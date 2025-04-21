@@ -1,0 +1,19 @@
+Copyright (c) 2025 Robert Cozzi, Jr.
+
+Permission is hereby granted, free of charge, to any individual or organization to install, use, and modify this software extension
+for both personal and professional purposes, including use in commercial business environments. Use of this extension within your company,
+workplace, or as part of your development workflow is fully permitted and encouraged.
+
+However, redistribution of this extension or its source code—whether modified or unmodified—for the purpose of resale, bundling, or inclusion
+in a for-profit commercial product or service is strictly prohibited without prior written permission from the author.
+
+If you wish to include this extension, or any derivative work based on it, in a for-profit product, derived work, service, or software product,
+then a paid commercial license must be obtained.
+If you are using or incorporating this extension into any non-for-profit or open-source project, permission is granted without the need for a separate license.
+
+For commercial licensing inquiries, please contact:
+  Bob Cozzi
+  Email: cozzi@rpgiv.com
+  Website: https://github.com/bobcozzi
+
+THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.

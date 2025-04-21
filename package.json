@@ -1,31 +1,58 @@
 {
   "name": "rpg-converter",
-  "displayName": "RPG Fixed to Free Converter",
-  "description": "Converts RPG fixed-format source to free-format inline in the editor.",
-  "version": "0.0.1",
-  "publisher": "Bob Cozzi",
+  "displayName": "IBM i RPG IV to RPG Free Converter by Bob Cozzi",
+  "description": "Convert RPG IV fixed-format source to free-format. inline in the editor.",
+  "icon": "images/rpgfree.png",
+  "version": "0.0.3",
+  "publisher": "bobcozzi",
+  "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0"
   },
+  "keywords": [
+    "ibmi",
+    "rpgle",
+    "rpgiv",
+    "iseries",
+    "ilerpg",
+    "rpgfree",
+    "as400"
+  ],
   "repository": {
-  "type": "git",
-  "url": "https://github.com/bobcozzi/vsciRPGConverter.git"
-},
+    "type": "git",
+    "url": "https://github.com/bobcozzi/vsciRPGConverter.git"
+  },
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "onCommand:rpgConverter.convert"
-  ],
-  "main": "./out/extension.js",
-  "contributes": {
+   "contributes": {
     "commands": [
       {
-        "command": "rpgConverter.convert",
-        "title": "Convert RPG Fixed to Free Format"
+        "command": "rpgconverter.convertToRPGFree",
+        "title": "Convert RPG IV to Free Format"
       }
-    ]
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "rpgconverter.convertToRPGFree",
+          "when": "resourceExtname =~ /rpg(le)?|sqlrpgle/i",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "RPG Converter",
+      "properties": {
+        "rpgconverter.enableVirtualSpace": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable virtual space behavior when editing RPG source. This allows the cursor to move beyond the end of lines, simulating SEU-style editing."
+        }
+      }
+    }
   },
+  "main": "./out/extension.js",
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
@@ -34,11 +61,9 @@
   },
   "devDependencies": {
     "@types/vscode": "^1.70.0",
-    "typescript": "^4.8.0",
-    "vsce": "^1.97.0"
+    "typescript": "^4.8.0"
   },
   "dependencies": {
-    "-": "^0.0.1",
-    "g": "^2.0.1"
+    "sql-formatter": "^15.5.2"
   }
 }
