@@ -1,10 +1,3 @@
-
-export function convertHSpec(lines: string[]): string[] {
-    if (!Array.isArray(lines) || lines.length === 0) return [];
-
-    const fullLine = lines.map(l => l.substring(6)).join('').trim(); // skip columns 1–6 (spec ID and optional *)
-
-    if (!fullLine) return [];
-
-    return [`ctl-opt ${fullLine};`];
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:b669f75ebbb639b94f8170afdf5b68ef2d12d243a377b304d5d859dbba69e598
+size 321

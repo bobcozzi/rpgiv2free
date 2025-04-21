@@ -1,7 +1,7 @@
 {
-  "name": "rpg-converter",
-  "displayName": "IBM i RPG IV to RPG Free Converter by Bob Cozzi",
-  "description": "Convert RPG IV fixed-format source to free-format. inline in the editor.",
+  "name": "rpgivfree",
+  "displayName": "Bob Cozzi's IBM i RPG IV to RPG Free Conversion Tool",
+  "description": "Bob Cozzi's Convert RPG IV fixed-format to free-format tool add-on for Visual Studio CODE for i.",
   "icon": "images/rpgfree.png",
   "version": "0.0.3",
   "publisher": "bobcozzi",
@@ -40,19 +40,12 @@
           "group": "navigation"
         }
       ]
-    },
-    "configuration": {
-      "title": "RPG Converter",
-      "properties": {
-        "rpgconverter.enableVirtualSpace": {
-          "type": "boolean",
-          "default": false,
-          "description": "Enable virtual space behavior when editing RPG source. This allows the cursor to move beyond the end of lines, simulating SEU-style editing."
-        }
-      }
     }
   },
   "main": "./out/extension.js",
+  "activationEvents": [
+    "onCommand:rpgconverter.convertToRPGFree"
+  ],
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
