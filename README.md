@@ -4,65 +4,86 @@ This Visual Studio Code extension helps developers convert RPG IV fixed-format c
 
 ## Features
 
-- **Convert RPG IV Fixed-Format to Free Format**:  
+- **Convert RPG IV Fixed-Format to Free Format**:
   Once installed, right-click on any RPG IV fixed-format statement in your editor and select the “Convert RPG IV to Free Format” option from the context menu. The statement will be converted instantly.
-  
-- **Multi-Line Support for Complex Statements**:  
+
+- **Multi-Line Support for Complex Statements**:
   If a statement spans multiple lines (such as a D (Definition) spec), you can position the cursor on any line within the statement, and the extension will convert the entire statement properly, even if it’s split across several lines.
-  
-- **Batch Conversion of Multiple Statements**:  
+
+- **Batch Conversion of Multiple Statements**:
   You can select multiple statements within the same file and convert them all in a single operation. The tool processes them efficiently.
-  
+
 - **Fully Implemented Specifications**:
   - File (F) Specs
   - Definition (D) Specs
   - Embedded SQL Statements
   - Procedure (P) Specs
 
+## Extension Settings
+
+This extension contributes the following settings under `rpgivfree`:
+
+### `rpgivfree.convertBINTOINT`
+Controls whether binary (B) data types in RPG IV are converted to integers in free-format RPG.
+
+- `0` — Do not convert B fields to integer (makes them BINDEC variables).
+- `1` — Always convert B fields to integer (makes them INT variables).
+- `2` — Convert B fields to integer variables only when decimal positions = 0.
+
+Default: `0`
+
+### `rpgivfree.addINZ`
+Automatically adds the `INZ` keyword to data structure fields that do not already have it.
+
+- `true` — Add `INZ` keyword to all Data Structures when converted.
+- `false` — Do not add `INZ`.
+
+Default: `false`
+
 ## In Development:
 
-- **Header/Control (H) Specs**  
+- **Header/Control (H) Specs**
   The conversion for H Specs is currently in development.
 
-- **Procedure (P) Specs**  
+- **Procedure (P) Specs**
   Most aspects of P Specs are working, but some minor adjustments are still being made.
 
-- **Calculation (C) Specs**  
-  The conversion of Calc Specs is in progress and will be included in the next release. (See below for more details).
+- **Calculation (C) Specs**
+  The conversion of Calc Specs is in progress and will be updated in each release. (See below for more details).
 
 ## Getting Started
 
-1. **Install the Extension**:  
-   - Go to the Visual Studio Code Extensions marketplace.  
+1. **Install the Extension**:
+   - Go to the Visual Studio Code Extensions marketplace.
    - Search for RPG IV to Free Format Conversion Tool and click Install.
-  
-2. **Using the Tool**:  
-   - Open any RPG IV file in VS Code.  
-   - Right-click on a fixed-format statement.  
-   - Select “Convert RPG IV to Free Format” from the context menu.  
+
+2. **Using the Tool**:
+   - Open any RPG IV file in VS Code.
+   - Right-click on a fixed-format statement.
+   - Select “Convert RPG IV to Free Format” from the context menu.
    - The tool will convert the statement into free format.
-  
-3. **Multi-Line Statements**:  
-   - For multi-line statements (like D Specs), position the cursor on any line that makes up the statement.  
+
+3. **Multi-Line Statements**:
+   - For multi-line statements (like D Specs), position the cursor on any line that makes up the statement.
    - The extension will automatically convert the entire statement.
 
-4. **Multiple Statements Conversion**:  
+4. **Multiple Statements Conversion**:
    - Select multiple statements in the editor and convert them at once.
 
 ## Known Issues
 
-- **Calc Specs (C Specs)**:  
+- **Calc Specs (C Specs)**:
   Currently under development. Some edge cases may not be fully converted as expected. We are actively working to address this.
-  
-- **P Specs**:  
+
+- **P Specs**:
   While most of the P Specs are working, there are some additional tweaks to improve edge cases and ensure consistent formatting.
 
 ## Roadmap
 
-- **Fully Implemented Calc Specs (C Specs)**:  
+- **Fully Implemented Calc Specs (C Specs)**:
   We are working on refining the handling of Calc Specs and expect it to be fully supported in the next release.
-  
-- **Improved User Feedback for Conversions**:  
+
+- **Improved User Feedback for Conversions**:
   We plan to enhance the user experience by providing more informative feedback about what is being converted and any issues that may arise during conversion.
 
 
@@ -75,6 +96,6 @@ This project is licensed. See the LICENSE file for details.
 If you have any issues or feature requests, please open an issue on the GitHub repository. We will do our best to address it promptly.
 ## Contact
 
-Bob Cozzi  
-[Website](http://www.github.com/bobcozzi/vsciRPGConverter)  
+Bob Cozzi
+[Website](http://www.github.com/bobcozzi/vsciRPGConverter)
 [Email](mailto:cozzi@rpgiv.com)

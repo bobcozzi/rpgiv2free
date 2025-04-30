@@ -1,7 +1,8 @@
+
 export function reflowOutputLines(statement: string, maxLength: number = 74): string[] {
   const result: string[] = [];
-  const firstIndent = '          '; // 10 spaces
-  const continuationIndent = '           '; // 12 spaces
+  const firstIndent        = '          '; // 10 spaces
+  const continuationIndent = '            '; // 12 spaces
   const nameContinuation = '...'; // Continuation syntax for long names
 
   // Trim leading spaces and apply the first indent
@@ -47,11 +48,11 @@ export function reflowOutputLines(statement: string, maxLength: number = 74): st
       let breakPoint = availableLength;
       const substring = trimmedStatement.slice(0, availableLength + 1);
 
-      // Prefer breaking at spaces, parentheses, or commas
+      // Prefer breaking at spaces, parentheses, or semicolons
       const lastBreakableIndex = Math.max(
           substring.lastIndexOf(' '),
           substring.lastIndexOf('('),
-          substring.lastIndexOf(',')
+          substring.lastIndexOf(':')
       );
 
       if (lastBreakableIndex > -1) {

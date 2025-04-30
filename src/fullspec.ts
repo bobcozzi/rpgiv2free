@@ -127,6 +127,9 @@ function lineContinuesFromPrevious(previousLine: string, currentLine: string): b
       if (curSpec === 'd' && isStandaloneDeclaration(prev, current)) {
         return false; // not a continuation
       }
+      if (curSpec === 'd' && isExtSubField(prev, current)) {
+        return false; // not a continuation
+      }
 
       if (prevHadEllipsis) {
         // Long name continuation:
@@ -145,6 +148,7 @@ function lineContinuesFromPrevious(previousLine: string, currentLine: string): b
     case 'c':
       // C-spec: blank factor1 (12–25) opcode (cols 26–35)
       return (ibmi.getCol(current, 12, 25).trim() === '')
+    case '': // No spec?
 
     default:
       return false;
@@ -182,45 +186,23 @@ function isStandaloneDeclaration(previous: string, current: string): boolean {
   return false;
 }
 
-////////  Legacy Code  /////////////
-// The following function is a legacy version of lineContinuesFromPrevious2.
-function lineContinuesFromPrevious2(previousLine: string, currentLine: string): boolean | '//' {
-  const current = currentLine.padEnd(80, ' ');
-  const previous = previousLine.padEnd(80, ' ');
+export function isExtSubField(previous: string, current: string): boolean {
+  const prev = previous.padEnd(80, ' ');
+  const curr = current.padEnd(80, ' ');
 
-  const prevSpec = previous.charAt(5).toLowerCase();
-  const prevCol7 = previous.charAt(6);
-  const curSpec = current.charAt(5).toLowerCase();
-  const curCol7 = current.charAt(6);
+  const nameField = ibmi.getCol(curr, 7, 20).trim();
+  const extField = ibmi.getColUpper(curr, 21);
+  const declType = ibmi.getColUpper(curr, 24, 25).trim();
+  const fromToFields = ibmi.getCol(curr, 26, 35).trim();
+  const keywordArea = ibmi.getCol(curr, 44, 80).trim();
 
-  // Handle RPG IV long name continuation ending in ...
-  if (prevSpec === curSpec && previous.substring(6, 80).trimEnd().endsWith('...')) {
+  // If there's a name field, it's a new declaration.
+  if (extField === 'E' && declType === '' && fromToFields === '') return true;
+
+  // If col 44–80 has keywords AND we are not in a name continuation context:
+  if (keywordArea !== '' && !prev.trimEnd().endsWith('...')) {
     return true;
   }
 
-  // If spec type changes don't continue.
-  if (prevSpec !== curSpec) return false;
-
-  // Special: col 7 is comment
-  if (curCol7 === '*') return true;
-
-  switch (curSpec) {
-    case 'c':
-      // C-spec: blank factor1 (12–25) opcode (cols 26–35)
-      return (ibmi.getCol(current, 12, 25).trim() === '')
-    case 'd':
-      // D-spec: name field blank (cols 6–20)
-      return (ibmi.getCol(current, 7, 43).trim() === '')
-    case 'f':
-      return (ibmi.getCol(current, 7, 43).trim() === '')
-    case 'h':
-      return true
-    case 'p':
-      // Others: name field blank as continuation
-      return (ibmi.getCol(current, 7, 43).trim() === '')
-
-    default:
-      return false;
-  }
+  return false;
 }
-

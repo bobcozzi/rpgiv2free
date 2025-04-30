@@ -40,7 +40,29 @@
           "group": "navigation"
         }
       ]
+    },
+    "configuration": {
+  "type": "object",
+  "title": "RPG IV Free Format Converter",
+  "properties": {
+    "rpgivfree.convertBINTOINT": {
+      "type": "number",
+      "default": 2,
+      "enum": [0, 1, 2],
+      "enumDescriptions": [
+        "0 - Do not convert to Integer",
+        "1 - Always convert B (binary) fields to Integer",
+        "2 - Convert to Integer only when decimal positions = 0"
+      ],
+      "description": "Controls how RPG IV B ('binary') fields are converted to integers."
+    },
+    "rpgivfree.addINZ": {
+      "type": "boolean",
+      "default": true,
+      "description": "Add INZ keyword to data structures that do not have one."
     }
+  }
+}
   },
   "main": "./out/extension.js",
   "activationEvents": [
