@@ -14,8 +14,10 @@ This Visual Studio Code extension helps developers convert RPG IV fixed-format c
   You can select multiple statements within the same file and convert them all in a single operation. The tool processes them efficiently.
 
 - **Fully Implemented Specifications**:
+  - Header (H) Specs
   - File (F) Specs
   - Definition (D) Specs
+  - Calculation (C) Specs (in progress)
   - Embedded SQL Statements
   - Procedure (P) Specs
 
@@ -43,13 +45,17 @@ Default: `false`
 ## In Development:
 
 - **Header/Control (H) Specs**
-  The conversion for H Specs is currently in development.
+  The conversion for H Specs is currently in development. It mostly works but may require some additional tweaks for edge cases.
 
 - **Procedure (P) Specs**
-  Most aspects of P Specs are working, but some minor adjustments are still being made.
+  Most aspects of P Specs are working, but some minor adjustments are still being made. I doubt you will notice any issues, but if you do, please let me know.
 
 - **Calculation (C) Specs**
-  The conversion of Calc Specs is in progress and will be updated in each release. (See below for more details).
+  The conversion of Calc Specs is in progress and is being updated in each release. (See below for more details).
+  Currently some calc specs convert fine, while others may or may not convert. Be ready with your Ctrl+Z to undo the conversion if it does not work as expected. (cmd+Z on Mac). For now, the following features are enablef:
+  - IFxx/ORxx/ANDxx/WHENxx convert as a compound statement.
+  - Regular 3 factor opcodes (like CHAIN) convert to free format. But verification is needed.
+  - Data Structures and subfields convert, but the END-DS is NOT added during conversion. Eventually we plan on making data structures a compound statement and if any part of it is selected for conversion, then entire thing is converted, with the END-DS added.
 
 ## Getting Started
 
