@@ -55,8 +55,10 @@ Default: `false`
   Currently some calc specs convert fine, while others may or may not convert. Be ready with your Ctrl+Z to undo the conversion if it does not work as expected. (cmd+Z on Mac). For now, the following features are enablef:
   - IFxx/ORxx/ANDxx/WHENxx convert as a compound statement.
   - Regular 3 factor opcodes (like CHAIN) convert to free format. But verification is needed.
-  - Data Structures and subfields convert, but the END-DS is NOT added during conversion. Eventually we plan on making data structures a compound statement and if any part of it is selected for conversion, then entire thing is converted, with the END-DS added.
 
+  **Data Structure (DS) and Data Structure Subfields**
+- Data Structures and subfields convert, but the END-DS is NOT added during conversion. Eventually we plan on making data structures a compound statement and if any part of it is selected for conversion, then entire thing is converted, with the END-DS added.
+-
 ## Getting Started
 
 1. **Install the Extension**:
