@@ -38,26 +38,70 @@ export function getRPGIVFreeSettings() {
   };
 }
 
-export function insertExtraDCLLines(
+export interface DCLInsert {
+  currentLineIndex: number;
+  extraDCL: string[];
+}
+
+export function insertExtraDCLLinesBatch(
+  editor: vscode.TextEditor,
+  allLines: string[],
+  inserts: DCLInsert[]
+): Thenable<boolean> {
+  if (inserts.length === 0) return Promise.resolve(true);
+
+  // Find all insertion positions and prepare insertions
+  const insertData: { position: vscode.Position; text: string }[] = [];
+
+  for (const { currentLineIndex, extraDCL } of inserts) {
+    if (extraDCL.length === 0) continue;
+
+    let insertAfterLine = 0;
+    for (let i = currentLineIndex; i >= 0; i--) {
+      const line = allLines[i];
+      if (!line || line.trim() === '') continue;
+      if (line.trim().startsWith('//')) continue;
+
+      const specType = line[5]?.toLowerCase?.() || '';
+      const legacyD = line.length > 5 && (["d", "p"].includes(specType));
+      const freeDCL = getColUpper(line, 8, 25);
+      const isDCL = freeDCL.startsWith('DCL-');
+
+      if (legacyD || isDCL) {
+        insertAfterLine = i;
+        break;
+      }
+    }
+
+    const position = new vscode.Position(insertAfterLine + 1, 0);
+    const text = extraDCL.join('\n') + '\n';
+    insertData.push({ position, text });
+  }
+
+  return editor.edit(editBuilder => {
+    for (const { position, text } of insertData) {
+      editBuilder.insert(position, text);
+    }
+  });
+}
+
+export function insertExtraDCLLines1(
   editor: vscode.TextEditor,
   allLines: string[],
   currentLineIndex: number,
   extraDCL: string[]
-): void {
-  if (extraDCL.length === 0) return;
+): Thenable<boolean> {
+  if (extraDCL.length === 0) return Promise.resolve(true);
 
-  // Start from current line and move upward
   let insertAfterLine = 0;
   for (let i = currentLineIndex; i >= 0; i--) {
     const line = allLines[i];
-    if (!line || line.trim() === '') continue; // Skip empty lines
-    if (line.trim().startsWith('//')) continue; // Skip comment lines
-    const specType = line[5].toLowerCase();
+    if (!line || line.trim() === '') continue;
+    if (line.trim().startsWith('//')) continue;
 
-    // Check for traditional D-spec (column 6 = 'D')
-    const legacyD = line.length > 5 && (["d","p"].includes(specType))
-    const freeDCL = getColUpper(line,8, 25);
-    // Check for free-format DCL- opcodes (e.g., "DCL-S", "DCL-DS", etc.)
+    const specType = line[5].toLowerCase();
+    const legacyD = line.length > 5 && (["d", "p"].includes(specType));
+    const freeDCL = getColUpper(line, 8, 25);
     const isDCL = freeDCL.startsWith('DCL-');
 
     if (legacyD || isDCL) {
@@ -66,10 +110,50 @@ export function insertExtraDCLLines(
     }
   }
 
-  // Build insert edit
-  editor.edit(editBuilder => {
-    const insertPosition = new vscode.Position(insertAfterLine + 1, 0);
-    const insertText = extraDCL.join('\n') + '\n';
+  const insertPosition = new vscode.Position(insertAfterLine + 1, 0);
+  const insertText = extraDCL.join('\n') + '\n';
+  return editor.edit(editBuilder => {
     editBuilder.insert(insertPosition, insertText);
   });
+}
+
+// Extracts the opcode from a C-spec line
+export function getOpcode(line: string): string {
+  return getColUpper(line.padEnd(80, ' '), 26, 35);
+}
+
+export function isOpcodeIFxx(line: string): boolean {
+  const opcode = getOpcode(line);
+  return /^IF(EQ|NE|GT|LT|GE|LE)?$/.test(opcode);
+}
+
+export function isOpcodeWHENxx(line: string): boolean {
+  const opcode = getOpcode(line);
+  return /^WHEN(EQ|NE|GT|LT|GE|LE)?$/.test(opcode);
+}
+
+export function isOpcodeANDxxORxx(line: string): boolean {
+  const opcode = getOpcode(line);
+  return /^(AND|OR)(EQ|NE|GT|LT|GE|LE)?$/.test(opcode);
+}
+
+export function isOpcodeEnd(line: string): boolean {
+  const opcode = getOpcode(line);
+  return /^END(IF|SL)?$/.test(opcode);
+}
+
+
+export function isStartBooleanOpcode(line: string): boolean {
+  return (
+    isOpcodeIFxx(line) ||
+    isOpcodeWHENxx(line)
+  );
+}
+
+export function isBooleanOpcode(line: string): boolean {
+  return (
+    isOpcodeIFxx(line) ||
+    isOpcodeWHENxx(line) ||
+    isOpcodeANDxxORxx(line)
+  );
 }

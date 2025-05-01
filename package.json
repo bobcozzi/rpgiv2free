@@ -3,8 +3,10 @@
   "displayName": "Bob Cozzi's IBM i RPG IV to RPG Free Conversion Tool",
   "description": "Bob Cozzi's Convert RPG IV fixed-format to free-format tool add-on for Visual Studio CODE for i.",
   "icon": "images/rpgfree.png",
-  "version": "0.0.3",
-  "publisher": "bobcozzi",
+  "preview": true,
+  "private": false,
+  "publisher": "CozziResearch",
+  "version": "0.0.4",
   "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0"

@@ -3,7 +3,8 @@
 import * as vscode from 'vscode';
 
 import { collectStmt } from './collectSpecs';
-import { reflowOutputLines } from './lineProcessor';
+import { reflowOutputLines } from './reflowLines';
+import { expandCompoundRange } from './compoundStmt';
 import { convertHSpec } from './HSpec';
 import { convertFSpec } from './FSpec';
 import { convertDSpec } from './DSpec';
@@ -49,14 +50,30 @@ export function activate(context: vscode.ExtensionContext) {
       }
     }
 
-    const selectedLineList = [...selectedLineIndexes].sort((a, b) => a - b);
+    // const selectedLineList = [...selectedLineIndexes].sort((a, b) => a - b);
+    const expandedLineIndexes = new Set<number>();
+
+    const anchorLineIndexes = new Set<number>();
+
+    for (const line of selectedLineIndexes) {
+      const expanded = expandCompoundRange(allLines, line);
+      const anchor = Math.min(...expanded);
+      anchorLineIndexes.add(anchor);  // Add the top line number of any compound statement
+    }
+    const anchorLineList = [...anchorLineIndexes].sort((a, b) => a - b);
+
+    for (const line of selectedLineIndexes) {
+      const expanded = expandCompoundRange(allLines, line);
+      for (const idx of expanded) expandedLineIndexes.add(idx);
+    }
+    const selectedLineList = [...expandedLineIndexes].sort((a, b) => a - b);
 
     for (const i of selectedLineList) {
       if (processedLines.has(i) || i >= allLines.length) continue;
       const collectedStmts = collectStmt(allLines, i);
       if (!collectedStmts) continue;
 
-      const { lines: specLines, indexes, comments, isSQL, entityName } = collectedStmts;
+      const { lines: specLines, indexes, comments, isSQL, isBOOL, entityName } = collectedStmts;
       if (!specLines.length || indexes.some(idx => processedLines.has(idx))) continue;
 
       let convertedText = '';
@@ -64,7 +81,12 @@ export function activate(context: vscode.ExtensionContext) {
 
       if (isSQL) {
         convertedText = convertToFreeFormSQL(specLines).join('\n');
-      } else {
+
+      }
+      else if (isBOOL) {
+        convertedText = specLines.flatMap(line => reflowOutputLines(line)).join('\n');
+      }
+      else {
         const specType = specLines[0].charAt(5).toLowerCase().trim();
 
         const converted =
@@ -101,9 +123,12 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     // Apply extra DCL lines in a separate edit operation
-    for (const dcl of extraDCLs) {
-      await ibmi.insertExtraDCLLines(editor, editor.document.getText().split(/\r?\n/), dcl.insertAt, dcl.lines);
-    }
+// Apply extra DCL lines in a single batch edit
+const lines = editor.document.getText().split(/\r?\n/);
+await ibmi.insertExtraDCLLinesBatch(editor, lines, extraDCLs.map(dcl => ({
+  currentLineIndex: dcl.insertAt,
+  extraDCL: dcl.lines
+})));
   });
 
   // ✅ Register command

@@ -1,6 +1,6 @@
 
 import { collectSQLBlock } from './SQLSpec.js';
-import * as ibmi from './IBMi';
+import * as ibmi from './IBMi.js';
 
 
 // Global regex constants for identifying embedded SQL

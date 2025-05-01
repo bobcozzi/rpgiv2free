@@ -153,6 +153,7 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
       result,
     };
 }
+
 function reformatOpcode(
   opcode: string,
   factor1: string,
@@ -163,6 +164,11 @@ function reformatOpcode(
   resInd2: string,
   resInd3: string
 ): string[] {
+
+
+  // First try the conditional opcode logic
+  const condLines = convertConditionalOpcode(opcode, factor1, factor2);
+  if (condLines.length > 0) return condLines;
 
   const opCode = opcode.toUpperCase().replace(/\(.*\)$/, "");
   const newLines: string[] = [];
@@ -342,4 +348,32 @@ export function isValidOpcode(id: string): boolean {
         ]);
         const normalized = opcode.toUpperCase().replace(/\(.*\)$/, ""); // strip off Operation Extender (if any)
         return extOpcodes.has(opcode.toUpperCase());
+}
+
+function convertConditionalOpcode(
+  opcode: string,
+  factor1: string,
+  factor2: string
+): string[] {
+  const comparisonMap: Record<string, string> = {
+    EQ: "=",
+    NE: "<>",
+    LT: "<",
+    LE: "<=",
+    GT: ">",
+    GE: ">="
+  };
+
+  const opCode = opcode.toUpperCase().replace(/\(.*\)$/, "");
+  const condMatch = opCode.match(/^(IF|OR|AND|WHEN|DOW|DOU)(EQ|NE|LT|LE|GT|GE)$/);
+
+  if (condMatch) {
+    const keyword = condMatch[1]; // IF, OR, etc.
+    const cmp = condMatch[2];     // EQ, NE, etc.
+    const operator = comparisonMap[cmp];
+    if (operator && factor1 && factor2) {
+      return [`${keyword} ${factor1} ${operator} ${factor2}`];
+    }
+  }
+  return [];
 }

@@ -1,14 +1,18 @@
-import { collectSQLBlock } from './SQLSpec.js';
+import { collectSQLBlock } from './SQLSpec';
+import { collectBooleanOpcode } from './collectBoolean';
 import * as ibmi from './IBMi';
 import * as vscode from 'vscode';
+
+
 export { }; // forces module scope
 
 export interface collectSpecs {
   entityName: string | null;  // Can be null for SQL blocks
   lines: string[];
   indexes: number[];
-  comments: string[] | null; // Comments are optional
+  comments: string[] | null; // Comments parm is optional
   isSQL: boolean | false;
+  isBOOL: boolean | false;
 }
 
 // Add your actual regex patterns here
@@ -40,11 +44,27 @@ export function collectStmt(
       indexes: sqlBlockResult.indexes,
       comments: comments.length > 0 ? comments : null,
       isSQL: true,
+      isBOOL: false,
     };
   }
 
   const curSpec = ibmi.getSpecType(startLine);
   if (!curSpec || isLineEmpty(startLine)) return null;
+
+  if (curSpec === 'c') {
+    if (ibmi.isBooleanOpcode(startLine)) {
+      // Handle boolean opcode lines separately
+      const booleanOpcodeResult = collectBooleanOpcode(allLines, startIndex);
+      return {
+        entityName: null,
+        lines: booleanOpcodeResult.lines,
+        indexes: booleanOpcodeResult.indexes,
+        comments: comments.length > 0 ? comments : null,
+        isSQL: false,
+        isBOOL: true,
+      };
+    }
+  }
 
   // Special case: Unnamed Data Structure
 
@@ -73,7 +93,7 @@ let start = startIndex;
     const hasFactor1 = ibmi.getCol(curLine, 12, 25).trim().length;
     const curHasName = ibmi.getCol(curLine, 7, 21).trim().length > 0;
 
-    // Bob, also need the very fringe case of a long name ending on prior line
+    // The very fringe case of a long name ending on prior line
     //  D  thisIsALongNameThatIsNotContinued
     //  D                SDS
     if (!curEndsWithDots && curDclType === 'DS' && curSpec === 'd') {
@@ -83,11 +103,15 @@ let start = startIndex;
     }
     if (curSpec === 'c' && !isComment) {
       if (curOpCode.length === 0 && !hasFactor1) {
-        // Stop here if the current line is a C-spec with an opcode but no factor1
+        // keep reading if the current line is a C-spec with no opcode and no factor1
         start--;
         continue;
       }
       else if (curOpCode.length > 0) {
+        if (ibmi.isOpcodeANDxxORxx(curLine)) {
+          start--;
+          continue;
+        }
         break;
       }
     }
@@ -127,6 +151,7 @@ let start = startIndex;
       isComment = ibmi.getCol(line, 7, 80).trim().startsWith('//');
     }
 
+
     const namePartTrimmed = ibmi.getCol(line, 7, 21).trim();
 
     const attr22to43 = ibmi.getCol(line, 22, 43).trimEnd();
@@ -151,22 +176,32 @@ let start = startIndex;
       }
     }
 
+
+
     collectedIndexes.push(index);
 
 
     // ✅ Only collect lines after the full name is known, or in edge cases
     if (finalNameLineFound || ((["d", "p"].includes(curSpec)) && namePartTrimmed === '' && attr22to43 !== '') ||
-     (curSpec === 'c' && !isComment)) {
-      collectedIndexes.push(index);
-      collectedLines.push(line);
+      (curSpec === 'c' && !isComment)) {
+        let bDoNotSave = false;
+      if (curSpec === 'c' && !isComment && index !== start) {
+        if (!ibmi.isOpcodeANDxxORxx(line)) {
+          bDoNotSave = true;
+        }
+      }
+      if (!bDoNotSave) {
+        collectedIndexes.push(index);
+        collectedLines.push(line);
+      }
     }
 
     // Check if the next line begins a new declaration or new opcode
     const nextLine = allLines[index + 1]?.padEnd(80, ' ');
     if (!nextLine) break; // No more lines to process
-
+    const bStartNewLine = isStartOfNewEntity(nextLine, curSpec);
     if ((finalNameLineFound || (curSpec === 'c' && !isComment)) &&
-        nextLine && isStartOfNewEntity(nextLine, curSpec)) {
+        nextLine && bStartNewLine) {
       break;
     }
 
@@ -197,6 +232,7 @@ let start = startIndex;
     indexes: collectedIndexes,
     comments: comments.length > 0 ? comments : null,
     isSQL: false, // Ensure `isSQL` is false for non-SQL blocks
+    isBOOL: false, // Ensure `isBOOL` is false for non-boolean blocks
   };
 }
 
@@ -209,7 +245,10 @@ function isStartOfNewEntity(line: string, curSpec: string): boolean {
     const nextSpec = ibmi.getSpecType(line);
     const nextOpcode = ibmi.getCol(line, 25, 35).trim().length > 0;
     const nextFactor1 = ibmi.getCol(line, 12, 25).trim().length;
-    let isNextComment = ibmi.getCol(line, 7, 7).trim() === '*';
+
+  let isNextComment = ibmi.getCol(line, 7, 7).trim() === '*';
+  const bBooleanContinuation = ibmi.isOpcodeANDxxORxx(line);
+
     if (!isNextComment) {
       isNextComment = ibmi.getCol(line, 7, 80).trim().startsWith('//');
     }
@@ -217,11 +256,12 @@ function isStartOfNewEntity(line: string, curSpec: string): boolean {
     // A line is a new entity if:
     // - It has a name and is not a continuation
     // - OR it's an unnamed D-spec (e.g., DS, SDS) with attributes
-  let bStart = (!hasDots && name !== '') || ((["d", "p"].includes(curSpec)) && name === '' && attr22to43 !== '');
+  let bStart = (!hasDots && name !== '' && !bBooleanContinuation) ||
+               ((["d", "p"].includes(curSpec)) && name === '' && attr22to43 !== '');
   if (!bStart && curSpec === 'c' && !isNextComment) {
-    if (nextSpec !== 'c' || nextOpcode || nextFactor1) {
+    if (nextSpec !== 'c' || nextOpcode || nextFactor1 || bBooleanContinuation) {
       bStart = false; // Stop here if the nextLine is a C-spec with new opcode or factor1
     }
   }
   return bStart;
-  }
+}
