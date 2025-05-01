@@ -24,7 +24,7 @@ Download in the [![VS Code Marketplace](https://img.shields.io/visual-studio-mar
 
 ## Extension Settings
 
-This extension contributes the following settings under `rpgivfree`:
+This extension contains the following settings under `rpgivfree`:
 
 ### `rpgivfree.convertBINTOINT`
 Controls whether binary (B) data types in RPG IV are converted to integers in free-format RPG.
@@ -63,18 +63,18 @@ Default: `false`
 ## Getting Started
 
 1. **Install the Extension**:
-   - Go to the Visual Studio Code Extensions marketplace.
+   - Go to the Visual Studio Code Extensions marketplace. [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/CozziResearch.rpgivfree.svg?label=VS%20Code%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=CozziResearch.rpgivfree)).
+
    - Search for RPG IV to Free Format Conversion Tool and click Install.
 
 2. **Using the Tool**:
-   - Open any RPG IV file in VS Code.
-   - Right-click on a fixed-format statement.
+   - Open any RPG IV file in VS Code. The extension must be .RPGLE or .SQLRPGLE only.
+   - Right-click on a fixed-format statement to bring up the context menu.
    - Select “Convert RPG IV to Free Format” from the context menu.
    - The tool will convert the statement into free format.
 
 3. **Multi-Line Statements**:
-   - For multi-line statements (like D Specs), position the cursor on any line that makes up the statement.
-   - The extension will automatically convert the entire statement.
+   - For multi-line statements (like D Specs), or enhanced calc spec opcodes that use the extended Factor 2, position the cursor on any line that makes up the statement. The extension automatically converts the entire statement.
 
 4. **Multiple Statements Conversion**:
    - Select multiple statements in the editor and convert them at once.
