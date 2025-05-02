@@ -1,5 +1,6 @@
 import { collectSQLBlock } from './SQLSpec';
 import { collectBooleanOpcode } from './collectBoolean';
+import { collectHSpecs } from './collectHSpec';
 import * as ibmi from './IBMi';
 import * as vscode from 'vscode';
 
@@ -65,14 +66,29 @@ export function collectStmt(
       };
     }
   }
+  else if (curSpec === 'h') {
+    const headerSpecs = collectHSpecs(allLines, startIndex); // Collect H specs if needed
+    return {
+      entityName: null,
+      lines: headerSpecs.lines,
+      indexes: headerSpecs.indexes,
+      comments: comments.length > 0 ? comments : null,
+      isSQL: false,
+      isBOOL: false,
+    };
+  }
 
   // Special case: Unnamed Data Structure
 
 // Step 1: Walk backward to find the start of the declaration
 let start = startIndex;
-  while (start > 0) {
+  while (start >= 0) {
     const curLine = allLines[start].padEnd(80, ' ');
-    const prevLine = allLines[start - 1].padEnd(80, ' ');
+    let prevLine = '';
+    if (start > 0) {
+      prevLine = allLines[start - 1].padEnd(80, ' ');
+    }
+
     if (ibmi.getSpecType(prevLine) !== curSpec) break;
     let isComment = ibmi.getCol(curLine, 7, 7).trim() === '*';
     if (!isComment) {
@@ -186,7 +202,7 @@ let start = startIndex;
       (curSpec === 'c' && !isComment)) {
         let bDoNotSave = false;
       if (curSpec === 'c' && !isComment && index !== start) {
-        if (!ibmi.isOpcodeANDxxORxx(line)) {
+        if (hasOpcode && !ibmi.isOpcodeANDxxORxx(line)) {
           bDoNotSave = true;
         }
       }

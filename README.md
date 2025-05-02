@@ -3,6 +3,10 @@
 This Visual Studio Code extension helps developers convert RPG IV fixed-format code into free-format RPG IV code effortlessly. Whether you’re working with File (F) specs, Definition (D) specs, or Embedded SQL statements, this tool streamlines the process by automating the conversion of fixed-format RPG code into more modern, readable free-format code.
 Download in the [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/CozziResearch.rpgivfree.svg?label=VS%20Code%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=CozziResearch.rpgivfree)).
 
+
+For a detailed list of changes and release notes, see the [Changelog](./CHANGELOG.md).
+
+
 ## Features
 
 - **Convert RPG IV Fixed-Format to Free Format**:

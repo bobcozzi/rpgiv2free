@@ -174,6 +174,7 @@ function reformatOpcode(
 
   const opCode = opcode.toUpperCase().replace(/\(.*\)$/, "");
   const newLines: string[] = [];
+  let freeFormat = '';
 
   switch (opCode.toUpperCase()) {
     case "Z-ADD":
@@ -182,7 +183,46 @@ function reformatOpcode(
     case "Z-SUB":
         newLines.push(`${result} = 0`);
         newLines.push(`${result} -= ${factor2}`);
+      break;
+    case "ADDDUR":
+      const [value, keyword] = factor2.split(':').map(s => s.trim());
+      const add_builtinFunc = keyword?.startsWith('*') ? `%${keyword.slice(1).toLowerCase()}` : `/* INVALID */`;
+      if (factor1.trim() === '') {
+        // If factor1 is empty, use the result as the first operand
+        freeFormat = `${result} += ${add_builtinFunc}(${value});`;
+      }
+      else {
+        freeFormat = `${result} = ${factor1} + ${add_builtinFunc}(${value});`;
+      }
+      newLines.push(freeFormat);
         break;
+    case "SUBDUR":
+      freeFormat = '';
+      if (factor2.includes(':')) {
+        // SUBDUR same as ADDDUR pattern
+        const [value, keywordRaw] = factor2.split(':').map(s => s.trim());
+        const keyword = keywordRaw || '';
+        const builtinFunc = keyword.startsWith('*')
+          ? `%${keyword.slice(1).toLowerCase()}`
+          : '/* INVALID or missing keyword */';
+        if (factor1.trim() === '') {
+          freeFormat = `${result} -= ${builtinFunc}(${value});`;
+        }
+        else {
+          freeFormat = `${result} = ${factor1} - ${builtinFunc}(${value});`;
+        }
+
+      } else if (result.includes(':')) {
+        // SUBDUR as %DIFF
+        const [target, keywordRaw] = result.split(':').map(s => s.trim());
+        const keyword = keywordRaw || '';
+        freeFormat = `${target} = %diff(${factor1} : ${factor2} : ${keyword.toLowerCase()});`;
+      } else {
+        // fallback
+        freeFormat = `/* Unrecognized SUBDUR format */`;
+      }
+      newLines.push(freeFormat);
+      break;
     case "MOVEL":
       newLines.push(`${result} = ${factor2}`);
       break;

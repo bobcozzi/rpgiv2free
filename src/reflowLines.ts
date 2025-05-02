@@ -51,7 +51,7 @@ export function reflowOutputLines(statement: string, maxLength: number = 74): st
       // Prefer breaking at spaces, parentheses, or semicolons
       const lastBreakableIndex = Math.max(
           substring.lastIndexOf(' '),
-          substring.lastIndexOf('('),
+         // substring.lastIndexOf('('),
           substring.lastIndexOf(':')
       );
 
