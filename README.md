@@ -6,6 +6,9 @@ Download in the [![VS Code Marketplace](https://img.shields.io/visual-studio-mar
 
 For a detailed list of changes and release notes, see the [Changelog](./CHANGELOG.md).
 
+This extension is an RPG IV to Free Format statement converter. You select the RPG IV fixed format statements you want to
+convert to free format, right-click and select "Convert RPG IV to free format".
+It is not a refactoring tool or moderization tool. Its only purpose is to get that statement into free format for you.
 
 ## Features
 
