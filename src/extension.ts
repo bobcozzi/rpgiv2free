@@ -113,6 +113,11 @@ export function activate(context: vscode.ExtensionContext) {
       }
     }
 
+      const convertedExtraDCL = extraDCLs.map(block => ({
+        insertAt: block.insertAt,
+        lines: block.lines.flatMap(line => reflowOutputLines(line))
+      }));
+
     // Apply main edits
     if (edits.length > 0) {
       await editor.edit(editBuilder => {
@@ -125,7 +130,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Apply extra DCL lines in a separate edit operation
 // Apply extra DCL lines in a single batch edit
 const lines = editor.document.getText().split(/\r?\n/);
-await ibmi.insertExtraDCLLinesBatch(editor, lines, extraDCLs.map(dcl => ({
+await ibmi.insertExtraDCLLinesBatch(editor, lines, convertedExtraDCL.map(dcl => ({
   currentLineIndex: dcl.insertAt,
   extraDCL: dcl.lines
 })));

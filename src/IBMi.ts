@@ -63,9 +63,13 @@ export function insertExtraDCLLinesBatch(
       if (line.trim().startsWith('//')) continue;
 
       const specType = line[5]?.toLowerCase?.() || '';
-      const legacyD = line.length > 5 && (["d", "p"].includes(specType));
+      // Note: Input specs must appear after D specs/DCL-DS/DCL-S specs.
+      // so we do not check for 'I' specs here.
+      const legacyD = line.length > 5 && (["d", "p","f","h"].includes(specType));
       const freeDCL = getColUpper(line, 8, 25);
-      const isDCL = freeDCL.startsWith('DCL-');
+      const freeDCL2 = getColUpper(line, 1, 80);
+      const isDCL = freeDCL.startsWith('DCL-') || freeDCL.startsWith('CTL-') ||
+                    freeDCL2.startsWith('DCL-') || freeDCL2.startsWith('CTL-');
 
       if (legacyD || isDCL) {
         insertAfterLine = i;

@@ -67,7 +67,8 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
           decimals,
           resInd1,
           resInd2,
-          resInd3
+          resInd3,
+          extraDCL
         );
 
       if (reformattedLine.length > 0) {
@@ -75,7 +76,7 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
       } else {
         freeFormLine.push(`${enhValues.opcode.toLowerCase()} ${enhValues.factor1} ${enhValues.factor2} ${enhValues.result};`);
       }
-      if (length.trim() !== '') {
+      if (extraDCL.length === 0 && length.trim() !== '') {
         const dataType = (decimals.trim() !== '') ? `packed(${length}:${decimals})` : `char(${length})`;
         extraDCL.push(` dcl-s ${result} ${dataType}; // Calc Spec work field`);
       }
@@ -162,7 +163,8 @@ function reformatOpcode(
   length: string, decimals: string,
   resInd1: string,
   resInd2: string,
-  resInd3: string
+  resInd3: string,
+  extraDCL: string[]
 ): string[] {
 
 
@@ -200,6 +202,40 @@ function reformatOpcode(
         } else {
           newLines.push(`${result} += ${factor2}`);
       }
+      break;
+    case "DEFN":
+    case "DEFINE":
+      let newDEFN = '';
+      if (factor1.toUpperCase() === "*LIKE") {
+        if (length.trim() !== '') {
+          newDEFN = ` dcl-s ${result} LIKE(${factor2} : ${length})`;
+        }
+        else  {
+          newDEFN = ` dcl-s ${result} LIKE(${factor2})`;
+        }
+      } else if (factor1.toUpperCase() === '*DTAARA') { // Handle *DTAARA DEFN here
+        if (length.trim() !== '') {
+          if (decimals.trim() !== '') {
+            newDEFN = ` dcl-ds ${result} packed(${length}:${decimals})`
+          }
+          else {
+            newDEFN = ` dcl-ds ${result} char(${length} : ${length})`;
+          }
+        }
+        else  {
+          newDEFN = ` dcl-ds ${result}`;
+        }
+        if (!factor2) {
+          newDEFN += `DTAARA;`;
+        }
+        else {
+          newDEFN += `DTAARA('${factor2.toUpperCase()}');`;
+        }
+      }
+      newDEFN +=
+      extraDCL.push(newDEFN);
+      newDEFN = `          // ${factor1} ${opcode} ${factor2} ${result}; // See converted DCL-xx`;
+      newLines.push(newDEFN);
       break;
       case "MULT":
         if (factor1) {
