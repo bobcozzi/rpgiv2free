@@ -1,8 +1,7 @@
 import * as vscode from 'vscode';
 import * as ibmi from './IBMi';
-import { isValidOpcode } from './CSpec'; // adjust path if needed
 
-import { log } from './extension'; // adjust path if needed
+import { log } from './IBMi'; // adjust path if needed
 
 
 
@@ -34,8 +33,9 @@ export function getVarName(lines: string[], startIndex = 0): { varName: string, 
 }
 
 // Function to convert D specs from fixed-format to free-format
-export function convertDSpec(lines: string[], entityName: string | null): string[] {
-    vscode.window.showInformationMessage(`convertDSpec called. Lines: ${lines?.length ?? 'undefined'}`);
+export function convertDSpec(lines: string[], entityName: string | null, extraDCL: string[] | null): string[] {
+
+   ibmi.log(`convertDSpec called. Lines: ${lines?.length ?? 'undefined'}`);
 
     if (!Array.isArray(lines) || lines.length === 0) return [];
     let varName = entityName;
@@ -138,26 +138,42 @@ export function convertDSpec(lines: string[], entityName: string | null): string
     if (settings.addINZ && !/\b(INZ)\b/i.test(kwdArea)) {
       kwdArea = kwdArea ? `INZ ${kwdArea.trim()}` : 'INZ';
     }
-    // If the Externally Described Data Structure allows extra fields to be included in the DS,
-    // then an END-DS keyword is required, otherwise it is not allowed on line-line data structures.
+    // If the Data Structure is something such as LIKEDS(xxx),
+    // then an END-DS keyword is NOT allowed.
+    // e.g.,  dcl-ds custmast likeds(cust_t); // END-DS is NOT allowed
+
+    // If the Data Structure is something such as EXTNAME(xxx),
+    // then an END-DS keyword is required either as a keyword style
+    // or as a separate statement.
     // e.g.,  dcl-ds custmast extname('CUSTMAST') end-ds; // requires END-DS
+    // or
+    //        dcl-ds custmast extname('CUSTMAST');
+    //        end-ds; // requires END-DS
     if (/\b(EXTNAME|EXTFILE|EXT)\b/i.test(kwdArea)) {
       if (!/\bEND-DS\b/i.test(kwdArea)) {
-        kwdArea = `${kwdArea.trim()} end-ds`;
+        if (extraDCL != null) {
+          extraDCL.push(`end-ds;`);
+        }
       }
     }
   }
 
     kwdArea = fixKeywordArgs(kwdArea);
     fieldType = (fieldType?.length >= 2) ? fieldType : '';
-    const isOpCode = isValidOpcode(varName);
+    const isOpCode = ibmi.isValidOpcode(varName);
 
     switch (dclType.toLowerCase()) {
-        case 'ds': decl = `dcl-ds ${varName} ${kwdArea}`.trim(); break;
+      case 'ds': decl = `dcl-ds ${varName} ${kwdArea}`.trim();
+        extraDCL?.push(`end-ds;`);
+        break;
         case 's' : decl = `dcl-s ${varName} ${fieldType} ${kwdArea ? ' ' + kwdArea : ''}`.trim(); break;
-        case 'pr': decl = `dcl-pr ${varName} ${fieldType} ${kwdArea}`.trim(); break;
-        case 'pi': decl = `dcl-pi ${varName} ${fieldType} ${kwdArea}`.trim(); break;
-        case 'c' : decl = `dcl-c ${varName} ${kwdArea}`.trim(); break;
+      case 'pr': decl = `dcl-pr ${varName} ${fieldType} ${kwdArea}`.trim();
+        extraDCL?.push(`end-pr;`);
+        break;
+      case 'pi': decl = `dcl-pi ${varName} ${fieldType} ${kwdArea}`.trim();
+        extraDCL?.push(`end-pi;`);
+        break;
+      case 'c' : decl = `dcl-c ${varName} ${kwdArea}`.trim(); break;
       default:
         if (isOpCode) {
           varName = 'dcl-subf ' + varName;

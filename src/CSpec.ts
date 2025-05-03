@@ -41,7 +41,7 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
 
     let freeFormLine: string[] = [];
 
-    if (isExtOpcode(opcode)) {
+    if (ibmi.isExtOpcode(opcode)) {
       if (lines.length > 1) {
         // Extract cols 36–80 (1-based) from each line starting with index 1
         extFactor2 = lines
@@ -377,54 +377,6 @@ function reformatOpcode(
  * @param id - The string to test, possibly including operation extenders like "(E)".
  * @returns True if the base string is a valid opcode, false otherwise.
  */
-export function isValidOpcode(id: string): boolean {
-    // List of valid opcodes (operation extenders not included)
-    const rpgOpcodes = new Set([
-      "ACQ", "BEGSR", "CALLP", "CHAIN", "CLEAR", "CLOSE", "COMMIT",
-      "DATA-GEN", "DATA-INTO", "DEALLOC", "DELETE", "DOU", "DOW",
-      "DSPLY", "DUMP", "ELSE", "ELSEIF", "ENDDO", "ENDFOR", "ENDIF",
-      "ENDMON", "ENDSL", "ENDSR", "EVAL", "EVALR", "EVAL-CORR", "EXCEPT",
-      "EXFMT", "EXSR", "FEOD", "FOR", "FOR-EACH", "FORCE", "IF", "IN",
-      "ITER", "LEAVE", "LEAVESR", "MONITOR", "NEXT", "ON-ERROR", "ON-EXIT",
-      "OPEN", "OTHER", "OUT", "POST", "READ", "READC", "READE", "READP",
-      "READPE", "REL", "RESET", "RETURN", "ROLBK", "SELECT", "SETGT",
-      "SETLL", "SORTA", "TEST", "UNLOCK", "UPDATE", "WHEN", "WRITE",
-      "XML-INTO", "XML-SAX"
-    ]);
-
-    // Strip off operation extenders like "(EHMR)" from the ID
-    const baseOpcode = id.replace(/\([A-Z]+\)$/i, "").toUpperCase();
-
-    return rpgOpcodes.has(baseOpcode);
-}
-    // Is an OpCode that supports the Extended Factor 2 syntax?
-    export function isExtOpcode(opcode: string): boolean {
-        const extOpcodes = new Set([
-          "CALLP",
-          "CLEAR",
-          "DATA-INTO",
-          "DOU",
-          "DOW",
-          "EVAL",
-          "EVALR",
-          "EVAL-CORR",
-          "FOR",
-          "FOR-EACH",
-          "IF",
-          "ELSEIF",
-          "WHEN",
-          "MONITOR",
-          "ON-ERROR",
-          "RETURN",
-          "ROLBK",
-          "SORTA",
-          "TEST",
-          "XML-INTO",
-          "XML-SAX"
-        ]);
-        const normalized = opcode.toUpperCase().replace(/\(.*\)$/, ""); // strip off Operation Extender (if any)
-        return extOpcodes.has(opcode.toUpperCase());
-}
 
 function convertConditionalOpcode(
   opcode: string,

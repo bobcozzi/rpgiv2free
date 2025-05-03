@@ -14,12 +14,6 @@ import { convertToFreeFormSQL } from './SQLSpec';
 
 import * as ibmi from './IBMi';
 
-const outputChannel = vscode.window.createOutputChannel('RPGFREEConverterLog');
-
-export function log(message: any) {
-  outputChannel.appendLine(typeof message === 'string' ? message : JSON.stringify(message));
-  outputChannel.show(true); // Show the log panel
-}
 
 export function activate(context: vscode.ExtensionContext) {
   const disposable = vscode.commands.registerCommand('rpgconverter.convertToRPGFree', async () => {
@@ -29,7 +23,7 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
     const line = editor.document.lineAt(editor.selection.active.line).text;
-    log('Current line: ' + line);
+    ibmi.log('Current line: ' + line);
 
     const doc = editor.document;
     const allLines = doc.getText().split(/\r?\n/);
@@ -92,7 +86,7 @@ export function activate(context: vscode.ExtensionContext) {
         const converted =
             specType === 'h' ? convertHSpec(specLines)
           : specType === 'f' ? convertFSpec(specLines)
-          : specType === 'd' ? convertDSpec(specLines, entityName)
+          : specType === 'd' ? convertDSpec(specLines, entityName, extraDCL)
           : specType === 'p' ? convertPSpec(specLines, entityName)
           : specType === 'c' ? convertCSpec(specLines, extraDCL)
           : specLines;
