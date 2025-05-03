@@ -6,7 +6,7 @@
   "preview": true,
   "private": false,
   "publisher": "CozziResearch",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0"
@@ -27,7 +27,7 @@
   "categories": [
     "Other"
   ],
-   "contributes": {
+  "contributes": {
     "commands": [
       {
         "command": "rpgconverter.convertToRPGFree",
@@ -44,31 +44,36 @@
       ]
     },
     "configuration": {
-  "type": "object",
-  "title": "RPG IV Free Format Converter",
-  "properties": {
-    "rpgivfree.convertBINTOINT": {
-      "type": "number",
-      "default": 2,
-      "enum": [0, 1, 2],
-      "enumDescriptions": [
-        "0 - Do not convert to Integer",
-        "1 - Always convert B (binary) fields to Integer",
-        "2 - Convert to Integer only when decimal positions = 0"
-      ],
-      "description": "Controls how RPG IV B ('binary') fields are converted to integers."
-    },
-    "rpgivfree.addINZ": {
-      "type": "boolean",
-      "default": true,
-      "description": "Add INZ keyword to data structures that do not have one."
+      "type": "object",
+      "title": "RPG IV Free Format Converter",
+      "properties": {
+        "rpgivfree.convertBINTOINT": {
+          "type": "number",
+          "default": 2,
+          "enum": [
+            0,
+            1,
+            2
+          ],
+          "enumDescriptions": [
+            "0 - Do not convert to Integer",
+            "1 - Always convert B (binary) fields to Integer",
+            "2 - Convert to Integer only when decimal positions = 0"
+          ],
+          "description": "Controls how RPG IV B ('binary') fields are converted to integers."
+        },
+        "rpgivfree.addINZ": {
+          "type": "boolean",
+          "default": true,
+          "description": "Add INZ keyword to data structures that do not have one."
+        }
+      }
     }
-  }
-}
   },
   "main": "./out/extension.js",
   "activationEvents": [
-    "onCommand:rpgconverter.convertToRPGFree"
+    "onCommand:rpgconverter.convertToRPGFree",
+    "onStartupFinished"
   ],
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -78,6 +83,7 @@
     "package": "vsce package"
   },
   "devDependencies": {
+    "@types/node": "^22.15.3",
     "@types/vscode": "^1.70.0",
     "typescript": "^4.8.0"
   },

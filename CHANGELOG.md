@@ -2,10 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.4.4] - 2025-05-03
+## [0.4.5] - 2025-05-03
 ### Added
 - Converting a Data Structure "header" line or the PI or PR statements results in the corresponding END-xx being generated after the list of child nodes.
-- 
+- Reactivating File spec conversion (it was removed accidentally in 0.4.4).
+-
 ## [0.4.3] - 2025-05-02
 ### Added
 - `SUBDUR` opcode handling:

@@ -22,18 +22,28 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.window.showErrorMessage('No active editor found.');
       return;
     }
-    const line = editor.document.lineAt(editor.selection.active.line).text;
-    ibmi.log('Current line: ' + line);
+    const activeline = editor.selection.active.line;
+    ibmi.log('Active line: ' + activeline);
+    const totalLines = editor.document.lineCount;
+    ibmi.log(`Document line count: ${totalLines}`);
+
+    try {
+      const line = editor.document.lineAt(editor.selection.active.line).text;
+      ibmi.log('Current line: ' + line);
+    } catch (e) {
+      ibmi.log('ERROR getting line text: ' + (e as Error).message);
+    }
 
     const doc = editor.document;
     const allLines = doc.getText().split(/\r?\n/);
     const processedLines = new Set<number>();
+    ibmi.log('Total lines: ' + allLines.length);
 
     // Collect all edits and extra DCLs to apply them in separate edit operations
     const selectedLineIndexes = new Set<number>();
     const edits: { range: vscode.Range, text: string }[] = [];
     const extraDCLs: { insertAt: number, lines: string[] }[] = [];
-
+    try {
     for (const sel of editor.selections) {
       if (sel.isEmpty) {
         selectedLineIndexes.add(sel.active.line);
@@ -43,6 +53,9 @@ export function activate(context: vscode.ExtensionContext) {
         }
       }
     }
+  } catch (e) {
+    ibmi.log('Error collecting selected lines: ' + (e as Error).message);
+  }
 
     // const selectedLineList = [...selectedLineIndexes].sort((a, b) => a - b);
     const expandedLineIndexes = new Set<number>();
@@ -72,7 +85,6 @@ export function activate(context: vscode.ExtensionContext) {
 
       let convertedText = '';
       let extraDCL: string[] = [];
-
       if (isSQL) {
         convertedText = convertToFreeFormSQL(specLines).join('\n');
 

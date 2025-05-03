@@ -1,13 +1,17 @@
 
 import * as vscode from 'vscode';
 
-// Extracts the specified columns data from the line input string.
-  // const opcode = getcol(line, 25, 35).trim().toUpperCase();
-const outputChannel = vscode.window.createOutputChannel('RPGFREEConverterLog');
+// Create output channel
+const outputChannel = vscode.window.createOutputChannel('RPGIVFreeFmtConverter');
 
+// Log function with condition for Debug
 export function log(message: any) {
-  outputChannel.appendLine(typeof message === 'string' ? message : JSON.stringify(message));
-  outputChannel.show(true); // Show the log panel
+  const isDebug = process.env.VSCODE_ENV === 'development';  // Check if in debug mode via environment variable
+
+  if (isDebug) {
+    outputChannel.appendLine(typeof message === 'string' ? message : JSON.stringify(message));
+    outputChannel.show(true);  // Show the log panel
+  }
 }
 
   export function getCol(line: string | null | undefined, from: number, to?: number): string {

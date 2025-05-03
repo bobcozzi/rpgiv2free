@@ -169,6 +169,8 @@ let start = startIndex;
 
 
     const namePartTrimmed = ibmi.getCol(line, 7, 21).trim();
+    const fSpecCont = ibmi.getCol(line, 7, 43).trim();
+    const fSpecKwd = ibmi.getCol(line, 44, 80).trim();
 
     const attr22to43 = ibmi.getCol(line, 22, 43).trimEnd();
     const endsWithDots = ibmi.getCol(line, 7, 80).trimEnd().endsWith('...');
@@ -192,8 +194,6 @@ let start = startIndex;
       }
     }
 
-
-
     collectedIndexes.push(index);
 
 
@@ -211,6 +211,15 @@ let start = startIndex;
         collectedLines.push(line);
       }
     }
+    if (!isComment) {
+      // Continued F spec?
+      if (curSpec === 'f' &&
+        ((index === start) || (fSpecKwd.length > 0 && fSpecCont.length === 0))) {
+        // Stop here if the nextLine is a F-spec with keyword
+        collectedIndexes.push(index);
+        collectedLines.push(line);
+      }
+    }
 
     // Check if the next line begins a new declaration or new opcode
     const nextLine = allLines[index + 1]?.padEnd(80, ' ');
@@ -224,15 +233,22 @@ let start = startIndex;
     const nextSpec = ibmi.getSpecType(nextLine);
     const nextOpcode = ibmi.getCol(nextLine, 25, 35).trim().length > 0;
     const nextFactor1 = ibmi.getCol(nextLine, 12, 25).trim().length;
+    const nextfSpecCont = ibmi.getCol(nextLine, 7, 43).trim();
+    const nextfSpecKwd = ibmi.getCol(nextLine, 44, 80).trim();
+
     let isNextComment = ibmi.getCol(nextLine, 7, 7).trim() === '*';
     if (!isNextComment) {
       isNextComment = ibmi.getCol(nextLine, 7, 80).trim().startsWith('//');
     }
 
     if (!isNextComment) {
-      if (curSpec === 'c' && nextSpec != 'c' || nextOpcode || nextFactor1) {
+      if (curSpec != nextSpec || (nextSpec === 'c' && (nextOpcode || nextFactor1))) {
           // Stop here if the nextLine is a C-spec with new opcode or factor1
           break;
+      }
+      if (nextSpec === 'f' && (nextfSpecKwd.length === 0 || nextfSpecCont.length > 0)) {
+        // Stop here if the nextLine is a F-spec with keyword
+        break;
       }
     }
 
