@@ -94,10 +94,12 @@ Default: `false`
 - **H Specs**:
   - Header specs are converted to one large CTL-OPT line. This is a work in progress and will be improved in future releases.
   - It is a future objective to include a "switch" setting to convert each H spec line independently or allow it to work like it does now.
+- **D Specs**:
+  - The conversion of D specs is mostly complete, but some edge cases may not be handled perfectly. For example, if a data structure is followed by a stand alone field with a long name it does not properly position the converted data structure's END-DS statement.
 
 ## Roadmap
 
-- **Fully Implemented Calc Specs (C Specs)**:
+- **Implemented Calc Specs (C Specs)**:
   We are working on refining the handling of Calc Specs and expect it to be fully supported in the next release.
 
 - **Improved User Feedback for Conversions**:

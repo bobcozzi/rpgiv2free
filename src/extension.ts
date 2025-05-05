@@ -3,7 +3,7 @@
 import * as vscode from 'vscode';
 
 import { collectStmt } from './collectSpecs';
-import { reflowOutputLines } from './reflowLines';
+import { reflowLines } from './reflowLines';
 import { expandCompoundRange } from './compoundStmt';
 import { convertHSpec } from './HSpec';
 import { convertFSpec } from './FSpec';
@@ -35,7 +35,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     const doc = editor.document;
-    const allLines = doc.getText().split(/\r?\n/);
+    const allLines = ibmi.splitLines(doc.getText());;
     const processedLines = new Set<number>();
     ibmi.log('Total lines: ' + allLines.length);
 
@@ -86,11 +86,11 @@ export function activate(context: vscode.ExtensionContext) {
       let convertedText = '';
       let extraDCL: string[] = [];
       if (isSQL) {
-        convertedText = convertToFreeFormSQL(specLines).join('\n');
+        convertedText = convertToFreeFormSQL(specLines).join(ibmi.getEOL());
 
       }
       else if (isBOOL) {
-        convertedText = specLines.flatMap(line => reflowOutputLines(line)).join('\n');
+        convertedText = specLines.flatMap(line => reflowLines(line)).join(ibmi.getEOL());
       }
       else {
         const specType = specLines[0].charAt(5).toLowerCase().trim();
@@ -103,7 +103,7 @@ export function activate(context: vscode.ExtensionContext) {
           : specType === 'c' ? convertCSpec(specLines, extraDCL)
           : specLines;
 
-        convertedText = converted.flatMap(line => reflowOutputLines(line)).join('\n');
+        convertedText = converted.flatMap(line => reflowLines(line)).join(ibmi.getEOL());
       }
 
       const rangeStart = new vscode.Position(indexes[0], 0);
@@ -121,7 +121,7 @@ export function activate(context: vscode.ExtensionContext) {
 
       const convertedExtraDCL = extraDCLs.map(block => ({
         insertAt: block.insertAt,
-        lines: block.lines.flatMap(line => reflowOutputLines(line))
+        lines: block.lines.flatMap(line => reflowLines(line))
       }));
 
     // Apply main edits
@@ -135,7 +135,8 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Apply extra DCL lines in a separate edit operation
 // Apply extra DCL lines in a single batch edit
-const lines = editor.document.getText().split(/\r?\n/);
+
+const lines = ibmi.splitLines(editor.document.getText());
 await ibmi.insertExtraDCLLinesBatch(editor, lines, convertedExtraDCL.map(dcl => ({
   currentLineIndex: dcl.insertAt,
   extraDCL: dcl.lines

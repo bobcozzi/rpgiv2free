@@ -124,7 +124,7 @@ export function convertDSpec(lines: string[], entityName: string | null, extraDC
         // For PSDS, we need to add the PSDS keyword
         kwdArea = `${kwdArea} PSDS`;
   }
-  if (dclType !== 'DS' && dclType !== 'S') {
+  if (dclType !== 'DS' && dclType !== 'S' && dclType !== 'C') {
     // For DS, we need to add the DS keyword
     if (extType === 'E' && !/\b(EXTFLD)\b/i.test(kwdArea)) {
       kwdArea = kwdArea ? `EXTFLD ${kwdArea.trim()}` : 'EXTFLD';
@@ -149,13 +149,14 @@ export function convertDSpec(lines: string[], entityName: string | null, extraDC
     // or
     //        dcl-ds custmast extname('CUSTMAST');
     //        end-ds; // requires END-DS
-    if (/\b(EXTNAME|EXTFILE|EXT)\b/i.test(kwdArea)) {
-      if (!/\bEND-DS\b/i.test(kwdArea)) {
-        if (extraDCL != null) {
-          extraDCL.push(`end-ds;`);
-        }
-      }
-    }
+    // comment out the following block since it is done elsewhere
+    // if (/\b(EXTNAME|EXTFILE|EXT)\b/i.test(kwdArea)) {
+    //   if (!/\bEND-DS\b/i.test(kwdArea)) {
+    //     if (extraDCL != null) {
+    //       extraDCL.push(`end-ds;`);
+    //     }
+    //   }
+    // }
   }
 
     kwdArea = fixKeywordArgs(kwdArea);
@@ -164,7 +165,9 @@ export function convertDSpec(lines: string[], entityName: string | null, extraDC
 
     switch (dclType.toLowerCase()) {
       case 'ds': decl = `dcl-ds ${varName} ${kwdArea}`.trim();
-        extraDCL?.push(`end-ds;`);
+        if (!(/\b(EXTNAME|EXTFILE|EXT)\b/i.test(kwdArea))) {
+          extraDCL?.push(`end-ds;`);
+        }
         break;
         case 's' : decl = `dcl-s ${varName} ${fieldType} ${kwdArea ? ' ' + kwdArea : ''}`.trim(); break;
       case 'pr': decl = `dcl-pr ${varName} ${fieldType} ${kwdArea}`.trim();
@@ -188,13 +191,13 @@ export function convertDSpec(lines: string[], entityName: string | null, extraDC
 //      D externDS      E DS                  EXTName(custmast)
 // replace it with this:
 //      D externDS      E DS                  EXTName('CUSTMAST')
-function fixKeywordArgs(line: string): string {
+function fixKeywordArgs(KwdArea: string): string {
   const keywords = ['EXTNAME', 'DTAARA', 'EXTFILE', 'EXTFLD'];
   const regex = new RegExp(`\\b(${keywords.join('|')})\\s*\\(([^)]+)\\)`, 'gi');
 
   // Find all matches and collect them
   let matches: string[] = [];
-  let modifiedLine = line.replace(regex, (match, keyword, arg) => {
+  let modifiedLine = KwdArea.replace(regex, (match, keyword, arg) => {
     const trimmed = arg.trim();
     let formatted = '';
     if (
@@ -211,7 +214,8 @@ function fixKeywordArgs(line: string): string {
   });
 
   // Remove extra spaces and commas left behind
-  modifiedLine = modifiedLine.replace(/^[, ]+|[, ]+$/g, '').replace(/[, ]{2,}/g, ' ').trim();
+  // modifiedLine = modifiedLine.replace(/^[, ]+|[, ]+$/g, '').replace(/[, ]{2,}/g, ' ').trim();
+  modifiedLine = modifiedLine.replace(/^[, ]+|[, ]+$/g, '').trim();
 
   // Prepend the found keywords (in order of appearance)
   if (matches.length > 0) {

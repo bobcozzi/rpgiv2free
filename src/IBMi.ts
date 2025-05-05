@@ -4,6 +4,21 @@ import * as vscode from 'vscode';
 // Create output channel
 const outputChannel = vscode.window.createOutputChannel('RPGIVFreeFmtConverter');
 
+
+export function getEOL(): string {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) return '\n'; // Default to LF if no editor
+  return editor.document.eol === vscode.EndOfLine.CRLF ? '\r\n' : '\n';
+}
+
+/**
+ * Splits a single string into individual string (lines) using platform-agnostic line endings.
+ * Handles \n (Unix), \r\n (Windows), and \r (legacy Mac) just in case.
+ */
+export function splitLines(text: string): string[] {
+  return text.split(/\r\n|\r|\n/);
+}
+
 // Log function with condition for Debug
 export function log(message: any) {
   const isDebug = process.env.VSCODE_ENV === 'development';  // Check if in debug mode via environment variable
@@ -120,7 +135,7 @@ export function insertExtraDCLLinesBatch(
       }
     }
     const position = new vscode.Position(insertAfterLine + 1, 0);
-    const text = extraDCL.join('\n') + '\n';
+    const text = extraDCL.join(getEOL()) + getEOL();
     insertData.push({ position, text });
   }
 
@@ -213,22 +228,23 @@ export function getOpcode(line: string): string {
 
 export function isOpcodeIFxx(line: string): boolean {
   const opcode = getOpcode(line);
-  return /^IF(EQ|NE|GT|LT|GE|LE)?$/.test(opcode);
+  // Only matches IF followed by a valid boolean operator
+  return /^IF(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
 }
 
 export function isOpcodeWHENxx(line: string): boolean {
   const opcode = getOpcode(line);
-  return /^WHEN(EQ|NE|GT|LT|GE|LE)?$/.test(opcode);
+  // Only matches WHEN followed by a valid boolean operator
+  return /^WHEN(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
 }
-
 export function isOpcodeANDxxORxx(line: string): boolean {
   const opcode = getOpcode(line);
-  return /^(AND|OR)(EQ|NE|GT|LT|GE|LE)?$/.test(opcode);
+  return /^(AND|OR)(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
 }
 
 export function isOpcodeEnd(line: string): boolean {
   const opcode = getOpcode(line);
-  return /^END(IF|SL)?$/.test(opcode);
+  return /^END(IF|SL|CS|DO)?$/.test(opcode);
 }
 
 

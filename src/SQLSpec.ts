@@ -1,7 +1,9 @@
 
 
 import { formatSQL } from './SQLFormatter';
-import * as vscode from 'vscode'
+import * as ibmi from './IBMi';
+import * as vscode from 'vscode';
+
 
 // Global regex constants for identifying embedded SQL
 const EXEC_SQL_RX = /^[\s\S]{5}[ cC]\/EXEC\s+SQL/i;
@@ -125,7 +127,8 @@ export function wrapSQLBody(sql: string): string[] {
   const maxLength = 72;
 
   const formattedSQL = formatSQL(sql);
-  const rawLines = formattedSQL.split('\n').map(line => line.trim()).filter(Boolean);
+
+  const rawLines = ibmi.splitLines(formattedSQL).map(line => line.trim()).filter(Boolean);
   const wrapped: string[] = [];
 
   for (let i = 0; i < rawLines.length; i++) {
