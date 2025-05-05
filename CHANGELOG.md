@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.8] - 2025-05-06
+### Added
+- Added several opcodes to the conversion engine. ADD, SUB, MULT, DIV, ALLOC, DEALLOC, REALLOC, CASxx, COMP, CAT, CALLP.
 ## [0.4.7] - 2025-05-05
 ### Fixed
 - Corrected an issue where END-DS was being added multiple times when non-LIKEDS Data Structures were converted.

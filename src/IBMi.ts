@@ -248,6 +248,11 @@ export function isOpcodeEnd(line: string): boolean {
 }
 
 
+export function isCASEOpcode(line: string): boolean {
+  const opcode = getOpcode(line);
+  return /^CAS(EQ|NE|LT|LE|GT|GE)?$/.test(opcode);
+}
+
 export function isStartBooleanOpcode(line: string): boolean {
   return (
     isOpcodeIFxx(line) ||

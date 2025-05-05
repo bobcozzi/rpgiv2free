@@ -1,6 +1,7 @@
 import { collectSQLBlock } from './SQLSpec';
 import { collectBooleanOpcode } from './collectBoolean';
 import { collectHSpecs } from './collectHSpec';
+import { collectCaseOpcode } from './collectCASEBlock';
 import * as ibmi from './IBMi';
 import * as vscode from 'vscode';
 
@@ -52,20 +53,32 @@ export function collectStmt(
   const curSpec = ibmi.getSpecType(startLine);
   if (!curSpec || isLineEmpty(startLine)) return null;
 
-  if (curSpec === 'c') {
-    if (ibmi.isBooleanOpcode(startLine)) {
-      // Handle boolean opcode lines separately
-      const booleanOpcodeResult = collectBooleanOpcode(allLines, startIndex);
-      return {
-        entityName: null,
-        lines: booleanOpcodeResult.lines,
-        indexes: booleanOpcodeResult.indexes,
-        comments: comments.length > 0 ? comments : null,
-        isSQL: false,
-        isBOOL: true,
-      };
-    }
+
+if (curSpec === 'c') {
+  if (ibmi.isBooleanOpcode(startLine)) {
+    // Handle boolean opcode lines separately
+    const booleanOpcodeResult = collectBooleanOpcode(allLines, startIndex);
+    return {
+      entityName: null,
+      lines: booleanOpcodeResult.lines,
+      indexes: booleanOpcodeResult.indexes,
+      comments: comments.length > 0 ? comments : null,
+      isSQL: false,
+      isBOOL: true,
+    };
+  } else if (ibmi.isCASEOpcode(startLine)) {
+    // Handle CASE/CASxx blocks
+    const caseOpcodeResult = collectCaseOpcode(allLines, startIndex);
+    return {
+      entityName: null,
+      lines: caseOpcodeResult.lines,
+      indexes: caseOpcodeResult.indexes,
+      comments: comments.length > 0 ? comments : null,
+      isSQL: false,
+      isBOOL: false,
+    };
   }
+}
   else if (curSpec === 'h') {
     const headerSpecs = collectHSpecs(allLines, startIndex); // Collect H specs if needed
     return {
