@@ -22,13 +22,25 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number): { 
     indexes.push(i);
 
     const factor1 = ibmi.getCol(startLine, 12, 25).trim();
-    const opcode = ibmi.getColUpper(startLine, 26, 35).trim(); // IFEQ, WHENNE, etc.
+    const opcode = ibmi.getOpcode(startLine); // IFEQ, WHENNE, etc.
     const factor2 = ibmi.getCol(startLine, 36, 49).trim();
 
     const compOp = opcode.slice(-2); // Last 2 characters
     const comparison = opMap[compOp] ?? '?';
 
-    let booleanExpr = `if ${factor1} ${comparison} ${factor2}`;
+  let ffOpcode = '';
+    let isIf = false;
+    let isWhen = false;
+
+    if (opcode.startsWith('IF')) {
+        ffOpcode = 'IF';
+        isIf = true;
+    } else if (opcode.startsWith('WHEN')) {
+        ffOpcode = 'WHEN';
+        isWhen = true;
+  }
+
+    let booleanExpr = `${ffOpcode} ${factor1} ${comparison} ${factor2}`;
     i++;
 
     // Continue collecting ANDxx / ORxx lines

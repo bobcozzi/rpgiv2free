@@ -1,12 +1,12 @@
 {
-  "name": "rpgivfree",
+  "name": "rpgiv2free",
   "displayName": "Bob Cozzi's IBM i RPG IV to RPG Free Conversion Tool",
   "description": "Bob Cozzi's Convert RPG IV fixed-format to free-format tool add-on for Visual Studio CODE for i.",
-  "icon": "images/rpgfree.png",
+  "icon": "images/rpgiv2free.png",
   "preview": true,
   "private": false,
   "publisher": "CozziResearch",
-  "version": "0.4.8",
+  "version": "0.5.1",
   "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0"
@@ -20,10 +20,14 @@
     "rpgfree",
     "as400"
   ],
-  "repository": {
+ "repository": {
     "type": "git",
-    "url": "https://github.com/bobcozzi/rpgivfree.git"
+    "url": "https://github.com/bobcozzi/rpgiv2free.git"
   },
+  "bugs": {
+    "url": "https://github.com/bobcozzi/rpgiv2free/issues"
+  },
+  "homepage": "https://github.com/bobcozzi/rpgiv2free#readme",
   "categories": [
     "Other"
   ],
@@ -47,7 +51,7 @@
       "type": "object",
       "title": "RPG IV Free Format Converter",
       "properties": {
-        "rpgivfree.convertBINTOINT": {
+        "rpgiv2free.convertBINTOINT": {
           "type": "number",
           "default": 2,
           "enum": [
@@ -62,10 +66,25 @@
           ],
           "description": "Controls how RPG IV B ('binary') fields are converted to integers."
         },
-        "rpgivfree.addINZ": {
+        "rpgiv2free.addINZ": {
           "type": "boolean",
           "default": true,
           "description": "Add INZ keyword to data structures that do not have one."
+        },
+        "rpgiv2free.maxFreeFormatLineLength": {
+          "type": "number",
+          "default": 76,
+          "description": "Max length for converted free format lines (right margin)."
+        },
+        "rpgiv2free.indentFirstLine": {
+          "type": "number",
+          "default": 10,
+          "description": "First free format line indent/spaces (in bytes)."
+        },
+        "rpgiv2free.indentContinuedLines": {
+          "type": "number",
+          "default": 12,
+          "description": "Secondary free format lines indent/spaces (in bytes)."
         }
       }
     }

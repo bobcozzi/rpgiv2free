@@ -2,7 +2,7 @@
 import * as vscode from 'vscode';
 
 // Create output channel
-const outputChannel = vscode.window.createOutputChannel('RPGIVFreeFmtConverter');
+const outputChannel = vscode.window.createOutputChannel('RPGIV2FreeFmtConverter');
 
 
 export function getEOL(): string {
@@ -57,10 +57,13 @@ export function getDclType(line: string): string {
 
 
 export function getRPGIVFreeSettings() {
-  const config = vscode.workspace.getConfiguration('rpgivfree');
+  const config = vscode.workspace.getConfiguration('rpgiv2free');
   return {
     convertBINTOINT: config.get<number>('convertBINTOINT', 2),
-    addINZ: config.get<boolean>('addINZ', true)
+    addINZ: config.get<boolean>('addINZ', true),
+    indentFirstLine: config.get<number>('indentFirstLine',10),
+    indentContLines: config.get<number>('indentContinuedLines', 12),
+    maxWidth: config.get<number>('maxFreeFormatLineLength',76)
   };
 }
 

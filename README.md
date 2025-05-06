@@ -1,10 +1,10 @@
 # RPG IV to Free Format Conversion Tool
 
 This Visual Studio Code extension helps developers convert RPG IV fixed-format code into free-format RPG IV code effortlessly. Whether you’re working with File (F) specs, Definition (D) specs, or Embedded SQL statements, this tool streamlines the process by automating the conversion of fixed-format RPG code into more modern, readable free-format code.
-Download from the Visual Studio CODE Marketplace: [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/CozziResearch.rpgivfree.svg?label=VS%20Code%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=CozziResearch.rpgivfree)).
+Download from the Visual Studio CODE Marketplace: [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/CozziResearch.rpgiv2free.svg?label=VS%20Code%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=CozziResearch.rpgiv2free)).
 
 
-For a detailed list of changes and release notes, see the [Changelog](./CHANGELOG.md).
+For a detailed list of changes and release notes, see the [Changelog](https://github.com/bobcozzi/rpgiv2free/CHANGELOG.md).
 
 This extension is an RPG IV to Free Format statement converter. You select the RPG IV fixed format statements you want to
 convert to free format, right-click and select "Convert RPG IV to free format".
@@ -31,9 +31,9 @@ It is not a refactoring tool or moderization tool. Its only purpose is to get th
 
 ## Extension Settings
 
-This extension contains the following settings under `rpgivfree`:
+This extension contains the following settings under `rpgiv2free`:
 
-### `rpgivfree.convertBINTOINT`
+### `rpgiv2free.convertBINTOINT`
 Controls whether binary (B) data types in RPG IV are converted to integers in free-format RPG.
 
 - `0` — Do not convert B fields to integer (makes them BINDEC variables).
@@ -42,13 +42,30 @@ Controls whether binary (B) data types in RPG IV are converted to integers in fr
 
 Default: `0`
 
-### `rpgivfree.addINZ`
+### `rpgiv2free.addINZ`
 Automatically adds the `INZ` keyword to data structure fields that do not already have it.
 
 - `true` — Add `INZ` keyword to all Data Structures when converted.
 - `false` — Do not add `INZ`.
 
 Default: `false`
+
+### `rpgiv2free.maxFreeFormatLineLength`
+Max length for converted free format lines (right margin).
+
+Default: `76`
+
+### `rpgiv2free.indentFirstLine`
+First free format line indent/spaces (in bytes).
+
+Default: `10`
+
+### `rpgiv2free.indentContinuedLines`
+Secondary free format lines indent/spaces (in bytes).
+
+Default: `12`
+
+
 
 ## In Development:
 
@@ -59,18 +76,18 @@ Default: `false`
   Most aspects of P Specs are working, but some minor adjustments are still being made. I doubt you will notice any issues, but if you do, please let me know.
 
 - **Calculation (C) Specs**
-  The conversion of Calc Specs is in progress and is being updated in each release. (See below for more details).
+  The conversion of Calc Specs is in progress and is being updated in each release.
   Currently some calc specs convert fine, while others may or may not convert. Be ready with your Ctrl+Z to undo the conversion if it does not work as expected. (cmd+Z on Mac). For now, the following features are enabled:
-  - IFxx/ORxx/ANDxx/WHENxx convert as a compound statement.
-  - Regular "3 factor" opcodes (such as CHAIN, reade) convert to free format. But verification is needed.
+  - IFxx/ORxx/ANDxx/WHENxx/CASxx convert as a compound statement.
+  - Regular "3 factor" opcodes (such as CHAIN, READE, etc.) convert to free format. But verification may be needed.
 
   **Data Structure (DS) and Data Structure Subfields**
-- Data Structures and subfields convert fine. When a DS, PI, or PR statement is selected, then rpgivfree conversion inserts the END-xx after the last subfield or parameter in the corresponding data structure or parameter list. Eventually we plan to include a setting to also convert the subfields or parameters to free format.
+- Data Structures and subfields convert fine. When a DS, PI, or PR statement is selected, then rpgiv2free conversion inserts the END-xx after the last subfield or parameter in the corresponding data structure or parameter list. Eventually we plan to include a setting to also convert the subfields or parameters to free format.
 -
 ## Getting Started
 
 1. **Install the Extension**:
-   - Go to the Visual Studio Code Extensions marketplace. [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/CozziResearch.rpgivfree.svg?label=VS%20Code%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=CozziResearch.rpgivfree)).
+   - Go to the Visual Studio Code Extensions marketplace. [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/CozziResearch.rpgiv2free.svg?label=VS%20Code%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=CozziResearch.rpgiv2free)).
 
    - or search for RPG IV to Free Format Conversion Tool, or from the Extensions explore within VS CODE, and in the "Search Extensions in Marketplace" search box, enter "Bob Cozzi" or "RPG IV" or similar.
 

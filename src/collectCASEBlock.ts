@@ -9,9 +9,9 @@ export function collectCaseOpcode(allLines: string[], startIndex: number): { lin
     const opMap: { [key: string]: string } = {
       EQ: '=', NE: '<>', GT: '>', LT: '<', GE: '>=', LE: '<='
     };
-
-    let i = startIndex;
+    const indent = ' '.repeat(12);
     const comparisons: string[] = [];
+    let i = startIndex;
 
     // Track the main condition variable (from the first line)
     let selector: string | null = null;
@@ -24,6 +24,9 @@ export function collectCaseOpcode(allLines: string[], startIndex: number): { lin
       const f2 = ibmi.getCol(line, 36, 49).trim();
       const result = ibmi.getCol(line, 50, 63).trim();
 
+      if (opCode === 'ENDCS' || opCode === 'END') {
+        indexes.push(i);
+      }
       if (/^CAS(EQ|NE|LT|LE|GT|GE)$/.test(opCode)) {
         indexes.push(i);
 
@@ -31,15 +34,18 @@ export function collectCaseOpcode(allLines: string[], startIndex: number): { lin
         const compSymbol = opMap[compOp] ?? '?';
 
         if (!selector) { selector = f1 };
-        const indent = ' '.repeat(12);
-        comparisons.push(`  ${comparisons.length === 0 ? 'if' : 'elseif'} (${selector} ${compSymbol} ${f2});${eol}${indent}exsr ${result};`);
+
+        if (comparisons.length === 0) {
+          comparisons.push(`SELECT${eol}`);
+        }
+        comparisons.push(`WHEN (${selector} ${compSymbol} ${f2});${eol}${indent}exsr ${result};`);
       }
       else if (opCode === 'CAS') {
         // This is the ELSE part
         indexes.push(i);
         elseLineIndex = i;
       }
-      else if (opCode === 'ENDCS') {
+      else if (opCode === 'ENDSL') {
 
         indexes.push(i);
         break;
@@ -50,10 +56,11 @@ export function collectCaseOpcode(allLines: string[], startIndex: number): { lin
 
     if (elseLineIndex !== null) {
       const elseResult = ibmi.getCol(allLines[elseLineIndex], 50, 63).trim();
-      comparisons.push(`  else${eol}    exsr ${elseResult};`);
+      comparisons.push(`OTHER;${eol}${indent}exsr ${elseResult}`);
+      // comparisons.push(``);
     }
 
-    comparisons.push('endif;');
+    comparisons.push('endsl');
     lines.push(...comparisons);
 
     return { lines, indexes };

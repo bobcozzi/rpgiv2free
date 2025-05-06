@@ -501,7 +501,7 @@ function convertCAT(
   } else {
     // Rule: If no extender (P), wrap in %SUBST
     const lenVar = `${result}_LEN_FF`;
-    lines.push(`${lenVar} = %LEN(${fullExpr});  // Generated workfield for free format CAT`);
+    lines.push(`${lenVar} = %LEN(${fullExpr});  // Generated workfield ${lenVar} from CAT opcode`);
     lines.push(`${result} = %SUBST(${result} : 1 : ${lenVar}) = ${fullExpr};`);
     extraDCL.push(`DCL-S ${lenVar} INT(10);`);
   }
