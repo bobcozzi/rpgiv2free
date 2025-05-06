@@ -96,6 +96,7 @@
   ],
   "scripts": {
     "lint": "eslint .",
+    "fix": "eslint . --fix",
     "vscode:prepublish": "npm run compile",
     "build": "tsc",
     "compile": "tsc -p ./",
