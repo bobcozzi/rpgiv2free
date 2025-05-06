@@ -1,7 +1,7 @@
 {
   "name": "rpgiv2free",
-  "displayName": "Bob Cozzi's IBM i RPG IV to RPG Free Conversion Tool",
-  "description": "Bob Cozzi's Convert RPG IV fixed-format to free-format tool add-on for Visual Studio CODE for i.",
+  "displayName": "Bob Cozzi's RPG IV to RPG Free Conversion extension for VS CODE for i",
+  "description": "Bob Cozzi's Convert RPG IV fixed-format code to free-format code. Extension for Visual Studio CODE for i.",
   "icon": "images/rpgiv2free.png",
   "preview": true,
   "private": false,
