@@ -22,7 +22,7 @@ export function expandCompoundRange(lines: string[], selectedIndex: number): num
     }
 
     // Expand downward until ENDCS or non-CAS opcode
-    while (end < lines. length) {
+    while (end < lines.length) {
       const nextLine = lines[end];
       const nextOpcode = ibmi.getOpcode(nextLine);
       if (nextOpcode === 'ENDCS') {

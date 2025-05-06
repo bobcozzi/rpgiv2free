@@ -1,44 +1,44 @@
 import * as vscode from 'vscode';
 import * as ibmi from './IBMi';
-import {getVarName, processKeywordLines} from './DSpec'; // borrow some DSpec functions
+import { getVarName, processKeywordLines } from './DSpec'; // borrow some DSpec functions
 
 // Function to convert D specs from fixed-format to free-format
 export function convertPSpec(lines: string[], entityName: string | null): string[] {
-    vscode.window.showInformationMessage(`convertPSpec called. Lines: ${lines?.length ?? 'undefined'}`);
+  vscode.window.showInformationMessage(`convertPSpec called. Lines: ${lines?.length ?? 'undefined'}`);
 
-    if (!Array.isArray(lines) || lines.length === 0) return [];
-    let varName = entityName;
-    let nextIndex = 0;
-    let kwdArea = '';
-    const settings = ibmi.getRPGIVFreeSettings();
+  if (!Array.isArray(lines) || lines.length === 0) return [];
+  let varName = entityName;
+  let nextIndex = 0;
+  let kwdArea = '';
+  const settings = ibmi.getRPGIVFreeSettings();
 
-    const dftName = '*n'; // Default name for D specs
+  const dftName = '*n'; // Default name for D specs
 
-    if (!varName) {
-        const joined = lines.map(line => line.padEnd(80, ' ')).join('');
-        varName = ibmi.getCol(joined, 7, 21).trim(); // fallback to default extraction
-    } else {
-        lines = lines.slice(nextIndex);
-    }
-    if (!varName) {
-        varName = dftName;
-    }
-
+  if (!varName) {
     const joined = lines.map(line => line.padEnd(80, ' ')).join('');
+    varName = ibmi.getCol(joined, 7, 21).trim(); // fallback to default extraction
+  } else {
+    lines = lines.slice(nextIndex);
+  }
+  if (!varName) {
+    varName = dftName;
+  }
 
-    const specType = ibmi.getSpecType(joined);   // Get column 6 Spec Type
-    const dclType = ibmi.getColUpper(joined, 24, 25);  // Get column 24-25 DCL Type
-    let decl = '';
+  const joined = lines.map(line => line.padEnd(80, ' ')).join('');
 
-    kwdArea = processKeywordLines(lines);
-    kwdArea = fixKeywordArgs(kwdArea);
+  const specType = ibmi.getSpecType(joined);   // Get column 6 Spec Type
+  const dclType = ibmi.getColUpper(joined, 24, 25);  // Get column 24-25 DCL Type
+  let decl = '';
 
-    switch (dclType.toLowerCase()) {
-        case 'b': decl = `dcl-proc ${varName} ${kwdArea}`.trim(); break;
-        case 'e': decl = `end-proc ${varName}`.trim(); break;
-    }
+  kwdArea = processKeywordLines(lines);
+  kwdArea = fixKeywordArgs(kwdArea);
 
-    return [decl];
+  switch (dclType.toLowerCase()) {
+    case 'b': decl = `dcl-proc ${varName} ${kwdArea}`.trim(); break;
+    case 'e': decl = `end-proc ${varName}`.trim(); break;
+  }
+
+  return [decl];
 }
 
 //  Search this kind of stuff for keywords

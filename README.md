@@ -4,7 +4,7 @@ This Visual Studio Code extension helps developers convert RPG IV fixed-format c
 Download from the Visual Studio CODE Marketplace: [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/CozziResearch.rpgiv2free.svg?label=VS%20Code%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=CozziResearch.rpgiv2free)).
 
 
-For a detailed list of changes and release notes, see the [Changelog](https://github.com/bobcozzi/rpgiv2free/blob/main/CHANGELOG.md)).
+For a detailed list of changes and release notes, see the [Changelog](https://github.com/bobcozzi/rpgiv2free/blob/main/CHANGELOG.md).
 
 This extension is an RPG IV to Free Format statement converter. You select the RPG IV fixed format statements you want to
 convert to free format, right-click and select "Convert RPG IV to free format".

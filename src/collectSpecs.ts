@@ -54,31 +54,31 @@ export function collectStmt(
   if (!curSpec || isLineEmpty(startLine)) return null;
 
 
-if (curSpec === 'c') {
-  if (ibmi.isBooleanOpcode(startLine)) {
-    // Handle boolean opcode lines separately
-    const booleanOpcodeResult = collectBooleanOpcode(allLines, startIndex);
-    return {
-      entityName: null,
-      lines: booleanOpcodeResult.lines,
-      indexes: booleanOpcodeResult.indexes,
-      comments: comments.length > 0 ? comments : null,
-      isSQL: false,
-      isBOOL: true,
-    };
-  } else if (ibmi.isCASEOpcode(startLine)) {
-    // Handle CASE/CASxx blocks
-    const caseOpcodeResult = collectCaseOpcode(allLines, startIndex);
-    return {
-      entityName: null,
-      lines: caseOpcodeResult.lines,
-      indexes: caseOpcodeResult.indexes,
-      comments: comments.length > 0 ? comments : null,
-      isSQL: false,
-      isBOOL: false,
-    };
+  if (curSpec === 'c') {
+    if (ibmi.isBooleanOpcode(startLine)) {
+      // Handle boolean opcode lines separately
+      const booleanOpcodeResult = collectBooleanOpcode(allLines, startIndex);
+      return {
+        entityName: null,
+        lines: booleanOpcodeResult.lines,
+        indexes: booleanOpcodeResult.indexes,
+        comments: comments.length > 0 ? comments : null,
+        isSQL: false,
+        isBOOL: true,
+      };
+    } else if (ibmi.isCASEOpcode(startLine)) {
+      // Handle CASE/CASxx blocks
+      const caseOpcodeResult = collectCaseOpcode(allLines, startIndex);
+      return {
+        entityName: null,
+        lines: caseOpcodeResult.lines,
+        indexes: caseOpcodeResult.indexes,
+        comments: comments.length > 0 ? comments : null,
+        isSQL: false,
+        isBOOL: false,
+      };
+    }
   }
-}
   else if (curSpec === 'h') {
     const headerSpecs = collectHSpecs(allLines, startIndex); // Collect H specs if needed
     return {
@@ -93,8 +93,8 @@ if (curSpec === 'c') {
 
   // Special case: Unnamed Data Structure
 
-// Step 1: Walk backward to find the start of the declaration
-let start = startIndex;
+  // Step 1: Walk backward to find the start of the declaration
+  let start = startIndex;
   while (start >= 0) {
     const curLine = allLines[start].padEnd(80, ' ');
     let prevLine = '';
@@ -109,7 +109,7 @@ let start = startIndex;
     }
     if (isComment) {
       const commentText = allLines[start].substring(7, 80).trimEnd();
-      comments.push(allLines[start].substring(0,6) + ' //' + commentText);
+      comments.push(allLines[start].substring(0, 6) + ' //' + commentText);
     }
     const curDclType = ibmi.getDclType(curLine);
     const trimmedLine = ibmi.getCol(prevLine, 7, 80).trimEnd();
@@ -145,24 +145,24 @@ let start = startIndex;
       }
     }
 
-  // If this is a long-name continuation line, keep going
-  if (prevHasName && endsWithDots) {
-    start--; // Keep walking back
-    continue;
-  }
+    // If this is a long-name continuation line, keep going
+    if (prevHasName && endsWithDots) {
+      start--; // Keep walking back
+      continue;
+    }
 
-  // If it's just a continuation (no name), keep going
-  if (curHasName && !endsWithDots) {
+    // If it's just a continuation (no name), keep going
+    if (curHasName && !endsWithDots) {
+      break;
+    }
+    if (!prevHasName) {
+      start--;
+      continue;
+    }
+    start--;
+    // If it's a line with a name but no '...', stop here — it's a new declaration
     break;
   }
-  if (!prevHasName) {
-    start--;
-    continue;
-  }
-  start--;
-  // If it's a line with a name but no '...', stop here — it's a new declaration
-  break;
-}
 
   // Step 2: Walk forward to collect name fragments and attributes
   let entityNameParts: string[] = [];
@@ -192,9 +192,9 @@ let start = startIndex;
 
     let fullName = '';
     if (endsWithDots) {
-        fullName = ibmi.getCol(line, 7, 80).trimEnd().slice(0, -3).trimEnd();
+      fullName = ibmi.getCol(line, 7, 80).trimEnd().slice(0, -3).trimEnd();
     } else {
-        fullName = ibmi.getCol(line, 7, 21).trimEnd();
+      fullName = ibmi.getCol(line, 7, 21).trimEnd();
     }
 
     if (["d", "p"].includes(curSpec)) {
@@ -213,7 +213,7 @@ let start = startIndex;
     // ✅ Only collect lines after the full name is known, or in edge cases
     if (finalNameLineFound || ((["d", "p"].includes(curSpec)) && namePartTrimmed === '' && attr22to43 !== '') ||
       (curSpec === 'c' && !isComment)) {
-        let bDoNotSave = false;
+      let bDoNotSave = false;
       if (curSpec === 'c' && !isComment && index !== start) {
         if (hasOpcode && !ibmi.isOpcodeANDxxORxx(line)) {
           bDoNotSave = true;
@@ -239,7 +239,7 @@ let start = startIndex;
     if (!nextLine) break; // No more lines to process
     const bStartNewLine = isStartOfNewEntity(nextLine, curSpec);
     if ((finalNameLineFound || (curSpec === 'c' && !isComment)) &&
-        nextLine && bStartNewLine) {
+      nextLine && bStartNewLine) {
       break;
     }
 
@@ -256,8 +256,8 @@ let start = startIndex;
 
     if (!isNextComment) {
       if (curSpec != nextSpec || (nextSpec === 'c' && (nextOpcode || nextFactor1))) {
-          // Stop here if the nextLine is a C-spec with new opcode or factor1
-          break;
+        // Stop here if the nextLine is a C-spec with new opcode or factor1
+        break;
       }
       if (nextSpec === 'f' && (nextfSpecKwd.length === 0 || nextfSpecCont.length > 0)) {
         // Stop here if the nextLine is a F-spec with keyword
@@ -282,27 +282,27 @@ let start = startIndex;
 }
 
 function isStartOfNewEntity(line: string, curSpec: string): boolean {
-    if (ibmi.getSpecType(line) !== curSpec) return true;
+  if (ibmi.getSpecType(line) !== curSpec) return true;
 
-    const name = ibmi.getCol(line, 7, 21).trim();
-    const attr22to43 = ibmi.getCol(line, 22, 43).trimEnd();
-    const hasDots = ibmi.getCol(line, 7, 80).trimEnd().endsWith('...');
-    const nextSpec = ibmi.getSpecType(line);
-    const nextOpcode = ibmi.getCol(line, 25, 35).trim().length > 0;
-    const nextFactor1 = ibmi.getCol(line, 12, 25).trim().length;
+  const name = ibmi.getCol(line, 7, 21).trim();
+  const attr22to43 = ibmi.getCol(line, 22, 43).trimEnd();
+  const hasDots = ibmi.getCol(line, 7, 80).trimEnd().endsWith('...');
+  const nextSpec = ibmi.getSpecType(line);
+  const nextOpcode = ibmi.getCol(line, 25, 35).trim().length > 0;
+  const nextFactor1 = ibmi.getCol(line, 12, 25).trim().length;
 
   let isNextComment = ibmi.getCol(line, 7, 7).trim() === '*';
   const bBooleanContinuation = ibmi.isOpcodeANDxxORxx(line);
 
-    if (!isNextComment) {
-      isNextComment = ibmi.getCol(line, 7, 80).trim().startsWith('//');
-    }
+  if (!isNextComment) {
+    isNextComment = ibmi.getCol(line, 7, 80).trim().startsWith('//');
+  }
 
-    // A line is a new entity if:
-    // - It has a name and is not a continuation
-    // - OR it's an unnamed D-spec (e.g., DS, SDS) with attributes
+  // A line is a new entity if:
+  // - It has a name and is not a continuation
+  // - OR it's an unnamed D-spec (e.g., DS, SDS) with attributes
   let bStart = (!hasDots && name !== '' && !bBooleanContinuation) ||
-               ((["d", "p"].includes(curSpec)) && name === '' && attr22to43 !== '');
+    ((["d", "p"].includes(curSpec)) && name === '' && attr22to43 !== '');
   if (!bStart && curSpec === 'c' && !isNextComment) {
     if (nextSpec !== 'c' || nextOpcode || nextFactor1 || bBooleanContinuation) {
       bStart = false; // Stop here if the nextLine is a C-spec with new opcode or factor1

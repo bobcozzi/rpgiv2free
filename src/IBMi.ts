@@ -29,27 +29,27 @@ export function log(message: any) {
   }
 }
 
-  export function getCol(line: string | null | undefined, from: number, to?: number): string {
-    if (!line || from < 1) return '';
-    const end = to ?? from; // default 'to' to 'from' if not provided
-    if (end < from) return '';
-    return line.substring(from - 1, end).trim();
-  }
-  export function getColUpper(line: string | null | undefined, from: number, to?: number): string {
-    if (!line || from < 1) return '';
-    const end = to ?? from; // default 'to' to 'from' if not provided
-    if (end < from) return '';
-    return line.substring(from - 1, end).trim().toUpperCase();
-  }
-  export function getColLower(line: string | null | undefined, from: number, to?: number): string {
-    if (!line || from < 1) return '';
-    const end = to ?? from; // default 'to' to 'from' if not provided
-    if (end < from) return '';
-    return line.substring(from - 1, end).trim().toLowerCase();
-  }
+export function getCol(line: string | null | undefined, from: number, to?: number): string {
+  if (!line || from < 1) return '';
+  const end = to ?? from; // default 'to' to 'from' if not provided
+  if (end < from) return '';
+  return line.substring(from - 1, end).trim();
+}
+export function getColUpper(line: string | null | undefined, from: number, to?: number): string {
+  if (!line || from < 1) return '';
+  const end = to ?? from; // default 'to' to 'from' if not provided
+  if (end < from) return '';
+  return line.substring(from - 1, end).trim().toUpperCase();
+}
+export function getColLower(line: string | null | undefined, from: number, to?: number): string {
+  if (!line || from < 1) return '';
+  const end = to ?? from; // default 'to' to 'from' if not provided
+  if (end < from) return '';
+  return line.substring(from - 1, end).trim().toLowerCase();
+}
 
-  export function getSpecType(line: string): string {
-    return line.length >= 6 ? line[5].toLowerCase() : '';
+export function getSpecType(line: string): string {
+  return line.length >= 6 ? line[5].toLowerCase() : '';
 }
 export function getDclType(line: string): string {
   return getColUpper(line, 24, 25);
@@ -61,9 +61,9 @@ export function getRPGIVFreeSettings() {
   return {
     convertBINTOINT: config.get<number>('convertBINTOINT', 2),
     addINZ: config.get<boolean>('addINZ', true),
-    indentFirstLine: config.get<number>('indentFirstLine',10),
+    indentFirstLine: config.get<number>('indentFirstLine', 10),
     indentContLines: config.get<number>('indentContinuedLines', 12),
-    maxWidth: config.get<number>('maxFreeFormatLineLength',76)
+    maxWidth: config.get<number>('maxFreeFormatLineLength', 76)
   };
 }
 
@@ -103,8 +103,7 @@ export function insertExtraDCLLinesBatch(
 
         // Skip blank or comment lines
         let isComment = (candidate.trim().startsWith('//'));
-        if (!isComment)
-        {
+        if (!isComment) {
           isComment = candidate.length > 6 && candidate[6] === '*';
         }
 
@@ -154,7 +153,7 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
     const line = allLines[i];
     if (!line || line.trim() === '') continue;
     if (line.trim().startsWith('//')) continue;
-    const isComment = line.length > 6 && line[6]==='*';
+    const isComment = line.length > 6 && line[6] === '*';
     if (isComment) continue; // Skip comment lines
 
     const specType = line[5]?.toLowerCase?.() || '';
@@ -294,29 +293,29 @@ export function isValidOpcode(id: string): boolean {
 
 // Is an OpCode that supports the Extended Factor 2 syntax?
 export function isExtOpcode(opcode: string): boolean {
-    const extOpcodes = new Set([
-      "CALLP",
-      "CLEAR",
-      "DATA-INTO",
-      "DOU",
-      "DOW",
-      "EVAL",
-      "EVALR",
-      "EVAL-CORR",
-      "FOR",
-      "FOR-EACH",
-      "IF",
-      "ELSEIF",
-      "WHEN",
-      "MONITOR",
-      "ON-ERROR",
-      "RETURN",
-      "ROLBK",
-      "SORTA",
-      "TEST",
-      "XML-INTO",
-      "XML-SAX"
-    ]);
-    const normalized = opcode.toUpperCase().replace(/\(.*\)$/, ""); // strip off Operation Extender (if any)
-    return extOpcodes.has(opcode.toUpperCase());
+  const extOpcodes = new Set([
+    "CALLP",
+    "CLEAR",
+    "DATA-INTO",
+    "DOU",
+    "DOW",
+    "EVAL",
+    "EVALR",
+    "EVAL-CORR",
+    "FOR",
+    "FOR-EACH",
+    "IF",
+    "ELSEIF",
+    "WHEN",
+    "MONITOR",
+    "ON-ERROR",
+    "RETURN",
+    "ROLBK",
+    "SORTA",
+    "TEST",
+    "XML-INTO",
+    "XML-SAX"
+  ]);
+  const normalized = opcode.toUpperCase().replace(/\(.*\)$/, ""); // strip off Operation Extender (if any)
+  return extOpcodes.has(opcode.toUpperCase());
 }

@@ -20,7 +20,7 @@
     "rpgfree",
     "as400"
   ],
- "repository": {
+  "repository": {
     "type": "git",
     "url": "https://github.com/bobcozzi/rpgiv2free.git"
   },
@@ -102,8 +102,11 @@
     "package": "vsce package"
   },
   "devDependencies": {
+    "@eslint/json": "^0.12.0",
+    "@eslint/markdown": "^6.4.0",
     "@types/node": "^22.15.3",
     "@types/vscode": "^1.70.0",
+    "eslint": "^9.26.0",
     "typescript": "^4.8.0"
   },
   "dependencies": {

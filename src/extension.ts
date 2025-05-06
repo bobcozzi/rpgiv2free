@@ -44,18 +44,18 @@ export function activate(context: vscode.ExtensionContext) {
     const edits: { range: vscode.Range, text: string }[] = [];
     const extraDCLs: { insertAt: number, lines: string[] }[] = [];
     try {
-    for (const sel of editor.selections) {
-      if (sel.isEmpty) {
-        selectedLineIndexes.add(sel.active.line);
-      } else {
-        for (let i = sel.start.line; i <= sel.end.line; i++) {
-          selectedLineIndexes.add(i);
+      for (const sel of editor.selections) {
+        if (sel.isEmpty) {
+          selectedLineIndexes.add(sel.active.line);
+        } else {
+          for (let i = sel.start.line; i <= sel.end.line; i++) {
+            selectedLineIndexes.add(i);
+          }
         }
       }
+    } catch (e) {
+      ibmi.log('Error collecting selected lines: ' + (e as Error).message);
     }
-  } catch (e) {
-    ibmi.log('Error collecting selected lines: ' + (e as Error).message);
-  }
 
     // const selectedLineList = [...selectedLineIndexes].sort((a, b) => a - b);
     const expandedLineIndexes = new Set<number>();
@@ -96,12 +96,12 @@ export function activate(context: vscode.ExtensionContext) {
         const specType = specLines[0].charAt(5).toLowerCase().trim();
 
         const converted =
-            specType === 'h' ? convertHSpec(specLines)
-          : specType === 'f' ? convertFSpec(specLines)
-          : specType === 'd' ? convertDSpec(specLines, entityName, extraDCL)
-          : specType === 'p' ? convertPSpec(specLines, entityName)
-          : specType === 'c' ? convertCSpec(specLines, extraDCL)
-          : specLines;
+          specType === 'h' ? convertHSpec(specLines)
+            : specType === 'f' ? convertFSpec(specLines)
+              : specType === 'd' ? convertDSpec(specLines, entityName, extraDCL)
+                : specType === 'p' ? convertPSpec(specLines, entityName)
+                  : specType === 'c' ? convertCSpec(specLines, extraDCL)
+                    : specLines;
 
         convertedText = converted.flatMap(line => reflowLines(line)).join(ibmi.getEOL());
       }
@@ -119,10 +119,10 @@ export function activate(context: vscode.ExtensionContext) {
       }
     }
 
-      const convertedExtraDCL = extraDCLs.map(block => ({
-        insertAt: block.insertAt,
-        lines: block.lines.flatMap(line => reflowLines(line))
-      }));
+    const convertedExtraDCL = extraDCLs.map(block => ({
+      insertAt: block.insertAt,
+      lines: block.lines.flatMap(line => reflowLines(line))
+    }));
 
     // Apply main edits
     if (edits.length > 0) {
@@ -134,13 +134,13 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     // Apply extra DCL lines in a separate edit operation
-// Apply extra DCL lines in a single batch edit
+    // Apply extra DCL lines in a single batch edit
 
-const lines = ibmi.splitLines(editor.document.getText());
-await ibmi.insertExtraDCLLinesBatch(editor, lines, convertedExtraDCL.map(dcl => ({
-  currentLineIndex: dcl.insertAt,
-  extraDCL: dcl.lines
-})));
+    const lines = ibmi.splitLines(editor.document.getText());
+    await ibmi.insertExtraDCLLinesBatch(editor, lines, convertedExtraDCL.map(dcl => ({
+      currentLineIndex: dcl.insertAt,
+      extraDCL: dcl.lines
+    })));
   });
 
   // ✅ Register command
