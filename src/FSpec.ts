@@ -44,7 +44,7 @@ export function convertFSpec(lines: string[]): string[] {
   for (const line of lines) {
     kwdArea += ' ' + line.substring(43, 80).trim(); // 44 to 80
   }
-  vscode.window.showInformationMessage(`dclType=${dclType}, fileName=${fileName} fileDesc=${fileDesc} kwd=${kwdArea}`);
+ // vscode.window.showInformationMessage(`dclType=${dclType}, fileName=${fileName} fileDesc=${fileDesc} kwd=${kwdArea}`);
 
 
   let decl = '';

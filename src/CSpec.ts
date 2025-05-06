@@ -14,7 +14,7 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
 
   const line = lines[0].padEnd(80, ' '); // RPG fixed-format always assumes 80-char line
   const specType = ibmi.getSpecType(line);
-  vscode.window.showInformationMessage('convertCSpec called. SpecType: ' + specType);
+ // vscode.window.showInformationMessage('convertCSpec called. SpecType: ' + specType);
   if (specType !== 'c') return [];
 
   const levelBreak = ibmi.getCol(line, 7, 8).trim();

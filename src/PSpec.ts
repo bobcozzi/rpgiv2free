@@ -4,7 +4,7 @@ import { getVarName, processKeywordLines } from './DSpec'; // borrow some DSpec 
 
 // Function to convert D specs from fixed-format to free-format
 export function convertPSpec(lines: string[], entityName: string | null): string[] {
-  vscode.window.showInformationMessage(`convertPSpec called. Lines: ${lines?.length ?? 'undefined'}`);
+ // vscode.window.showInformationMessage(`convertPSpec called. Lines: ${lines?.length ?? 'undefined'}`);
 
   if (!Array.isArray(lines) || lines.length === 0) return [];
   let varName = entityName;
