@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.5.1] - 2025-05-06
+## [0.5.2] - 2025-05-06
 ### New
 - Extension renamed from rpgivfree to rpgiv2free to better clarify its role.
 - SELECT/WHENxx statements now convert properly.
