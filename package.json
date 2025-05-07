@@ -99,7 +99,9 @@
     "build": "tsc",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "package": "vsce package"
+    "package": "vsce package",
+    "publish:vsx": "ovsx publish --pat $OPENVSX_PAT",
+     "publish:ms": "vsce publish"
   },
   "devDependencies": {
     "@eslint/json": "^0.12.0",
