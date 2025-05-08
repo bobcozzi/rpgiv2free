@@ -6,7 +6,7 @@
   "preview": true,
   "private": false,
   "publisher": "CozziResearch",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0"
@@ -104,9 +104,10 @@
     "build": "tsc",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "package": "vsce package",
-    "publish:vsx": "ovsx publish --pat $OPENVSX_PAT",
-     "publish:ms": "vsce publish"
+  "publish:vsx": "ovsx publish --pat $OPENVSX_PAT",
+  "publish:ms": "vsce publish",
+  "publish:all": "npm run publish:ms && npm run publish:vsx"
+
   },
   "devDependencies": {
     "@eslint/json": "^0.12.0",

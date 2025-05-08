@@ -180,29 +180,31 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
     if (ibmi.isComment(line)) continue;
     const isComment = line.length > 6 && line[6] === '*';
     if (isComment) continue; // Skip comment lines
+    const directive = getColUpper(line, 7, 32).trim();
 
     if ( // Check for control directives such as /title, /space, /ejext, etc.
       line.length >= 9 &&
       line[6] === '/' &&
       /[A-Za-z]{2}/.test(line.substring(7, 9))
     ) {
-      continue;
+      if (!directive.startsWith("/ENDIF")) {
+        continue;
+      }
     }
 
     const specType = line[5]?.toLowerCase?.() || '';
-    const legacySpec = line.length > 5 && !["d", " "].includes(specType);
+    const legacyDSpec = line.length > 5 && !["d"].includes(specType);
     const freeForm = getColUpper(line, 8, 25);
     const freeForm2 = getColUpper(line, 1, 80);
     const extType = getColUpper(line, 22);  // Get column 22 Ext Type
     const PSDS = getColUpper(line, 23);  // Get column 23 PSDS Flag
     const dclType = getColUpper(line, 24, 25);  // Get column 24-25 DCL Type
+    const col2627 = getColUpper(line, 26, 27);  // Get column 36-27 should be empty
 
-    if (!legacySpec) {  // If fixed format D spec, then see if it is also a DS, S, or C type.
-      if (specType === "d") {
-        if (dclType?.trim() && ["DS", "S", "C"].includes(dclType)) {
-          // stop here and return this line number.
-          break;
-        }
+    if (legacyDSpec || col2627.trim()==='') {  // If fixed format D spec, then see if it is also a DS, S, or C type.
+      if (dclType?.trim() && ["DS", "S", "C","PI","PR"].includes(dclType)) {
+        // stop here and return this line number.
+        break;
       }
     }
     const isDCLorSubItem =
@@ -217,9 +219,10 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
       freeForm2.startsWith('DCL-DS') ||
       freeForm2.startsWith('DCL-PI') ||
       freeForm2.startsWith('DCL-PR') ||
-      freeForm2.startsWith('DCL-PARM');
+      freeForm2.startsWith('DCL-PARM') ||
+      directive.startsWith('/ENDIF')
 
-    if (legacySpec || isDCLorSubItem || isFreeFormCalcStmt(line)) {
+    if (isDCLorSubItem || isFreeFormCalcStmt(line)) {
       break; // Insert just before this line
     }
     insertPoint = i;
