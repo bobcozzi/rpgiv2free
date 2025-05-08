@@ -1,8 +1,6 @@
 
 import * as vscode from 'vscode';
-
-// Create output channel
-const outputChannel = vscode.window.createOutputChannel('RPGIV2FreeFmtConverter');
+import * as ibmi from './IBMi'
 
 
 export function getEOL(): string {
@@ -21,12 +19,7 @@ export function splitLines(text: string): string[] {
 
 // Log function with condition for Debug
 export function log(message: any) {
-  const isDebug = process.env.VSCODE_ENV === 'development';  // Check if in debug mode via environment variable
-
-  if (isDebug) {
-    outputChannel.appendLine(typeof message === 'string' ? message : JSON.stringify(message));
-    outputChannel.show(true);  // Show the log panel
-  }
+  console.log(message);
 }
 
 export function getCol(line: string | null | undefined, from: number, to?: number): string {
@@ -55,6 +48,36 @@ export function getDclType(line: string): string {
   return getColUpper(line, 24, 25);
 }
 
+export function convertCmt(line: string): string {
+  let freeComment = '';
+  const indent = ' '.repeat(10);
+  const isComment = getCol(line, 7).trim() === '*';
+
+  if (isComment) {
+    const cmtText = getCol(line, 8, 80).trimEnd();
+    if (cmtText) {
+      freeComment = indent + '// ' + cmtText;
+    } else {
+      freeComment = '';  // or ' ' if you need a placeholder
+    }
+  } else {
+    freeComment = line;
+  }
+
+  return freeComment;
+}
+
+export function isComment(line: string): boolean {
+  let isComment = getCol(line, 7).trim() === '*';
+  if (isComment || getCol(line, 8, 80).trimStart().startsWith('//') ||
+      getCol(line, 1, 80).trimStart().startsWith('//')) {
+    return true;
+  }
+  return false;
+}
+export function isNotComment(line: string): boolean {
+  return (!isComment(line));
+}
 
 export function getRPGIVFreeSettings() {
   const config = vscode.workspace.getConfiguration('rpgiv2free');
@@ -63,7 +86,8 @@ export function getRPGIVFreeSettings() {
     addINZ: config.get<boolean>('addINZ', true),
     indentFirstLine: config.get<number>('indentFirstLine', 10),
     indentContLines: config.get<number>('indentContinuedLines', 12),
-    maxWidth: config.get<number>('maxFreeFormatLineLength', 76)
+    maxWidth: config.get<number>('maxFreeFormatLineLength', 76),
+    addEXTDEVFLAG: config.get<boolean>('AddEXTDEVICEFLAG', true)
   };
 }
 
@@ -149,12 +173,21 @@ export function insertExtraDCLLinesBatch(
 }
 
 function findLocationForEndStmt(startIndex: number, allLines: string[]): number {
+  let insertPoint = startIndex;
   for (let i = startIndex + 1; i < allLines.length; i++) {
     const line = allLines[i];
     if (!line || line.trim() === '') continue;
-    if (line.trim().startsWith('//')) continue;
+    if (ibmi.isComment(line)) continue;
     const isComment = line.length > 6 && line[6] === '*';
     if (isComment) continue; // Skip comment lines
+
+    if ( // Check for control directives such as /title, /space, /ejext, etc.
+      line.length >= 9 &&
+      line[6] === '/' &&
+      /[A-Za-z]{2}/.test(line.substring(7, 9))
+    ) {
+      continue;
+    }
 
     const specType = line[5]?.toLowerCase?.() || '';
     const legacySpec = line.length > 5 && !["d", " "].includes(specType);
@@ -168,7 +201,7 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
       if (specType === "d") {
         if (dclType?.trim() && ["DS", "S", "C"].includes(dclType)) {
           // stop here and return this line number.
-          return i - 1;
+          break;
         }
       }
     }
@@ -187,11 +220,12 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
       freeForm2.startsWith('DCL-PARM');
 
     if (legacySpec || isDCLorSubItem || isFreeFormCalcStmt(line)) {
-      return i - 1; // Insert just before this line
+      break; // Insert just before this line
     }
+    insertPoint = i;
   }
 
-  return allLines.length - 1; // Default to end of file
+  return insertPoint;
 }
 
 function isFreeFormCalcStmt(line: string): boolean {
@@ -199,6 +233,10 @@ function isFreeFormCalcStmt(line: string): boolean {
 
   // If the line is empty, return false
   if (trimmedLine === '') return false;
+
+  if (isComment(line)) {
+    return false;
+  }
 
   // Split the line into tokens by space
   const tokens = trimmedLine.split(/\s+/);  // Regular split by spaces
@@ -231,43 +269,46 @@ export function getOpcode(line: string): string {
 export function isOpcodeIFxx(line: string): boolean {
   const opcode = getOpcode(line);
   // Only matches IF followed by a valid boolean operator
-  return /^IF(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
+  return (isComment(line)) ? false : /^IF(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
 }
 
 export function isOpcodeWHENxx(line: string): boolean {
   const opcode = getOpcode(line);
   // Only matches WHEN followed by a valid boolean operator
-  return /^WHEN(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
-}
-export function isOpcodeANDxxORxx(line: string): boolean {
-  const opcode = getOpcode(line);
-  return /^(AND|OR)(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
+  return (isComment(line)) ? false : /^WHEN(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
 }
 
-export function isOpcodeEnd(line: string): boolean {
+export function isOpcodeANDxxORxx(line: string): boolean {
   const opcode = getOpcode(line);
-  return /^END(IF|SL|CS|DO)?$/.test(opcode);
+  return (isComment(line)) ? false : /^(AND|OR)(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
 }
+
 
 
 export function isCASEOpcode(line: string): boolean {
   const opcode = getOpcode(line);
-  return /^CAS(EQ|NE|LT|LE|GT|GE)?$/.test(opcode);
+  return (isComment(line)) ? false : /^CAS(EQ|NE|LT|LE|GT|GE)?$/.test(opcode);
 }
 
 export function isStartBooleanOpcode(line: string): boolean {
-  return (
-    isOpcodeIFxx(line) ||
-    isOpcodeWHENxx(line)
+  return ( isNotComment(line) &&
+  (isOpcodeIFxx(line) ||
+   isOpcodeWHENxx(line))
   );
 }
 
 export function isBooleanOpcode(line: string): boolean {
-  return (
-    isOpcodeIFxx(line) ||
+  return ( isNotComment(line) &&
+    (isOpcodeIFxx(line) ||
     isOpcodeWHENxx(line) ||
-    isOpcodeANDxxORxx(line)
+    isOpcodeANDxxORxx(line))
   );
+}
+
+
+export function isOpcodeEnd(line: string): boolean {
+  const opcode = getOpcode(line);
+  return (isComment(line)) ? false : /^END(?:IF|DO|FOR|MON|SL|CS|SR)?$/.test(opcode);
 }
 
 export function isValidOpcode(id: string): boolean {

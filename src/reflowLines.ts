@@ -44,6 +44,10 @@ export function reflowLines(statement: string): string[] {
     trimmedStatement = trimmedStatement.slice(0, -1).trimEnd(); // Remove semicolon for processing
   }
 
+    if (trimmedStatement.length === 0) {
+      result.push(`${firstIndent}${comment ?? ''}`);
+    }
+
   let insideQuote = false;
 
   while (trimmedStatement.length > 0) {

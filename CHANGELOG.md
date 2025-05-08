@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.3] - 2025-06-10
+### Added
+- Support for END and ENDSR handling.
+- Corrected an issue with data structure conversion
+- Enhanced how the END-DS location is determined for better results.
+- Convert comments better in more situations.
+- Add new option to disable the *EXT flag/parameter on externally described file device IDs. That is DISK(*EXT) can now be generated as DISK when this new option is turned off. See SETTINGS for details.
+
+### Fixed
+- File specs now interpret the Keyed/nonKeyed flag properly.
+- Conversion of final line in a source member is now handled correctly.
+
+### Changed
+- Updated extension dependencies for better compatibility with the latest VS Code releases.
+- Refined UI elements for a more consistent look and feel within VS Code.
+- Improved documentation and in-editor tooltips for extension commands.
+
 ## [0.5.2] - 2025-05-06
 ### New
 - Extension renamed from rpgivfree to rpgiv2free to better clarify its role.

@@ -6,7 +6,7 @@
   "preview": true,
   "private": false,
   "publisher": "CozziResearch",
-  "version": "0.5.2",
+  "version": "0.5.4",
   "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0"
@@ -85,6 +85,11 @@
           "type": "number",
           "default": 12,
           "description": "Secondary free format lines indent/spaces (in bytes)."
+        },
+        "rpgiv2free.AddEXTDeviceFlag": {
+          "type": "boolean",
+          "default": true,
+          "description": "Add *EXT to DISK, WORKSTN, etc. when converting externally described files."
         }
       }
     }

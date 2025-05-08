@@ -25,7 +25,7 @@ export function expandCompoundRange(lines: string[], selectedIndex: number): num
     while (end < lines.length) {
       const nextLine = lines[end];
       const nextOpcode = ibmi.getOpcode(nextLine);
-      if (nextOpcode === 'ENDCS') {
+      if (nextOpcode === 'ENDCS' || nextOpcode === 'END') {
         end++; // include ENDCS line
         break;
       } else if (ibmi.isCASEOpcode(nextLine)) {

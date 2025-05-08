@@ -77,10 +77,11 @@ export function activate(context: vscode.ExtensionContext) {
 
     for (const i of selectedLineList) {
       if (processedLines.has(i) || i >= allLines.length) continue;
-      const collectedStmts = collectStmt(allLines, i);
+      const collectedStmts = collectStmt(allLines, i); // collect all selected source statements
       if (!collectedStmts) continue;
 
-      const { lines: specLines, indexes, comments, isSQL, isBOOL, entityName } = collectedStmts;
+      const { lines: specLines, indexes, comments, isSQL, isBOOL, entityName: entityName } = collectedStmts;
+
       if (!specLines.length || indexes.some(idx => processedLines.has(idx))) continue;
 
       let convertedText = '';
@@ -104,6 +105,14 @@ export function activate(context: vscode.ExtensionContext) {
                     : specLines;
 
         convertedText = converted.flatMap(line => reflowLines(line)).join(ibmi.getEOL());
+      }
+
+      const eol = ibmi.getEOL();  // e.g., '\n' or '\r\n'
+
+      // Add any comments detected and collected to the end of the converted routine.
+
+      if (Array.isArray(comments) && comments.length > 0) {
+        convertedText += `${eol}${comments.join(eol)}`;
       }
 
       const rangeStart = new vscode.Position(indexes[0], 0);

@@ -165,7 +165,7 @@ export function convertDSpec(lines: string[], entityName: string | null, extraDC
 
   switch (dclType.toLowerCase()) {
     case 'ds': decl = `dcl-ds ${varName} ${kwdArea}`.trim();
-      if (!(/\b(EXTNAME|EXTFILE|EXT)\b/i.test(kwdArea))) {
+      if (!(/\b(LIKEDS)\b/i.test(kwdArea))) {
         extraDCL?.push(`end-ds;`);
       }
       break;

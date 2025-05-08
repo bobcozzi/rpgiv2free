@@ -1,6 +1,7 @@
 import { collectSQLBlock } from './SQLSpec';
 import { collectBooleanOpcode } from './collectBoolean';
 import { collectHSpecs } from './collectHSpec';
+import { collectComments } from './collectComments';
 import { collectCaseOpcode } from './collectCASEBlock';
 import * as ibmi from './IBMi';
 import * as vscode from 'vscode';
@@ -35,6 +36,7 @@ export function collectStmt(
   const isSQLStart = EXEC_SQL_RX.test(startLine);
   const isSQLCont = SQL_CONT_RX.test(startLine);
   const isSQLEnd = END_EXEC_RX.test(startLine);
+
   if (isSQLStart || isSQLCont || isSQLEnd) {
     // Handle SQL block separately and return its result
     const sqlBlockResult = collectSQLBlock(allLines, startIndex);
@@ -49,10 +51,41 @@ export function collectStmt(
       isBOOL: false,
     };
   }
+  if (ibmi.isComment(startLine)) { // Converting a block of comments?
+    const cmtBlock = collectComments(allLines, startIndex);
+    return {
+    entityName: null,  // No entity name for SQL blocks
+      lines: cmtBlock.lines,
+      indexes: cmtBlock.indexes,
+      comments: comments.length > 0 ? comments : null,
+      isSQL: false,
+      isBOOL: false,
+    };
+  }
 
   const curSpec = ibmi.getSpecType(startLine);
-  if (!curSpec || isLineEmpty(startLine)) return null;
+  if ((!curSpec && ibmi.isNotComment(startLine)) || isLineEmpty(startLine)) return null;
 
+  if (ibmi.isComment(startLine)) {
+    let commentBlock: string[] = [];
+    let commentIndex: number[] = [];
+    let idx = startIndex;
+    while (idx < allLines.length && ibmi.isComment(allLines[idx].padEnd(80, ' '))) {
+      commentBlock.push(ibmi.convertCmt(allLines[idx]));
+      commentIndex.push(idx);
+      idx++;
+    }
+    if (commentBlock.length > 0) {
+      return {
+        entityName: null,
+        lines: commentBlock,
+        indexes: commentIndex,
+        comments: comments.length > 0 ? comments : null,
+        isSQL: false,
+        isBOOL: false,
+      };
+    }
+  }
 
   if (curSpec === 'c') {
     if (ibmi.isBooleanOpcode(startLine)) {
@@ -102,15 +135,18 @@ export function collectStmt(
       prevLine = allLines[start - 1].padEnd(80, ' ');
     }
 
-    if (ibmi.getSpecType(prevLine) !== curSpec) break;
-    let isComment = ibmi.getCol(curLine, 7, 7).trim() === '*';
-    if (!isComment) {
-      isComment = ibmi.getCol(curLine, 7, 80).trimStart().startsWith('//');
+    if (ibmi.isComment(curLine)) {
+      // comments.push(ibmi.convertCmt(curLine));
+      start--;
+      continue;
     }
-    if (isComment) {
-      const commentText = allLines[start].substring(7, 80).trimEnd();
-      comments.push(allLines[start].substring(0, 6) + ' //' + commentText);
+    if (ibmi.isNotComment(prevLine)) {
+      if (ibmi.getSpecType(prevLine) !== curSpec) break;
     }
+
+
+
+
     const curDclType = ibmi.getDclType(curLine);
     const trimmedLine = ibmi.getCol(prevLine, 7, 80).trimEnd();
     const curTrimmed = ibmi.getCol(prevLine, 7, 80).trimEnd();
@@ -130,7 +166,7 @@ export function collectStmt(
       // Stop here if the current line is a DS and has no name
       break;
     }
-    if (curSpec === 'c' && !isComment) {
+    if (curSpec === 'c') {
       if (curOpCode.length === 0 && !hasFactor1) {
         // keep reading if the current line is a C-spec with no opcode and no factor1
         start--;
@@ -168,18 +204,20 @@ export function collectStmt(
   let entityNameParts: string[] = [];
   let finalNameLineFound = false;
   let index = start;
-  let collectedIndexes: number[] = [];
+  let collectedIndexes = new Set<number>();
   let collectedLines: string[] = [];
 
   while (index < allLines.length) {
     const line = allLines[index].padEnd(80, ' ');
-    if (ibmi.getSpecType(line) !== curSpec) break;
 
-    let isComment = ibmi.getCol(line, 7, 7).trim() === '*';
-    if (!isComment) {
-      isComment = ibmi.getCol(line, 7, 80).trim().startsWith('//');
+    if (ibmi.isComment(line)) {
+      comments.push(ibmi.convertCmt(line));
+      collectedIndexes.add(index);
+      index++;
+      continue;
     }
 
+    if (ibmi.getSpecType(line) !== curSpec) break;
 
     const namePartTrimmed = ibmi.getCol(line, 7, 21).trim();
     const fSpecCont = ibmi.getCol(line, 7, 43).trim();
@@ -207,39 +245,43 @@ export function collectStmt(
       }
     }
 
-    collectedIndexes.push(index);
+    if (index === start) {
+      collectedIndexes.add(index);
+    }
 
-
-    // ✅ Only collect lines after the full name is known, or in edge cases
-    if (finalNameLineFound || ((["d", "p"].includes(curSpec)) && namePartTrimmed === '' && attr22to43 !== '') ||
-      (curSpec === 'c' && !isComment)) {
-      let bDoNotSave = false;
-      if (curSpec === 'c' && !isComment && index !== start) {
+    if (curSpec === 'c') {
+      if (index !== start) {
         if (hasOpcode && !ibmi.isOpcodeANDxxORxx(line)) {
-          bDoNotSave = true;
+          break;
         }
       }
-      if (!bDoNotSave) {
-        collectedIndexes.push(index);
+      else {
+        collectedIndexes.add(index);
         collectedLines.push(line);
       }
     }
-    if (!isComment) {
+
+
+    // ✅ Only collect lines after the full name is known, or in edge cases
+    if (finalNameLineFound || ((["d", "p"].includes(curSpec)) && namePartTrimmed === '' && attr22to43 !== '') ) {
+        collectedIndexes.add(index);
+        collectedLines.push(line);
+    }
+
       // Continued F spec?
       if (curSpec === 'f' &&
         ((index === start) || (fSpecKwd.length > 0 && fSpecCont.length === 0))) {
         // Stop here if the nextLine is a F-spec with keyword
-        collectedIndexes.push(index);
+        collectedIndexes.add(index);
         collectedLines.push(line);
       }
-    }
 
     // Check if the next line begins a new declaration or new opcode
     const nextLine = allLines[index + 1]?.padEnd(80, ' ');
     if (!nextLine) break; // No more lines to process
     const bStartNewLine = isStartOfNewEntity(nextLine, curSpec);
-    if ((finalNameLineFound || (curSpec === 'c' && !isComment)) &&
-      nextLine && bStartNewLine) {
+    if ((finalNameLineFound || (curSpec === 'c') && !ibmi.isComment(nextLine)) &&
+      nextLine.trim()!== '' && bStartNewLine) {
       break;
     }
 
@@ -249,10 +291,7 @@ export function collectStmt(
     const nextfSpecCont = ibmi.getCol(nextLine, 7, 43).trim();
     const nextfSpecKwd = ibmi.getCol(nextLine, 44, 80).trim();
 
-    let isNextComment = ibmi.getCol(nextLine, 7, 7).trim() === '*';
-    if (!isNextComment) {
-      isNextComment = ibmi.getCol(nextLine, 7, 80).trim().startsWith('//');
-    }
+    let isNextComment = ibmi.isComment(nextLine);
 
     if (!isNextComment) {
       if (curSpec != nextSpec || (nextSpec === 'c' && (nextOpcode || nextFactor1))) {
@@ -274,7 +313,7 @@ export function collectStmt(
   return {
     entityName,
     lines: collectedLines,
-    indexes: collectedIndexes,
+    indexes: [...collectedIndexes], // Convert Set<number> to an array
     comments: comments.length > 0 ? comments : null,
     isSQL: false, // Ensure `isSQL` is false for non-SQL blocks
     isBOOL: false, // Ensure `isBOOL` is false for non-boolean blocks

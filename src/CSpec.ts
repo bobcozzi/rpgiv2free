@@ -195,10 +195,26 @@ function reformatOpcode(
       newLines.push(`${result} = 0`);
       newLines.push(`${result} -= ${factor2}`);
       break;
+    case "END":
+      freeFormat = `${opCode}xx; // "END" opcode deprecated. Use ENDxx (e.g., ENDIF, ENDDO, etc.)`;
+      break;
+    case "ENDSR":
+      if (factor2.trim() !== '') {
+        freeFormat = `${opCode} ${factor2}; `;
+      }
+      else {
+        freeFormat = `${opCode}; `;
+      }
+      if (factor1.trim() !== '') {
+        // If factor1 is empty, use the result as the first operand
+        freeFormat += ` // Label: ${factor1}`;
+      }
+      newLines.push(freeFormat);
+      break;
 
     case "ADDDUR":
       const [value, keyword] = factor2.split(':').map(s => s.trim());
-      const add_builtinFunc = keyword?.startsWith('*') ? `%${keyword.slice(1).toLowerCase()}` : `/* INVALID */`;
+      const add_builtinFunc = keyword?.startsWith('*') ? `%${keyword.slice(1).toLowerCase()}` : `// INVALID DURATION`;
       if (factor1.trim() === '') {
         // If factor1 is empty, use the result as the first operand
         freeFormat = `${result} += ${add_builtinFunc}(${value});`;

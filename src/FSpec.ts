@@ -1,5 +1,6 @@
 
 import * as vscode from 'vscode';
+import * as ibmi from './IBMi'
 
 export function convertFSpec(lines: string[]): string[] {
   if (!Array.isArray(lines) || lines.length === 0) return [];
@@ -8,23 +9,25 @@ export function convertFSpec(lines: string[]): string[] {
     idx === 0 ? line.padEnd(80, ' ') : line
   ).join('');
 
+  const settings = ibmi.getRPGIVFreeSettings();
+
   // Extract fields based on RPG fixed-format layout
-  const dclType = joined.charAt(5)?.trim() || ' ';                  // Position 6
-  const fileName = joined.substring(6, 16)?.trim() || '';            // Positions 7–16
-  const fileType = joined.charAt(16)?.trim() || ' ';                 // Position 17
-  const fileDesignation = joined.charAt(17)?.trim() || ' ';                 // Position 18
-  const endOfFileIndicator = joined.charAt(18)?.trim() || ' ';                 // Position 19
-  const fileAddition = joined.charAt(19)?.trim() || ' ';                 // Position 20
-  const sequence = joined.charAt(20)?.trim() || ' ';                 // Position 21
-  const fileDesc = joined.charAt(21)?.trim() || ' ';                 // Position 22 (F or E)
-  const rcdLength = joined.substring(22, 27)?.trim() || '';           // Positions 23–27
-  const limitsProcessing = joined.charAt(27)?.trim() || ' ';                 // Position 28
-  const keyOrRecAddrLength = joined.substring(28, 33)?.trim() || '';           // Positions 29–33
-  const recAddrType = joined.charAt(33)?.trim() || ' ';                 // Position 34
-  const fileOrg = joined.charAt(34)?.trim() || ' ';                 // Position 35
-  const deviceType = joined.substring(35, 42)?.trim() || '';           // Positions 36–42
-  const reserved = joined.charAt(42)?.trim() || ' ';                 // Position 43
-  const kwd = joined.substring(43, 80)?.trim() || '';           // Positions 44–80
+  const dclType = ibmi.getSpecType(joined);                  // Position 6
+  const fileName = ibmi.getColUpper(joined,7, 16);            // Positions 7–16
+  const fileType = ibmi.getColUpper(joined,17);                 // Position 17
+  const fileDesignation = ibmi.getColUpper(joined,18);                 // Position 18
+  const endOfFileIndicator = ibmi.getColUpper(joined,19);                 // Position 19
+  const fileAddition = ibmi.getColUpper(joined,20);                 // Position 20
+  const sequence = ibmi.getColUpper(joined,21);                 // Position 21
+  const fileDesc = ibmi.getColUpper(joined,22);                 // Position 22 (F or E)
+  const rcdLength = ibmi.getColUpper(joined,23, 27);           // Positions 23–27
+  const limitsProcessing = ibmi.getColUpper(joined,28);                 // Position 28
+  const keyOrRecAddrLength = ibmi.getColUpper(joined,29, 33);           // Positions 29–33
+  const recAddrType = ibmi.getColUpper(joined, 34);
+  const fileOrg = ibmi.getColUpper(joined,35);                 // Position 35
+  const deviceType = ibmi.getColUpper(joined,36, 42);           // Positions 36–42
+  const reserved = ibmi.getColUpper(joined,43);                 // Position 43
+  const kwd = ibmi.getColUpper(joined,44, 80);           // Positions 44–80
 
   // Usage based on file type
   let usage = '';
@@ -55,7 +58,12 @@ export function convertFSpec(lines: string[]): string[] {
   // Add device type and record length
   if (['DISK', 'PRINTER', 'WORKSTN', 'SPECIAL', 'SEQ'].includes(deviceType)) {
     if (isExternallyDescribed) {
-      decl += ` ${deviceType.toLowerCase()}(*ext)`;
+      if (settings.addEXTDEVFLAG) {
+        decl += ` ${deviceType.toLowerCase()}(*ext)`;
+      }
+      else {
+        decl += ` ${deviceType.toLowerCase()}`;
+      }
     } else {
       decl += ` ${deviceType.toLowerCase()}(${rcdLength})`;
     }
@@ -65,7 +73,7 @@ export function convertFSpec(lines: string[]): string[] {
   let keyedClause = '';
   if (recAddrType === 'K') {
     keyedClause = 'KEYED';
-  } else if (recAddrType !== ' ') {
+  } else if (recAddrType.trim())  {
     keyedClause = `KEYED(*CHAR:${keyOrRecAddrLength})`;
   }
 

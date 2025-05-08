@@ -65,7 +65,13 @@ Secondary free format lines indent/spaces (in bytes).
 
 Default: `12`
 
+### `rpgiv2free.AddEXTDeviceFlag
+Add *EXT to DISK, WORKSTN, etc. when when converting externally described files.
 
+- `true` — Add `*EXT` to DISK, WORKSTN, PRINTER keywords.
+- `false` — Do not add `*EXT` to externally described device file keywords.
+
+Default: `false`
 
 ## In Development:
 
