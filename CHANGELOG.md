@@ -3,9 +3,10 @@
 All notable changes to this project will be documented in this file.
 
 
-## [0.5.6] - 2025-06-9
+## [0.5.8] - 2025-06-9
 ### Fixed
 - Corrected an issue with the AddEXTDeviceFlag settings flag that caused it to be ignored.
+- Updated the readme.md file with more accurate information.
 
 ## [0.5.5] - 2025-06-8
 ### Fixed

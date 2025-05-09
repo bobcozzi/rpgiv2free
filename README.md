@@ -1,27 +1,27 @@
 # RPG IV to Free Format Conversion Tool
 
-This Visual Studio Code extension helps developers convert RPG IV fixed-format code into free-format RPG IV code effortlessly. Whether you’re working with File (F) specs, Definition (D) specs, or Embedded SQL statements, this tool streamlines the process by automating the conversion of fixed-format RPG code into more modern, readable free-format code.
+This Visual Studio Code extension helps developers convert RPG IV fixed-format statements into free-format RPG IV code effortlessly. Whether you’re working with File (F) specs, Definition (D) specs, or Embedded SQL statements, this tool streamlines the process by automating the conversion of fixed-format RPG code into more modern, readable free-format RPG IV.
 Download from the Visual Studio CODE Marketplace: [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/CozziResearch.rpgiv2free.svg?label=VS%20Code%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=CozziResearch.rpgiv2free)).
 
 
-For a detailed list of changes and release notes, see the [Changelog](https://github.com/bobcozzi/rpgiv2free/blob/main/CHANGELOG.md).
+For a list of changes and release notes, see the [Changelog](https://github.com/bobcozzi/rpgiv2free/blob/main/CHANGELOG.md).
 
 This extension is an RPG IV to Free Format statement converter. You select the RPG IV fixed format statements you want to
 convert to free format, right-click and select "Convert RPG IV to free format".
-It is not a refactoring tool or moderization tool. Its only purpose is to get that statement into free format for you.
+It is NOT a refactoring tool or code moderization tool. Its only purpose is to get an RPG IV fixed-format statement into free format RPG IV syntax.
 
 ## Features
 
 - **Convert RPG IV Fixed-Format to Free Format**:
   Once installed, right-click on any RPG IV fixed-format statement in your editor and select the “Convert RPG IV to Free Format” option from the context menu. The statement will be converted instantly.
 
-- **Multi-Line Support for Complex Statements**:
-  If a statement spans multiple lines (such as a D (Definition) spec), you can position the cursor on any line within the statement, and the extension will convert the entire statement properly, even if it’s split across several lines.
+- **Multi-Line Support for Compound Statements**:
+  If a statement spans multiple lines, such as when a File or Definition spec has additional keywords, or you have a legacy IFEQ/OREQ/ANDEQ style conditional Calc spec, you can position the cursor on any line within the statement, and the extension converts the entire statement; no need to select the entire thing.
 
 - **Batch Conversion of Multiple Statements**:
-  You can select multiple statements within the same file and convert them all in a single operation. The tool processes them efficiently.
+  You can select multiple statements within the same file and convert them all in a single operation. The tool processes them efficiently. however is it NOT recommended to select *ALL lines and convert them. I have not tested it on things like program-described arrays, conditioning indicators (they are currently lost during conversion) or other RPGII-style edge-cases.
 
-- **Fully Implemented Specifications**:
+- **Supported Specifications**:
   - Header (H) Specs
   - File (F) Specs
   - Definition (D) Specs
@@ -36,11 +36,11 @@ This extension contains the following settings under `rpgiv2free`:
 ### `rpgiv2free.convertBINTOINT`
 Controls whether binary (B) data types in RPG IV are converted to integers in free-format RPG.
 
-- `0` — Do not convert B fields to integer (makes them BINDEC variables).
-- `1` — Always convert B fields to integer (makes them INT variables).
-- `2` — Convert B fields to integer variables only when decimal positions = 0.
+- `0` — Do not convert B fields to integer (make them BINDEC variables).
+- `1` — Always convert B fields to integer (make them INT variables).
+- `2` — Convert B fields to integer (make them INT variables) ONLY when decimal positions = 0. (recommended)
 
-Default: `0`
+Default: `2`
 
 ### `rpgiv2free.addINZ`
 Automatically adds the `INZ` keyword to data structure fields that do not already have it.
@@ -48,7 +48,7 @@ Automatically adds the `INZ` keyword to data structure fields that do not alread
 - `true` — Add `INZ` keyword to all Data Structures when converted.
 - `false` — Do not add `INZ`.
 
-Default: `false`
+Default: `true`
 
 ### `rpgiv2free.maxFreeFormatLineLength`
 Max length for converted free format lines (right margin).
@@ -68,10 +68,10 @@ Default: `12`
 ### `rpgiv2free.AddEXTDeviceFlag
 Add *EXT to DISK, WORKSTN, etc. when when converting externally described files.
 
-- `true` — Add `*EXT` to DISK, WORKSTN, PRINTER keywords.
-- `false` — Do not add `*EXT` to externally described device file keywords.
+- `true` — Add `*EXT` to DISK, WORKSTN, PRINTER keywords. e.g., DISK(*EXT)
+- `false` — Do not add `*EXT` to externally described device file keywords. e.g., DISK
 
-Default: `false`
+Default: `true`
 
 ## In Development:
 
@@ -102,31 +102,28 @@ Default: `false`
    - Position the cursor on the fixed-format statement you want to convert.
    - Alternatively, you can select multiple lines of code or multiple statements to convert them at once. (The position of the cursor or selection on the line does not matter).
    - Right-click on the selected code or statement to bring up the context menu.
-   - Select “Convert RPG IV to Free Format” from the context menu.
+   - *Select* “**Convert RPG IV to Free Format**” from the context menu.
    - The tool converts all selected statements to free format.
 
 3. **Multi-Line Statements**:
-   - For multi-line statements (like D Specs), or enhanced calc spec opcodes that use the extended Factor 2, position the cursor on any line that makes up the statement. The extension automatically converts the entire statement.
+   - For multi-line statements, position the cursor on any line that makes up the statement. The extension automatically converts the full statement.
 
 
 ## Known Issues
 
 - **Calc Specs (C Specs)**:
-  Currently under development. Some opcodes are translated fine while others are sketchy.
+  Currently under development. Some opcodes are translated fine while others are sketchy. Conditioning Indicators logic is not support currently.
 
 - **H Specs**:
-  - Header specs are converted to one large CTL-OPT line. This is a work in progress and will be improved in future releases.
-  - It is a future objective to include a "switch" setting to convert each H spec line independently or allow it to work like it does now.
+  - Header specs are converted to one large CTL-OPT line. This is a work in progress and will be enhanced in a future release.
+  - It is a future objective to include a Setting to convert each H spec line independently or allow it to work like it does now.
 - **D Specs**:
-  - The conversion of D specs is mostly complete, but some edge cases may not be handled perfectly. For example, if a data structure is followed by a stand alone field with a long name it does not properly position the converted data structure's END-DS statement.
+  - The conversion of D specs is mostly complete, but some edge cases are not handled perfectly. For example, if a data structure is followed by another D spec for a *long name* variable, it may not correctly convert the code.
 
 ## Roadmap
 
-- **Implemented Calc Specs (C Specs)**:
-  We are working on refining the handling of Calc Specs and expect it to be fully supported in the next release.
-
-- **Improved User Feedback for Conversions**:
-  We plan to enhance the user experience by providing more informative feedback about what is being converted and any issues that may arise during conversion.
+- **Implementation of Calc Specs**:
+  We are working on refining the handling of Calc Specs and expect better support with each release.
 
 
 ## License
@@ -139,5 +136,5 @@ If you have any issues or feature requests, please open an issue on the GitHub r
 ## Contact
 
 Bob Cozzi
-[Website](http://www.github.com/bobcozzi/vsciRPGConverter)
+[Website](http://www.github.com/bobcozzi/rpgiv2free)
 [Email](mailto:cozzi@rpgiv.com)
