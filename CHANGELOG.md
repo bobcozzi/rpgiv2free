@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+
+## [0.5.6] - 2025-06-9
+### Fixed
+- Corrected an issue with the AddEXTDeviceFlag settings flag that caused it to be ignored.
+
 ## [0.5.5] - 2025-06-8
 ### Fixed
 - Corrected an issue with protypes and placement of end-pr. Also fixed the same issue on PI statements.

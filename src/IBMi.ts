@@ -87,7 +87,7 @@ export function getRPGIVFreeSettings() {
     indentFirstLine: config.get<number>('indentFirstLine', 10),
     indentContLines: config.get<number>('indentContinuedLines', 12),
     maxWidth: config.get<number>('maxFreeFormatLineLength', 76),
-    addEXTDEVFLAG: config.get<boolean>('AddEXTDEVICEFLAG', true)
+    addEXTDEVFLAG: config.get<boolean>('AddEXTDeviceFlag', true)
   };
 }
 
