@@ -6,7 +6,7 @@
   "preview": true,
   "private": false,
   "publisher": "CozziResearch",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0"
@@ -104,16 +104,18 @@
     "build": "tsc",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-  "publish:vsx": "ovsx publish --pat $OPENVSX_PAT",
-  "publish:ms": "vsce publish",
-  "publish:all": "npm run publish:ms && npm run publish:vsx"
-
+    "fix": "eslint . --fix",
+    "publish:vsx": "ovsx publish --pat $OPENVSX_PAT",
+    "publish:ms": "vsce publish",
+    "publish:all": "npm run fix && npm run compile && npm run publish:ms && npm run publish:vsx"
   },
   "devDependencies": {
     "@eslint/json": "^0.12.0",
     "@eslint/markdown": "^6.4.0",
     "@types/node": "^22.15.3",
     "@types/vscode": "^1.70.0",
+    "@typescript-eslint/eslint-plugin": "^8.32.0",
+    "@typescript-eslint/parser": "^8.32.0",
     "eslint": "^9.26.0",
     "typescript": "^4.8.0"
   },
