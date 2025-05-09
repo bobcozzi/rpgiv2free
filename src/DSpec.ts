@@ -115,8 +115,10 @@ export function convertDSpec(lines: string[], entityName: string | null, extraDC
       return `${type}(${lenValue})`;
     });
 
-    // Remove the LEN(n) keyword
-    kwdArea = kwdArea.replace(/,\s*LEN\([^)]+\)|LEN\([^)]+\),?\s*/i, '').trim();
+    if (dclType !== 'DS') {
+      // Remove the LEN(n) keyword
+      kwdArea = kwdArea.replace(/,\s*LEN\([^)]+\)|LEN\([^)]+\),?\s*/i, '').trim();
+    }
   }
 
   let decl = '';
@@ -348,6 +350,16 @@ function convertTypeToKwd(
   }
   else {
     length = calcLength(dataType, fromPos, toPos); // simple length calc for other data types
+  }
+
+  // If Data Structure has a length, then add the LEN(nnn) keyword
+  if (dclType === 'DS') {
+    if (toPos) {
+      kwds += ` LEN(${toPos})`
+    }
+    if (fromPos) {
+      kwds += ` OCCURS(${fromPos})`
+    }
   }
 
   switch (dataType) {

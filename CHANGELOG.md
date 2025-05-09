@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - Corrected an issue with the AddEXTDeviceFlag settings flag that caused it to be ignored.
 - Updated the readme.md file with more accurate information.
+- Data Structures with a Length (legacy "To pos") and/or OCCURS (legacy "From pos") now convert to LEN() and OCCURS() keyuwords respectively.
 
 ## [0.5.5] - 2025-06-8
 ### Fixed
