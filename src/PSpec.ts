@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as ibmi from './IBMi';
-import { getVarName, processKeywordLines } from './DSpec'; // borrow some DSpec functions
+import { getVarName, combineKwdAreaLines } from './DSpec'; // borrow some DSpec functions
 
 // Function to convert D specs from fixed-format to free-format
 export function convertPSpec(lines: string[], entityName: string | null): string[] {
@@ -30,7 +30,7 @@ export function convertPSpec(lines: string[], entityName: string | null): string
   const dclType = ibmi.getColUpper(joined, 24, 25);  // Get column 24-25 DCL Type
   let decl = '';
 
-  kwdArea = processKeywordLines(lines);
+  kwdArea = combineKwdAreaLines(lines);
   kwdArea = fixKeywordArgs(kwdArea);
 
   switch (dclType.toLowerCase()) {

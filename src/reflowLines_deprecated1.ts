@@ -23,7 +23,7 @@ function extractComment(line: string): { code: string, comment: string | null } 
   return { code: line.trimEnd(), comment: null };
 }
 
-export function reflowLines_AI(line: string): string[] {
+export function reflowLines_Deprecated(line: string): string[] {
   const config = ibmi.getRPGIVFreeSettings();
   const firstIndent = ' '.repeat(config.indentFirstLine);
   const contIndent = ' '.repeat(config.indentContLines);
@@ -46,7 +46,7 @@ export function reflowLines_AI(line: string): string[] {
           const available = maxLength - currentLine.length - 3; // space for '...'
           const part = remaining.substring(0, available);
           remaining = remaining.substring(available);
-          lines.push(currentLine + (currentLine.endsWith(' ') ? '' : ' ') + part + '...');
+          lines.push(currentLine + part + '...');
           currentIndent = contIndent;
           currentLine = currentIndent;
         }
@@ -63,18 +63,9 @@ export function reflowLines_AI(line: string): string[] {
     }
   }
 
-  if (currentLine.trim()) {
-    // Ensure we end the line with a semicolon
-    if (!currentLine.trimEnd().endsWith(';')) {
-      currentLine = currentLine.trimEnd() + ';';
-    }
-    lines.push(currentLine);
-  }
+  if (currentLine.trim()) lines.push(currentLine);
+  if (comment) lines[lines.length - 1] += ' ' + comment;
 
-  // Now append the comment to the last line
-  if (comment) {
-    lines[lines.length - 1] += ' ' + comment;
-  }
   return lines;
 }
 

@@ -1,6 +1,7 @@
 import { collectSQLBlock } from './SQLSpec';
 import { collectBooleanOpcode } from './collectBoolean';
 import { collectHSpecs } from './collectHSpec';
+import { collectDSpecs } from './collectDSpec';
 import { collectComments } from './collectComments';
 import { collectCaseOpcode } from './collectCASEBlock';
 import * as ibmi from './IBMi';
@@ -75,6 +76,12 @@ export function collectStmt(
       commentIndex.push(idx);
       idx++;
     }
+    idx = startIndex - 1;
+    while (idx >= 0 && ibmi.isComment(allLines[idx].padEnd(80, ' '))) {
+      commentBlock.push(ibmi.convertCmt(allLines[idx]));
+      commentIndex.push(idx);
+      idx--;
+    }
     if (commentBlock.length > 0) {
       return {
         entityName: null,
@@ -123,7 +130,17 @@ export function collectStmt(
       isBOOL: false,
     };
   }
-
+  else if (curSpec === 'd') {
+    const defnSpecs = collectDSpecs(allLines, startIndex); // Collect H specs if needed
+    return {
+      entityName: defnSpecs.entityName,
+      lines: defnSpecs.lines,
+      indexes: defnSpecs.indexes,
+      comments: defnSpecs.comments.length > 0 ? defnSpecs.comments : null,
+      isSQL: false,
+      isBOOL: false,
+    };
+  }
   // Special case: Unnamed Data Structure
 
   // Step 1: Walk backward to find the start of the declaration
@@ -144,13 +161,11 @@ export function collectStmt(
       if (ibmi.getSpecType(prevLine) !== curSpec) break;
     }
 
-
-
-
     const curDclType = ibmi.getDclType(curLine);
-    const trimmedLine = ibmi.getCol(prevLine, 7, 80).trimEnd();
+    const prevDclType = ibmi.getDclType(prevLine).trim();
+    const prevTrimmedLine = ibmi.getCol(prevLine, 7, 80).trimEnd();
     const curTrimmed = ibmi.getCol(prevLine, 7, 80).trimEnd();
-    const endsWithDots = trimmedLine.endsWith('...');
+    const prevEndsWithDots = prevTrimmedLine.endsWith('...');
     const curEndsWithDots = curTrimmed.endsWith('...');
     const prevHasName = ibmi.getCol(prevLine, 7, 21).trim().length > 0;
     const curOpCode = ibmi.getCol(curLine, 25, 35).trim();
@@ -161,6 +176,16 @@ export function collectStmt(
     // The very fringe case of a long name ending on prior line
     //  D  thisIsALongNameThatIsNotContinued
     //  D                SDS
+    if (curSpec === 'd') {
+      const fieldDefn = ibmi.getCol(curLine, 7, 32).trim();
+      const prevDefn = ibmi.getCol(prevLine, 33, 42).trim();
+      const fieldAttr = ibmi.getCol(curLine, 7, 32).trim();
+      if (!prevEndsWithDots) {
+        if ((["ds", "pr", "pi"].includes(prevDclType) || prevDefn !== '') || fieldAttr === '') {
+          break;
+        }
+      }
+    }
     if (!curEndsWithDots && curDclType === 'DS' && curSpec === 'd') {
       // Special case: Unnamed Data Structure (DS) with attributes
       // Stop here if the current line is a DS and has no name
@@ -182,13 +207,13 @@ export function collectStmt(
     }
 
     // If this is a long-name continuation line, keep going
-    if (prevHasName && endsWithDots) {
+    if (prevHasName && prevEndsWithDots) {
       start--; // Keep walking back
       continue;
     }
 
     // If it's just a continuation (no name), keep going
-    if (curHasName && !endsWithDots) {
+    if (curHasName && !prevEndsWithDots) {
       break;
     }
     if (!prevHasName) {
@@ -208,7 +233,14 @@ export function collectStmt(
   let collectedLines: string[] = [];
 
   while (index < allLines.length) {
-    const line = allLines[index].padEnd(80, ' ');
+    const totalLines = allLines.length;
+
+// Previous line (only if index > 0)
+    const prevLine = index > 0 ? allLines[index - 1].padEnd(80, ' ') : '';
+// Current line
+    const line = allLines[index]?.padEnd(80, ' ') ?? '';
+// Next line (only if index + 1 < totalLines)
+    const nextLine = index + 1 < totalLines ? allLines[index + 1].padEnd(80, ' ') : '';
 
     if (ibmi.isComment(line)) {
       comments.push(ibmi.convertCmt(line));
@@ -224,12 +256,13 @@ export function collectStmt(
     const fSpecKwd = ibmi.getCol(line, 44, 80).trim();
 
     const attr22to43 = ibmi.getCol(line, 22, 43).trimEnd();
-    const endsWithDots = ibmi.getCol(line, 7, 80).trimEnd().endsWith('...');
+    const prevEndsWithDots = ibmi.getCol(prevLine, 7, 80).trimEnd().endsWith('...');
+    const curEndsWithDots = ibmi.getCol(line, 7, 80).trimEnd().endsWith('...');
     const hasOpcode = ibmi.getCol(line, 25, 35).trim().length > 0;
     const hasFactor1 = ibmi.getCol(line, 12, 25).trim().length;
 
     let fullName = '';
-    if (endsWithDots) {
+    if (curEndsWithDots) {
       fullName = ibmi.getCol(line, 7, 80).trimEnd().slice(0, -3).trimEnd();
     } else {
       fullName = ibmi.getCol(line, 7, 21).trimEnd();
@@ -239,7 +272,7 @@ export function collectStmt(
       // Build the entity name from name parts
       if (!finalNameLineFound) {
         entityNameParts.push(fullName);
-        if (!endsWithDots) {
+        if (!curEndsWithDots) {
           finalNameLineFound = true;
         }
       }
@@ -277,8 +310,9 @@ export function collectStmt(
       }
 
     // Check if the next line begins a new declaration or new opcode
-    const nextLine = allLines[index + 1]?.padEnd(80, ' ');
-    if (!nextLine) break; // No more lines to process
+
+    if (!nextLine) break; // No more lines to process?
+
     const bStartNewLine = isStartOfNewEntity(nextLine, curSpec);
     if ((finalNameLineFound || (curSpec === 'c') && !ibmi.isComment(nextLine)) &&
       nextLine.trim()!== '' && bStartNewLine) {

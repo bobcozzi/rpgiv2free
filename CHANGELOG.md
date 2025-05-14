@@ -3,17 +3,23 @@
 All notable changes to this project will be documented in this file.
 
 
-## [0.5.8] - 2025-06-9
+## [0.6.0] - 2025-05-14
+- A major rewrite of D spec seletion and free format line formatting.
+- Fixed several bugs in how the full D spec statement was selected. In edge cases it was dropping the end of a Long Variable name. This has now been corrected.
+- Quoted literals on D specs are now retaining embedded consecutive blanks. It does this in two ways, (1) Avoids compressing them and (2) If the line breaks onto a new line at a set of blanks, then the - is used to continue and the next line starts in column 8. NOTE: If you migrate to fully free format RPG IV, then you will need to adjust that start position (to 1) accordingly.
+- NOTE: NO CALC SPEC changes or enhancements have been made to this build.
+
+## [0.5.8] - 2025-05-9
 ### Fixed
 - Corrected an issue with the AddEXTDeviceFlag settings flag that caused it to be ignored.
 - Updated the readme.md file with more accurate information.
 - Data Structures with a Length (legacy "To pos") and/or OCCURS (legacy "From pos") now convert to LEN() and OCCURS() keyuwords respectively.
 
-## [0.5.5] - 2025-06-8
+## [0.5.5] - 2025-05-8
 ### Fixed
 - Corrected an issue with protypes and placement of end-pr. Also fixed the same issue on PI statements.
 
-## [0.5.3] - 2025-06-7
+## [0.5.3] - 2025-05-7
 ### Added
 - Support for END and ENDSR handling.
 - Corrected an issue with data structure conversion

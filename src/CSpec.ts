@@ -20,7 +20,7 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
   const levelBreak = ibmi.getCol(line, 7, 8).trim();
   const indicators = ibmi.getCol(line, 9, 11).trim();
   const factor1 = ibmi.getCol(line, 12, 25).trim();
-  let opcode = ibmi.getColUpper(line, 26, 35);
+  let opcode = ibmi.getOpcode(line);
   const factor2 = ibmi.getCol(line, 36, 49).trim();
   const factor2Ext = ibmi.getCol(line, 36, 80).trim();
   const result = ibmi.getCol(line, 50, 63).trim();
@@ -475,6 +475,7 @@ function convertConditionalOpcode(
   }
   return [];
 }
+
 function convertCAT(
   opcode: string,
   factor1: string,
@@ -516,10 +517,13 @@ function convertCAT(
     lines.push(`${result} = ${fullExpr};`);
   } else {
     // Rule: If no extender (P), wrap in %SUBST
-    const lenVar = `${result}_LEN_FF`;
-    lines.push(`${lenVar} = %LEN(${fullExpr});  // Generated workfield ${lenVar} from CAT opcode`);
-    lines.push(`${result} = %SUBST(${result} : 1 : ${lenVar}) = ${fullExpr};`);
-    extraDCL.push(`DCL-S ${lenVar} INT(10);`);
+    const lenVar = `CAT_LEN_RPGIV2FREE`;
+    lines.push(`${lenVar} = %LEN(${fullExpr});  // workfield ${lenVar} for CAT opcode`);
+    lines.push(`${lenVar} = %MIN(${lenVar} : %LEN(${result})); // Avoid overlow error`);
+    lines.push(`%SUBST(${result} : 1 : ${lenVar}) = ${fullExpr};`);
+    if (!ibmi.isVarDcl(lenVar)) { // If not already declared, declare work field
+      extraDCL.push(`DCL-S ${lenVar} INT(10); // Ad hoc length field used by CAT opcode `);
+      }
   }
 
   return lines;

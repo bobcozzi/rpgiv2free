@@ -1,9 +1,14 @@
 
 import * as ibmi from './IBMi'
+import { stmtLines } from './types';
 
-export function collectComments(allLines: string[], startIndex: number): { lines: string[], indexes: number[] } {
+export function collectComments(allLines: string[], startIndex: number): stmtLines {
   const lines: string[] = [];
   const indexes: number[] = [];
+  const comments: string[] = [];
+  const eol = ibmi.getEOL();
+
+  // NOTE: This routine returns comments as "lines" not in the "comments" return value
 
   // Find start of comment block by scanning backward
   let start = startIndex;
@@ -32,5 +37,9 @@ export function collectComments(allLines: string[], startIndex: number): { lines
     indexes.push(i);
   }
 
-  return { lines, indexes };
+  return {
+    lines,
+    indexes,
+    comments: comments.length > 0 ? comments : null
+  };
 }

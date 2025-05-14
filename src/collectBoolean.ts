@@ -1,11 +1,15 @@
 
 import * as ibmi from './IBMi';
 
-import * as vscode from 'vscode';
+import { stmtLines } from './types';
 
-export function collectBooleanOpcode(allLines: string[], startIndex: number): { lines: string[], indexes: number[] } {
+export function collectBooleanOpcode(allLines: string[], startIndex: number): stmtLines {
   const lines: string[] = [];
   const indexes: number[] = [];
+  const comments: string[] = [];
+  const eol = ibmi.getEOL();
+
+  const indent = ' '.repeat(12);
 
   const opMap: { [key: string]: string } = {
     EQ: '=', NE: '<>', GT: '>', LT: '<', GE: '>=', LE: '<='
@@ -16,7 +20,7 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number): { 
   while (i >= 0 && !ibmi.isStartBooleanOpcode(allLines[i])) {
     i--;
   }
-  if (i < 0) return { lines: [], indexes: [] };
+  if (i < 0) return { lines: [], indexes: [], comments: null };
 
   const startLine = allLines[i];
   indexes.push(i);
@@ -25,35 +29,55 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number): { 
   const opcode = ibmi.getOpcode(startLine); // IFEQ, WHENNE, etc.
   const factor2 = ibmi.getCol(startLine, 36, 49).trim();
 
-  const compOp = opcode.slice(-2); // Last 2 characters
-  const comparison = opMap[compOp] ?? '?';
-
   let ffOpcode = '';
   let isIf = false;
   let isWhen = false;
+  let isSelect = (opcode === 'SELECT');
+  let compOp = '';
+  let comparison = '';
+  let booleanExpr = '';
 
-  if (opcode.startsWith('IF')) {
-    ffOpcode = 'IF';
-    isIf = true;
-  } else if (opcode.startsWith('WHEN')) {
-    ffOpcode = 'WHEN';
-    isWhen = true;
+  if (!isSelect) {
+    compOp = opcode.slice(-2); // Last 2 characters
+    comparison = opMap[compOp] ?? '?';
   }
 
-  let booleanExpr = `${ffOpcode} ${factor1} ${comparison} ${factor2}`;
+  if (isSelect) {
+    ffOpcode = 'select;' + ibmi.getEOL();
+    booleanExpr = ffOpcode;
+  }
+  else {
+    if (opcode.startsWith('IF')) {
+      ffOpcode = 'IF';
+      isIf = true;
+    } else if (opcode.startsWith('WHEN')) {
+      ffOpcode = 'WHEN';
+      isWhen = true;
+    }
+    booleanExpr = `${ffOpcode} ${factor1} ${comparison} ${factor2}`;
+  }
+
   i++;
 
   // Continue collecting ANDxx / ORxx lines
-  while (i < allLines.length && ibmi.isOpcodeANDxxORxx(allLines[i])) {
+  while (i < allLines.length && ((isSelect && ibmi.isOpcodeWHENxx(allLines[i])) || ibmi.isOpcodeANDxxORxx(allLines[i]))) {
     const line = allLines[i];
+    if (ibmi.isComment(line)) {
+      comments.push(line);
+      indexes.push(i);
+      i++;
+      continue;
+    }
+
     indexes.push(i);
 
     const contFactor1 = ibmi.getCol(line, 12, 25).trim();
-    const contOpcode = ibmi.getColUpper(line, 26, 35).trim(); // ANDGT, ORLE, etc.
+    const contOpcode = ibmi.getOpcode(line); // ANDGT, ORLE, etc.
     const contFactor2 = ibmi.getCol(line, 36, 49).trim();
 
     const logicOp = contOpcode.startsWith('OR') ? 'or' :
-      contOpcode.startsWith('AND') ? 'and' : '?';
+      contOpcode.startsWith('AND') ? 'and' :
+        contOpcode.startsWith('WHEN') ? 'when' : '?';
     const comp = contOpcode.slice(-2); // Last 2 characters
     const compSymbol = opMap[comp] ?? '?';
 
@@ -64,7 +88,11 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number): { 
   booleanExpr += ';';
   lines.push(booleanExpr);
 
-  return { lines, indexes };
+  return {
+    lines,
+    indexes,
+    comments: comments.length > 0 ? comments : null
+  };
 }
 
 function parseBooleanOpcodeLine(line: string): {

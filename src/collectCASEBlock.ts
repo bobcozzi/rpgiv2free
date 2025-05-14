@@ -1,9 +1,11 @@
 
 import * as ibmi from './IBMi';
+import { collectedStmt, stmtLines } from './types'
 
 export function collectCaseOpcode(allLines: string[], startIndex: number): { lines: string[], indexes: number[] } {
   const lines: string[] = [];
   const indexes: number[] = [];
+  const comments: string[] = [];
   const eol = ibmi.getEOL();
 
   const opMap: { [key: string]: string } = {
@@ -19,6 +21,12 @@ export function collectCaseOpcode(allLines: string[], startIndex: number): { lin
 
   while (i < allLines.length) {
     const line = allLines[i];
+    if (ibmi.isComment(line)) {
+      comments.push(line);
+      indexes.push(i);
+      i++;
+      continue;
+    }
     const opCode = ibmi.getColUpper(line, 26, 35).trim();
     const f1 = ibmi.getCol(line, 12, 25).trim();
     const f2 = ibmi.getCol(line, 36, 49).trim();
@@ -63,5 +71,12 @@ export function collectCaseOpcode(allLines: string[], startIndex: number): { lin
   comparisons.push('endsl');
   lines.push(...comparisons);
 
-  return { lines, indexes };
+  const result: stmtLines = {
+    lines,
+    indexes,
+    comments: null
+  };
+
+  return result;
+
 }

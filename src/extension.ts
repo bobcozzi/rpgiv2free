@@ -2,8 +2,9 @@
 // File: src/extension.ts
 import * as vscode from 'vscode';
 
+
+import { formatRPGIV } from './formatRPGIV';
 import { collectStmt } from './collectSpecs';
-import { reflowLines } from './reflowLines';
 import { expandCompoundRange } from './compoundStmt';
 import { convertHSpec } from './HSpec';
 import { convertFSpec } from './FSpec';
@@ -35,7 +36,10 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     const doc = editor.document;
-    const allLines = ibmi.splitLines(doc.getText());;
+    const allLines: string[] = [];
+    for (let i = 0; i < doc.lineCount; i++) {
+      allLines.push(doc.lineAt(i).text);
+    }
     const processedLines = new Set<number>();
     ibmi.log('Total lines: ' + allLines.length);
 
@@ -77,6 +81,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     for (const i of selectedLineList) {
       if (processedLines.has(i) || i >= allLines.length) continue;
+      const curLine = allLines[i];
       const collectedStmts = collectStmt(allLines, i); // collect all selected source statements
       if (!collectedStmts) continue;
 
@@ -88,10 +93,9 @@ export function activate(context: vscode.ExtensionContext) {
       let extraDCL: string[] = [];
       if (isSQL) {
         convertedText = convertToFreeFormSQL(specLines).join(ibmi.getEOL());
-
       }
       else if (isBOOL) {
-        convertedText = specLines.flatMap(line => reflowLines(line)).join(ibmi.getEOL());
+        convertedText = specLines.flatMap(line => formatRPGIV(line)).join(ibmi.getEOL());
       }
       else {
         const specType = specLines[0].charAt(5).toLowerCase().trim();
@@ -104,7 +108,7 @@ export function activate(context: vscode.ExtensionContext) {
                   : specType === 'c' ? convertCSpec(specLines, extraDCL)
                     : specLines;
 
-        convertedText = converted.flatMap(line => reflowLines(line)).join(ibmi.getEOL());
+        convertedText = converted.flatMap(line => formatRPGIV(line)).join(ibmi.getEOL());
       }
 
       const eol = ibmi.getEOL();  // e.g., '\n' or '\r\n'
@@ -130,7 +134,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const convertedExtraDCL = extraDCLs.map(block => ({
       insertAt: block.insertAt,
-      lines: block.lines.flatMap(line => reflowLines(line))
+      lines: block.lines.flatMap(line => formatRPGIV(line))
     }));
 
     // Apply main edits

@@ -21,31 +21,35 @@ export function splitLines(text: string): string[] {
 export function log(message: any) {
   console.log(message);
 }
-
 export function getCol(line: string | null | undefined, from: number, to?: number): string {
   if (!line || from < 1) return '';
+  line = line.padEnd(80, ' ');
   const end = to ?? from; // default 'to' to 'from' if not provided
   if (end < from) return '';
-  return line.substring(from - 1, end).trim();
+  return line.substring(from - 1, end);
 }
+
 export function getColUpper(line: string | null | undefined, from: number, to?: number): string {
   if (!line || from < 1) return '';
-  const end = to ?? from; // default 'to' to 'from' if not provided
+  line = line.padEnd(80, ' ');
+  const end = to ?? from;
   if (end < from) return '';
-  return line.substring(from - 1, end).trim().toUpperCase();
+  return line.substring(from - 1, end).toUpperCase();
 }
+
 export function getColLower(line: string | null | undefined, from: number, to?: number): string {
   if (!line || from < 1) return '';
-  const end = to ?? from; // default 'to' to 'from' if not provided
+  line = line.padEnd(80, ' ');
+  const end = to ?? from;
   if (end < from) return '';
-  return line.substring(from - 1, end).trim().toLowerCase();
+  return line.substring(from - 1, end).toLowerCase();
 }
 
 export function getSpecType(line: string): string {
   return line.length >= 6 ? line[5].toLowerCase() : '';
 }
 export function getDclType(line: string): string {
-  return getColUpper(line, 24, 25);
+  return getColUpper(line, 24, 25).trim();
 }
 
 export function convertCmt(line: string): string {
@@ -68,9 +72,9 @@ export function convertCmt(line: string): string {
 }
 
 export function isComment(line: string): boolean {
-  let isComment = getCol(line, 7).trim() === '*';
+  let isComment = (line.length > 5 && line[5] != ' ') && getCol(line, 7).trim() === '*';
   if (isComment || getCol(line, 8, 80).trimStart().startsWith('//') ||
-      getCol(line, 1, 80).trimStart().startsWith('//')) {
+    getCol(line, 1, 80).trimStart().startsWith('//')) {
     return true;
   }
   return false;
@@ -126,12 +130,8 @@ export function insertExtraDCLLinesBatch(
         const candidate = allLines[insertAfterLine].trim();
 
         // Skip blank or comment lines
-        let isComment = (candidate.trim().startsWith('//'));
-        if (!isComment) {
-          isComment = candidate.length > 6 && candidate[6] === '*';
-        }
 
-        if (candidate === '' || isComment) {
+        if (candidate === '' || isComment(candidate)) {
           insertAfterLine--;
         } else {
           break;
@@ -143,7 +143,7 @@ export function insertExtraDCLLinesBatch(
       for (let i = currentLineIndex; i >= 0; i--) {
         const line = allLines[i];
         if (!line || line.trim() === '') continue;
-        if (line.trim().startsWith('//')) continue;
+        if (isComment(line)) continue;
 
         const specType = line[5]?.toLowerCase?.() || '';
         // Note: Input specs must appear after D specs/DCL-DS/DCL-S specs.
@@ -160,13 +160,26 @@ export function insertExtraDCLLinesBatch(
         }
       }
     }
-    const position = new vscode.Position(insertAfterLine + 1, 0);
-    const text = extraDCL.join(getEOL()) + getEOL();
-    insertData.push({ position, text });
-  }
+    const uniqueDCL = [...new Set(extraDCL)];
+    const filteredDCL = uniqueDCL.filter(line => {
+      const varName = getDclVarName(line);
+      return !(varName && isVarDcl(varName));
+    });
 
+    if (filteredDCL.length > 0) {
+      const position = new vscode.Position(insertAfterLine + 1, 0);
+      const text = filteredDCL.join(getEOL()) + getEOL();
+      insertData.push({ position, text });
+    }
+  }
+  const seen = new Set<string>();
+  const uniqueData = insertData.filter(item => {
+    if (seen.has(item.text)) return false;
+    seen.add(item.text);
+    return true;
+  });
   return editor.edit(editBuilder => {
-    for (const { position, text } of insertData) {
+    for (const { position, text } of uniqueData) {
       editBuilder.insert(position, text);
     }
   });
@@ -177,9 +190,7 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
   for (let i = startIndex + 1; i < allLines.length; i++) {
     const line = allLines[i];
     if (!line || line.trim() === '') continue;
-    if (ibmi.isComment(line)) continue;
-    const isComment = line.length > 6 && line[6] === '*';
-    if (isComment) continue; // Skip comment lines
+    if (isComment(line)) continue;
     const directive = getColUpper(line, 7, 32).trim();
 
     if ( // Check for control directives such as /title, /space, /ejext, etc.
@@ -193,39 +204,30 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
     }
 
     const specType = line[5]?.toLowerCase?.() || '';
-    const legacyDSpec = line.length > 5 && !["d"].includes(specType);
+    const legacyDSpec = (specType === 'd');
+    const bValidDefn = isValidFixedDefnLine(line);
     const freeForm = getColUpper(line, 8, 25);
     const freeForm2 = getColUpper(line, 1, 80);
     const extType = getColUpper(line, 22);  // Get column 22 Ext Type
     const PSDS = getColUpper(line, 23);  // Get column 23 PSDS Flag
-    const dclType = getColUpper(line, 24, 25);  // Get column 24-25 DCL Type
+    const dclType = getColUpper(line, 24, 25).trim();  // Get column 24-25 DCL Type
     const col2627 = getColUpper(line, 26, 27);  // Get column 36-27 should be empty
 
-    if (legacyDSpec || col2627.trim()==='') {  // If fixed format D spec, then see if it is also a DS, S, or C type.
-      if (dclType?.trim() && ["DS", "S", "C","PI","PR"].includes(dclType)) {
-        // stop here and return this line number.
-        break;
+    if (legacyDSpec && bValidDefn &&
+      dclType?.trim() && ["DS", "S", "C", "PI", "PR"].includes(dclType)) {
+      // stop here and return this line number.
+      break;
+    }
+    if (!isSpecEmpty(line) && !isValidOpcode(line)) {
+      const dclTypes = ["DS", "S", "C", "PR", "PI", "PARM", "SUBF"];
+      const isDCLorSubItem = isFreeFormDclType(freeForm, dclTypes) || isFreeFormDclType(freeForm2, dclTypes);
+      const dclParmSubf = ["PARM", "SUBF"];
+      const isParmOrSubfield = isFreeFormDclType(freeForm, dclParmSubf)
+      if ((isDCLorSubItem && !isParmOrSubfield) || isFreeFormCalcStmt(line)) {
+        break; // Insert just before this line
       }
+      insertPoint = i;
     }
-    const isDCLorSubItem =
-      freeForm.startsWith('DCL-S') ||
-      freeForm.startsWith('DCL-C') ||
-      freeForm.startsWith('DCL-DS') ||
-      freeForm.startsWith('DCL-PI') ||
-      freeForm.startsWith('DCL-PR') ||
-      freeForm.startsWith('DCL-PARM') ||
-      freeForm2.startsWith('DCL-S') ||
-      freeForm2.startsWith('DCL-C') ||
-      freeForm2.startsWith('DCL-DS') ||
-      freeForm2.startsWith('DCL-PI') ||
-      freeForm2.startsWith('DCL-PR') ||
-      freeForm2.startsWith('DCL-PARM') ||
-      directive.startsWith('/ENDIF')
-
-    if (isDCLorSubItem || isFreeFormCalcStmt(line)) {
-      break; // Insert just before this line
-    }
-    insertPoint = i;
   }
 
   return insertPoint;
@@ -242,12 +244,14 @@ function isFreeFormCalcStmt(line: string): boolean {
   }
 
   // Split the line into tokens by space
-  const tokens = trimmedLine.split(/\s+/);  // Regular split by spaces
+  const tokens = trimmedLine.split(/\s+|\(/);  // Regular split by spaces
 
   const firstToken = tokens[0].toUpperCase().replace(/[^A-Z0-9]/g, ''); // Get first token and clean it
 
   // Check if the first token is a valid opcode (skip control structures)
-  if (isValidOpcode(firstToken)) return true;
+  if (isValidOpcode(firstToken)) {
+    return true;
+  }
 
   // Check for the presence of assignment or function call
   const splitIndex = trimmedLine.indexOf('=');  // Check for assignment operator
@@ -266,7 +270,7 @@ function isFreeFormCalcStmt(line: string): boolean {
 
 // Extracts the opcode from a C-spec line
 export function getOpcode(line: string): string {
-  return getColUpper(line.padEnd(80, ' '), 26, 35);
+  return getColUpper(line.padEnd(80, ' '), 26, 35).trim();
 }
 
 export function isOpcodeIFxx(line: string): boolean {
@@ -277,8 +281,19 @@ export function isOpcodeIFxx(line: string): boolean {
 
 export function isOpcodeWHENxx(line: string): boolean {
   const opcode = getOpcode(line);
+  if (isComment(line)) return false;
+  return /^WHEN(EQ|NE|GT|LT|GE|LE)$/.test(opcode) || opcode === 'OTHER';
+}
+
+export function isOpcodeSELECT(line: string): boolean {
+  const opcode = getOpcode(line);
   // Only matches WHEN followed by a valid boolean operator
-  return (isComment(line)) ? false : /^WHEN(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
+  return (isComment(line)) ? false : (opcode.toUpperCase() === 'SELECT');
+}
+export function isOpcodeWHENStart(line: string): boolean {
+  const opcode = getOpcode(line);
+  // Only matches WHEN followed by a valid boolean operator
+  return (isComment(line)) ? false : (opcode.toUpperCase() === 'SELECT');
 }
 
 export function isOpcodeANDxxORxx(line: string): boolean {
@@ -294,17 +309,17 @@ export function isCASEOpcode(line: string): boolean {
 }
 
 export function isStartBooleanOpcode(line: string): boolean {
-  return ( isNotComment(line) &&
-  (isOpcodeIFxx(line) ||
-   isOpcodeWHENxx(line))
+  return (isNotComment(line) &&
+    (isOpcodeIFxx(line) ||
+      isOpcodeSELECT(line))
   );
 }
 
 export function isBooleanOpcode(line: string): boolean {
-  return ( isNotComment(line) &&
+  return (isNotComment(line) &&
     (isOpcodeIFxx(line) ||
-    isOpcodeWHENxx(line) ||
-    isOpcodeANDxxORxx(line))
+      isOpcodeWHENxx(line) ||
+      isOpcodeANDxxORxx(line))
   );
 }
 
@@ -362,4 +377,120 @@ export function isExtOpcode(opcode: string): boolean {
   ]);
   const normalized = opcode.toUpperCase().replace(/\(.*\)$/, ""); // strip off Operation Extender (if any)
   return extOpcodes.has(opcode.toUpperCase());
+}
+
+function isFreeFormDclType(line: string, types: string[]): boolean {
+  const trimmed = line.trimStart();  // Remove leading spaces
+  const pattern = types.map(type => `DCL-${type}`).join('|');
+  const regex = new RegExp(`^(${pattern})\\b`, 'i');  // Word boundary to avoid DCL-SUBF, etc.
+  return regex.test(trimmed);
+}
+
+export function dNameContinues(line: string): boolean {
+  // Check if the line ends with '...'
+  if (!line.trimEnd().endsWith('...')) return false;
+
+  // Scan columns 7 to 21 to find the first non-blank character (start of name)
+  let startCol = -1;
+  for (let i = 7; i <= 21; i++) {
+    const char = ibmi.getCol(line, i, i);
+    if (char !== ' ') {
+      startCol = i;
+      break;
+    }
+  }
+
+  // No name found starting in 7 to 21 → not a continuation
+  if (startCol === -1) return false;
+
+  // Extract from startCol to column 80
+  const namePart = ibmi.getCol(line, startCol, 80).trimEnd();
+
+  // Must end with '...'
+  if (!namePart.endsWith('...')) return false;
+
+  // Remove '...' and validate the rest is strictly alphanumeric or underscore
+  const namePrefix = namePart.slice(0, -3);
+  return /^[A-Za-z0-9_]+$/.test(namePrefix);
+}
+
+export function dKwdContinues(line: string): boolean {
+  // Keyword area is columns 44 to 80
+  const kwdArea = ibmi.getCol(line, 44, 80).trimEnd();
+
+  if (kwdArea === '') return false;
+
+  // Case 1: Quoted literal continued with + or -
+  const lastChar = kwdArea.charAt(kwdArea.length - 1);
+  if (lastChar === '+' || lastChar === '-') return true;
+
+  // Case 2: Identifier (name) continued with ...
+  if (kwdArea.endsWith('...')) {
+    const base = kwdArea.slice(0, -3);
+    // Check that it's a valid name: A-Z, 0-9, _
+    return /^[A-Za-z0-9_]+$/.test(base);
+  }
+
+  return false;
+}
+
+
+export function isJustKwds(line: string): boolean {
+  // Keyword area is columns 44 to 80
+  const kwdArea = ibmi.getCol(line, 44, 80).trimEnd();
+  const nameDefnArea = ibmi.getCol(line, 7, 43).trimEnd();
+  if (kwdArea === '') return false;
+  // Case 1: Quoted literal continued with + or -
+  return kwdArea.length > 0 && nameDefnArea.length === 0;
+}
+
+export function isValidFixedDefnLine(curLine: string): boolean {
+  let bValidDefn = false;
+  if (dNameContinues(curLine)) return false;
+  const col6 = ibmi.getColUpper(curLine, 6)
+  if (col6 !== 'D') return false;
+  const dclType = ibmi.getDclType(curLine).toLowerCase();
+  const hasName = ibmi.getCol(curLine, 7, 21).trim().length > 0;
+  const isExtSubfield = (ibmi.getCol(curLine, 22).toUpperCase() === 'E');
+  const hasType = ibmi.getCol(curLine, 23, 25).trim().length > 0;
+  const hasAttr = ibmi.getCol(curLine, 26, 43).trim().length > 0;
+
+  if ((["ds", "pr", "pi", "s", "c"].includes(dclType)) || isExtSubfield || ((hasName || hasType) && hasAttr)) {
+    bValidDefn = true;
+  }
+
+  return bValidDefn;
+}
+export function isSpecEmpty(line: string): boolean {
+
+  const codeArea = ibmi.getCol(line, 7, 80).trimEnd().toLowerCase();
+  const col6 = ibmi.getCol(line, 6);
+  if (codeArea.trimEnd().length <= 6 || (codeArea.trimEnd().length === 7 && codeArea[6] === '*')) return true;
+  return false;
+}
+
+export function getDclVarName(line: string): string | null {
+  // Match optional spaces, case-insensitive dcl-s, then the variable name (identifier)
+  const match = line.match(/^\s*dcl-s\s+([A-Z0-9_#$@]+)\b/i);
+  return match ? match[1] : null;
+}
+
+export function isVarDcl(name: string): boolean {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) return false;
+
+  const doc = editor.document;
+  const fromLine = editor.selection.active.line;
+
+  for (let i = fromLine - 1; i >= 0; i--) {
+    const line = doc.lineAt(i).text;
+    if (
+      line.match(new RegExp(`\\b${name}\\b`, 'i')) &&
+      /^\s*dcl-s/i.test(line)
+    ) {
+      return true;
+    }
+  }
+
+  return false;
 }
