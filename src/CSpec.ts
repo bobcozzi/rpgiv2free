@@ -1,6 +1,8 @@
 
 import * as vscode from 'vscode';
 import * as ibmi from './IBMi';
+import * as op from './opcodes';
+
 
 type OpcodeEnhancement = {
   opcode: string;
@@ -31,14 +33,6 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
   const resInd3 = ibmi.getCol(line, 75, 76).trim();
   let extFactor2 = ibmi.getCol(line, 36, 80).trim();
 
-
-
-  // If 7–35 are blank, treat as a keyword line
-  const preOpcode = ibmi.getCol(line, 7, 35).trim();
-  if (preOpcode === '') {
-    return [ibmi.getCol(line, 35).trim()];
-  }
-
   let freeFormLine: string[] = [];
 
   if (ibmi.isExtOpcode(opcode)) {
@@ -55,15 +49,14 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
       opcode = "";  // EVAL/callp is not needed in free-form
     }
     freeFormLine.push(`${opcode.toLowerCase()} ${extFactor2}`);
-  } else {
+  } else if (!ibmi.isUnsuppotedOpcode(opcode)) {
     // Common 3-operand statement: result = factor1 opcode factor2;
     const enhValues: OpcodeEnhancement = enhanceOpcode(opcode, factor1, factor2, result, length, decimals, resInd1, resInd2, resInd3);
+
     let reformattedLine: string[] = [];
-    if (opcode === 'CAT') {
-      reformattedLine = convertCAT(opcode, factor1, factor2, result, extraDCL);
-    }
-    else {
-      reformattedLine = reformatOpcode(
+
+    ({ newLines: reformattedLine, newOpcode: enhValues.opcode } =
+      convertOpcodeToFreeFormat(
         opcode,
         factor1,
         factor2,
@@ -74,8 +67,8 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
         resInd2,
         resInd3,
         extraDCL
-      );
-    }
+      ));
+
     if (reformattedLine.length > 0) {
       freeFormLine.push(...reformattedLine);
     } else {
@@ -83,7 +76,7 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
     }
     if (extraDCL.length === 0 && length.trim() !== '') {
       const dataType = (decimals.trim() !== '') ? `packed(${length}:${decimals})` : `char(${length})`;
-      extraDCL.push(` dcl-s ${result} ${dataType}; // Calc Spec work field`);
+      extraDCL.push(` dcl-s ${result} ${dataType}; // Calc Spec work-field`);
     }
     const addlLines = handleResultingIndicators(
       enhValues.opcode,
@@ -154,7 +147,7 @@ export function enhanceOpcode(
   const uniqueExtenders = [...new Set(extenders)];
   const newOpcode =
     uniqueExtenders.length > 0
-      ? `${baseOpcode}(${uniqueExtenders.join("")})`
+      ? `${baseOpcode}(${uniqueExtenders.join(" ")})`
       : baseOpcode;
 
   return {
@@ -165,7 +158,7 @@ export function enhanceOpcode(
   };
 }
 
-function reformatOpcode(
+function convertOpcodeToFreeFormat(
   opcode: string,
   factor1: string,
   factor2: string,
@@ -175,17 +168,17 @@ function reformatOpcode(
   resInd2: string,
   resInd3: string,
   extraDCL: string[]
-): string[] {
+): { newLines: string[], newOpcode: string } {
 
 
   // First try the conditional opcode logic
   const condLines = convertConditionalOpcode(opcode, factor1, factor2);
-  if (condLines.length > 0) return condLines;
-
+  if (condLines.length > 0) return { newLines: condLines, newOpcode: opcode};
+  const fullOpcode = opcode.toUpperCase();
   const opCode = opcode.toUpperCase().replace(/\(.*\)$/, "");
   const newLines: string[] = [];
   let freeFormat = '';
-  const caseMatch = opCode.match(/^(CAS)(EQ|NE|LT|LE|GT|GE)$/);
+  let newOpcode = opCode;
 
   switch (opCode.toUpperCase()) {
     case "Z-ADD":
@@ -197,6 +190,14 @@ function reformatOpcode(
       break;
     case "END":
       freeFormat = `${opCode}xx; // "END" opcode deprecated. Use ENDxx (e.g., ENDIF, ENDDO, etc.)`;
+      break;
+    case 'SUBST':
+      newLines.push(...op.convertSUBST(fullOpcode, factor1, factor2, result, extraDCL));
+      newOpcode = '';
+      break;
+    case 'CHECK':
+      newLines.push(...op.convertCHECK(fullOpcode, factor1, factor2, result, extraDCL));
+      newOpcode = '';
       break;
     case "ENDSR":
       if (factor2.trim() !== '') {
@@ -293,22 +294,20 @@ function reformatOpcode(
           newDEFN = ` dcl-s ${result} LIKE(${factor2})`;
         }
       } else if (factor1.toUpperCase() === '*DTAARA') { // Handle *DTAARA DEFN here
+        newDEFN = ` dcl-ds ${result}`;
         if (length.trim() !== '') {
           if (decimals.trim() !== '') {
-            newDEFN = ` dcl-ds ${result} packed(${length}:${decimals})`
+            newDEFN += ` ${result} packed(${length}:${decimals})`
           }
           else {
-            newDEFN = ` dcl-ds ${result} char(${length} : ${length})`;
+            newDEFN += ` ${result} char(${length} : ${length})`;
           }
         }
-        else {
-          newDEFN = ` dcl-ds ${result}`;
-        }
         if (!factor2) {
-          newDEFN += `DTAARA;`;
+          newDEFN += ` DTAARA;`;
         }
         else {
-          newDEFN += `DTAARA('${factor2.toUpperCase()}');`;
+          newDEFN += ` DTAARA('${factor2.toUpperCase()}');`;
         }
       }
       newDEFN +=
@@ -345,7 +344,7 @@ function reformatOpcode(
       // handle unrecognized opcode
       break;
   }
-  return newLines;
+  return { newLines: newLines, newOpcode: newOpcode};;
 }
 
 function handleResultingIndicators(
@@ -362,6 +361,14 @@ function handleResultingIndicators(
   const newLines: string[] = [];
 
   switch (normalizedOpcode) {
+    case '':  // default is no Ind1, ind2=Error, ind2 = %Found()
+    if (resInd3) {
+        newLines.push(`*IN${resInd3} = %FOUND();`);
+      }
+      if (resInd2) {
+        newLines.push(`*IN${resInd2} = %ERROR();`);
+      }
+      break;
     case "ADD":
     case "SUB":
     case "MULLT":
@@ -474,57 +481,4 @@ function convertConditionalOpcode(
     }
   }
   return [];
-}
-
-function convertCAT(
-  opcode: string,
-  factor1: string,
-  factor2: string,
-  result: string,
-  extraDCL: string[]
-): string[] {
-  const lines: string[] = [];
-
-  // === Extract Extender (e.g., from CAT(P)) ===
-  const extenderMatch = opcode.match(/\(([^)]+)\)/);
-  const extender = extenderMatch ? extenderMatch[1].toUpperCase() : '';
-  const hasP = extender.includes('P');
-
-  let exprParts: string[] = [];
-
-  // === Rule 1: If no Factor 1, use result field ===
-  const f1 = factor1.trim() ? `%TRIMR(${factor1.trim()})` : `%TRIMR(${result.trim()})`;
-  exprParts.push(f1);
-
-  // === Rule 2 + 3: Parse Factor 2 ===
-  let f2Expr = '';
-  if (factor2.includes(':')) {
-    const [leftRaw, rightRaw] = factor2.split(':');
-    const left = leftRaw.trim();
-    const right = rightRaw.trim();
-    const blanks = `'${' '.repeat(Number(right))}'`;
-    f2Expr = `${blanks} + ${left}`;
-  } else {
-    f2Expr = factor2.trim();
-  }
-
-  exprParts.push(f2Expr);
-
-  const fullExpr = exprParts.join(' + ');
-
-  if (hasP) {
-    // Rule: If extender (P), assign directly
-    lines.push(`${result} = ${fullExpr};`);
-  } else {
-    // Rule: If no extender (P), wrap in %SUBST
-    const lenVar = `CAT_LEN_RPGIV2FREE`;
-    lines.push(`${lenVar} = %LEN(${fullExpr});  // workfield ${lenVar} for CAT opcode`);
-    lines.push(`${lenVar} = %MIN(${lenVar} : %LEN(${result})); // Avoid overlow error`);
-    lines.push(`%SUBST(${result} : 1 : ${lenVar}) = ${fullExpr};`);
-    if (!ibmi.isVarDcl(lenVar)) { // If not already declared, declare work field
-      extraDCL.push(`DCL-S ${lenVar} INT(10); // Ad hoc length field used by CAT opcode `);
-      }
-  }
-
-  return lines;
 }

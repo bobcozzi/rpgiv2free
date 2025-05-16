@@ -13,7 +13,7 @@ export function getVarName(lines: string[], startIndex = 0): { varName: string, 
       nameParts.push(nameChunk.slice(0, -3));
       i++;
     } else {
-      // If it's the first line and not a long name continuation, fall back to default logic
+      // If it's the first line or not a long name continuation, fall back to default logic
       if (i === startIndex) {
         return { varName: '', nextIndex: startIndex };
       }
@@ -29,7 +29,12 @@ export function getVarName(lines: string[], startIndex = 0): { varName: string, 
 }
 
 // Function to convert D specs from fixed-format to free-format
-export function convertDSpec(lines: string[], entityName: string | null, extraDCL: string[] | null): string[] {
+export function convertDSpec(lines: string[],
+  entityName: string | null,
+  extraDCL: string[] | null,
+  allLines: string[],
+  curLineIndex: number
+): string[] {
 
   ibmi.log(`convertDSpec called. Lines: ${lines?.length ?? 'undefined'}`);
 
@@ -84,7 +89,7 @@ export function convertDSpec(lines: string[], entityName: string | null, extraDC
     if (fromPos.charAt(0) === '*') {
       const specPos = fromPos + toPosOrLen;
       fieldType = `pos(${specPos.trim()})`;
-      }
+    }
     else if (/^\d+$/.test(decPos)) {
       if (dclType === 'S') {
         fieldType = `packed(${toPosOrLen}:${decPos || '0'})`;
@@ -184,7 +189,7 @@ export function convertDSpec(lines: string[], entityName: string | null, extraDC
       }
       decl = `${varName} ${fieldType}${kwdArea ? ' ' + kwdArea : ''}`.trim(); break;
   }
-
+  decl = convertOverlayToPos(decl, allLines, curLineIndex);
   return [decl];
 }
 
@@ -470,4 +475,57 @@ export function combineKwdAreaLines(lines: string[]): string {
   }
 
   return kwdArea.trimEnd();
+}
+
+export function convertOverlayToPos(
+  sourceLine: string,
+  fullSource: string[],
+  currentLineIndex: number
+): string {
+  const overlayRegex = /overlay\s*\(\s*([a-zA-Z0-9_]+)\s*(?::\s*([0-9]+))?\s*\)/i;
+  const match = overlayRegex.exec(sourceLine);
+
+  if (!match) return sourceLine; // No OVERLAY() found
+
+  const [fullMatch, overlayTarget, overlayOffset] = match;
+  const targetName = overlayTarget.toLowerCase();
+  let nameToken = '';
+  // Search backwards for matching D-spec or DCL-DS
+  for (let i = currentLineIndex - 1; i >= 0; i--) {
+    const line = fullSource[i].trimEnd().toLowerCase();
+    nameToken = '';
+    let lastIndex = 0;
+    if (ibmi.isNotComment(line)) {
+      if (ibmi.getSpecType(line) === 'd') {
+        if (ibmi.getDclType(line).toLowerCase() === 'ds') {
+          if (line.trimEnd().endsWith('...')) {
+            ({ varName: nameToken, nextIndex: lastIndex } = getVarName(fullSource, i));
+          }
+          else {
+            nameToken = ibmi.getCol(line, 7, 21).trim();
+          }
+          break;
+        }
+      }
+      else if (line.trimStart().startsWith('dcl-ds')) {
+        if (line.trimEnd().endsWith('...')) {
+          ({ varName: nameToken, nextIndex: lastIndex } = getVarName(fullSource, i));
+        }
+        else {
+          const match = line.match(/\bdcl-ds\s+([a-zA-Z0-9_]+)/i);
+          nameToken = match ? match[1] : '';
+        }
+        break;
+      }
+    }
+  }
+
+  if (nameToken === targetName) {
+    const posValue = overlayOffset || '1';
+    return sourceLine.replace(overlayRegex, `pos(${posValue})`);
+  }
+
+
+  // No matching DS found, return original
+  return sourceLine;
 }

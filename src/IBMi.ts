@@ -91,7 +91,8 @@ export function getRPGIVFreeSettings() {
     indentFirstLine: config.get<number>('indentFirstLine', 10),
     indentContLines: config.get<number>('indentContinuedLines', 12),
     maxWidth: config.get<number>('maxFreeFormatLineLength', 76),
-    addEXTDEVFLAG: config.get<boolean>('AddEXTDeviceFlag', true)
+    addEXTDEVFLAG: config.get<boolean>('AddEXTDeviceFlag', true),
+    tempVarName1: config.get<string>('tempVarName1',"rpg2ff_temp1")
   };
 }
 
@@ -350,6 +351,18 @@ export function isValidOpcode(id: string): boolean {
   return rpgOpcodes.has(baseOpcode);
 }
 
+export function isUnsuppotedOpcode(id: string): boolean {
+  // List of valid opcodes (operation extenders not included)
+  const oldRPGOpcodes = new Set([
+    "CALL", "PARM", "KLIST", "KFLD","FREE","DEBUG"
+  ]);
+   // Strip off operation extenders like "(EHMR)" from the ID
+  const baseOpcode = id.replace(/\([A-Z]+\)$/i, "").toUpperCase();
+
+  return oldRPGOpcodes.has(baseOpcode);
+}
+
+
 // Is an OpCode that supports the Extended Factor 2 syntax?
 export function isExtOpcode(opcode: string): boolean {
   const extOpcodes = new Set([
@@ -375,7 +388,7 @@ export function isExtOpcode(opcode: string): boolean {
     "XML-INTO",
     "XML-SAX"
   ]);
-  const normalized = opcode.toUpperCase().replace(/\(.*\)$/, ""); // strip off Operation Extender (if any)
+  const normalized = opcode.toUpperCase().trim().replace(/\(.*\)$/, ""); // strip off Operation Extender (if any)
   return extOpcodes.has(opcode.toUpperCase());
 }
 
@@ -462,10 +475,9 @@ export function isValidFixedDefnLine(curLine: string): boolean {
   return bValidDefn;
 }
 export function isSpecEmpty(line: string): boolean {
-
-  const codeArea = ibmi.getCol(line, 7, 80).trimEnd().toLowerCase();
-  const col6 = ibmi.getCol(line, 6);
-  if (codeArea.trimEnd().length <= 6 || (codeArea.trimEnd().length === 7 && codeArea[6] === '*')) return true;
+  const codeArea = ibmi.getCol(line, 7, 80).trimEnd();
+  const col6 = ibmi.getSpecType(line);
+  if (codeArea === '' || isComment(line)) return true;
   return false;
 }
 

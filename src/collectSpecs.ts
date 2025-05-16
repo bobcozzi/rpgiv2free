@@ -1,12 +1,14 @@
+
 import { collectSQLBlock } from './SQLSpec';
 import { collectBooleanOpcode } from './collectBoolean';
 import { collectHSpecs } from './collectHSpec';
 import { collectDSpecs } from './collectDSpec';
 import { collectComments } from './collectComments';
 import { collectCaseOpcode } from './collectCASEBlock';
+import { collectExtOpcode } from './collectExtOpcode';
+
 import * as ibmi from './IBMi';
 import * as vscode from 'vscode';
-
 
 export { }; // forces module scope
 
@@ -55,7 +57,7 @@ export function collectStmt(
   if (ibmi.isComment(startLine)) { // Converting a block of comments?
     const cmtBlock = collectComments(allLines, startIndex);
     return {
-    entityName: null,  // No entity name for SQL blocks
+      entityName: null,  // No entity name for SQL blocks
       lines: cmtBlock.lines,
       indexes: cmtBlock.indexes,
       comments: comments.length > 0 ? comments : null,
@@ -94,7 +96,7 @@ export function collectStmt(
     }
   }
 
-  if (curSpec === 'c') {
+  if (curSpec === 'c' && !ibmi.isUnsuppotedOpcode(ibmi.getOpcode(startLine))) {
     if (ibmi.isBooleanOpcode(startLine)) {
       // Handle boolean opcode lines separately
       const booleanOpcodeResult = collectBooleanOpcode(allLines, startIndex);
@@ -114,6 +116,21 @@ export function collectStmt(
         lines: caseOpcodeResult.lines,
         indexes: caseOpcodeResult.indexes,
         comments: comments.length > 0 ? comments : null,
+        isSQL: false,
+        isBOOL: false,
+      };
+    } else if (ibmi.isExtOpcode(ibmi.getOpcode(startLine)) ||
+      ibmi.getCol(startLine, 8, 35).trim() == '') {
+      // if Calc spec and Extended Factor 2 opcode or nothing in Factor 1 or Opcode, then
+      // this is a continued Extended Factor 2 spec. So read backwards
+      // until we find an opcode or any free format statement.
+      // Handle CASE/CASxx blocks
+      const extF2 = collectExtOpcode(allLines, startIndex);
+      return {
+        entityName: null,
+        lines: extF2.lines,
+        indexes: extF2.indexes,
+        comments: extF2.comments.length > 0 ? extF2.comments : null,
         isSQL: false,
         isBOOL: false,
       };
@@ -235,11 +252,11 @@ export function collectStmt(
   while (index < allLines.length) {
     const totalLines = allLines.length;
 
-// Previous line (only if index > 0)
+    // Previous line (only if index > 0)
     const prevLine = index > 0 ? allLines[index - 1].padEnd(80, ' ') : '';
-// Current line
+    // Current line
     const line = allLines[index]?.padEnd(80, ' ') ?? '';
-// Next line (only if index + 1 < totalLines)
+    // Next line (only if index + 1 < totalLines)
     const nextLine = index + 1 < totalLines ? allLines[index + 1].padEnd(80, ' ') : '';
 
     if (ibmi.isComment(line)) {
@@ -296,18 +313,18 @@ export function collectStmt(
 
 
     // ✅ Only collect lines after the full name is known, or in edge cases
-    if (finalNameLineFound || ((["d", "p"].includes(curSpec)) && namePartTrimmed === '' && attr22to43 !== '') ) {
-        collectedIndexes.add(index);
-        collectedLines.push(line);
+    if (finalNameLineFound || ((["d", "p"].includes(curSpec)) && namePartTrimmed === '' && attr22to43 !== '')) {
+      collectedIndexes.add(index);
+      collectedLines.push(line);
     }
 
-      // Continued F spec?
-      if (curSpec === 'f' &&
-        ((index === start) || (fSpecKwd.length > 0 && fSpecCont.length === 0))) {
-        // Stop here if the nextLine is a F-spec with keyword
-        collectedIndexes.add(index);
-        collectedLines.push(line);
-      }
+    // Continued F spec?
+    if (curSpec === 'f' &&
+      ((index === start) || (fSpecKwd.length > 0 && fSpecCont.length === 0))) {
+      // Stop here if the nextLine is a F-spec with keyword
+      collectedIndexes.add(index);
+      collectedLines.push(line);
+    }
 
     // Check if the next line begins a new declaration or new opcode
 
@@ -315,7 +332,7 @@ export function collectStmt(
 
     const bStartNewLine = isStartOfNewEntity(nextLine, curSpec);
     if ((finalNameLineFound || (curSpec === 'c') && !ibmi.isComment(nextLine)) &&
-      nextLine.trim()!== '' && bStartNewLine) {
+      nextLine.trim() !== '' && bStartNewLine) {
       break;
     }
 

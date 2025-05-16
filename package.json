@@ -6,7 +6,7 @@
   "preview": true,
   "private": false,
   "publisher": "CozziResearch",
-  "version": "0.5.9",
+  "version": "0.6.0",
   "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0"
@@ -90,6 +90,11 @@
           "type": "boolean",
           "default": true,
           "description": "Add *EXT to DISK, WORKSTN, etc. when converting externally described files."
+        },
+        "rpgiv2free.tempVarName1": {
+          "type": "string",
+          "default": "rpg2ff_tempVar1",
+          "description": "Temp/Workfield name to generate for CAT, SUBST etc, opcode conversions."
         }
       }
     }

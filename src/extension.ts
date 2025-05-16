@@ -103,7 +103,7 @@ export function activate(context: vscode.ExtensionContext) {
         const converted =
           specType === 'h' ? convertHSpec(specLines)
             : specType === 'f' ? convertFSpec(specLines)
-              : specType === 'd' ? convertDSpec(specLines, entityName, extraDCL)
+              : specType === 'd' ? convertDSpec(specLines, entityName, extraDCL, allLines, i)
                 : specType === 'p' ? convertPSpec(specLines, entityName)
                   : specType === 'c' ? convertCSpec(specLines, extraDCL)
                     : specLines;
@@ -123,8 +123,9 @@ export function activate(context: vscode.ExtensionContext) {
       const lastLineText = doc.lineAt(indexes[indexes.length - 1]).text;
       const rangeEnd = new vscode.Position(indexes[indexes.length - 1], lastLineText.length);
       const rangeToReplace = new vscode.Range(rangeStart, rangeEnd);
-
-      edits.push({ range: rangeToReplace, text: convertedText });
+      if (convertedText) {
+        edits.push({ range: rangeToReplace, text: convertedText });
+      }
 
       indexes.forEach(idx => processedLines.add(idx));
       if (extraDCL.length > 0) {
