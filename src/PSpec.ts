@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as ibmi from './IBMi';
-import { getVarName, combineKwdAreaLines } from './DSpec'; // borrow some DSpec functions
+import { combineKwdAreaLines } from './DSpec'; // borrow some DSpec functions
 
 // Function to convert D specs from fixed-format to free-format
 export function convertPSpec(lines: string[], entityName: string | null): string[] {

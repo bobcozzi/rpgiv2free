@@ -20,21 +20,24 @@ export function convertCAT(
   let exprParts: string[] = [];
 
   // === Rule 1: If no Factor 1, use result field ===
-  const f1 = factor1.trim() ? `%TRIMR(${factor1.trim()})` : `%TRIMR(${result.trim()})`;
-  exprParts.push(f1);
+  let f1 = '';
 
   // === Rule 2 + 3: Parse Factor 2 ===
   let f2Expr = '';
+  let hasBlanks = false;
   if (factor2.includes(':')) {
     const [leftRaw, rightRaw] = factor2.split(':');
     const left = leftRaw.trim();
     const right = rightRaw.trim();
     const blanks = `'${' '.repeat(Number(right))}'`;
     f2Expr = `${blanks} + ${left}`;
+    hasBlanks = true;
+    f1 = factor1.trim() ? `%TRIMR(${factor1.trim()})` : `%TRIMR(${result.trim()})`;
   } else {
     f2Expr = factor2.trim();
+    f1 = factor1.trim() ? `${factor1.trim()}` : `${result.trim()}`;
   }
-
+  exprParts.push(f1);
   exprParts.push(f2Expr);
 
   const fullExpr = exprParts.join(' + ');

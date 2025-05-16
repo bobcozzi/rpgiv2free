@@ -22,7 +22,7 @@ function extractComment(line: string): { code: string, comment: string | null } 
 
   return { code: line.trimEnd(), comment: null };
 }
-export const formatRPGIV = (input: string): string[] => {
+export const formatRPGIV = (input: string, splitOffComments: boolean = false): string[] => {
   const config = ibmi.getRPGIVFreeSettings();
   const firstIndentLen = config.indentFirstLine - 1;
   const contIndentLen = config.indentContLines - 1;
@@ -52,20 +52,26 @@ export const formatRPGIV = (input: string): string[] => {
     }
   };
 
-  const addToken = (token: string, addIndent = true) => {
-    if (currentLength + token.length + 1 > maxLength) {
+  const isSpecialPrefixToken = (token: string) => {
+    return token.startsWith('*') || token.startsWith('%');
+  };
+
+  const addToken = (token: string, tokenSpacer: string = '', addIndent = true) => {
+    const tokenLen = token.length + tokenSpacer?.length;
+    if (
+      currentLength + token.length + 1 > maxLength &&
+      !isSpecialPrefixToken(token)
+    ) {
       flushLine(true, addIndent);
     }
-    if (currentLength > contIndentLen) {
-      currentLine += ' ';
-      currentLength++;
-    }
-    currentLine += token;
-    currentLength += token.length;
+
+    currentLine += token + tokenSpacer;
+    currentLength += tokenLen;
   };
 
   const breakLongName = (name: string) => {
     const maxChunk = maxLength - contIndentLen - 3;
+
     let pos = 0;
     while (pos < name.length) {
       const chunkLen = Math.min(name.length - pos, maxChunk);
@@ -136,11 +142,12 @@ export const formatRPGIV = (input: string): string[] => {
     return parts;
   };
 
-   // Separate comment from code
+  // Separate comment from code
   const { code, comment } = extractComment(input);
-  const tokens = code.match(/'([^']|'')*'|[^\s]+/g) || [];
-  if (comment) {
-    result.push(indent(12) + comment);
+  // const tokens = code.match(/'([^']|'')*'|[^\s]+/g) || [];
+  const { tokens, spacers } = tokenizeWithSpacing(code);
+  if (comment && splitOffComments) {
+    result.push(indent(contIndentLen) + comment);
   }
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i];
@@ -150,12 +157,12 @@ export const formatRPGIV = (input: string): string[] => {
 
       // Determine if the full quoted string fits on the current line
       if (currentLength + token.length <= maxLength) {
-        addToken(token); // Add it as-is
+        addToken(token, spacers[i]); // Add it as-is
         continue;
       }
 
       const pieces = breakQuotedString(token, maxLength, contIndentLen);
-      pieces.forEach(part => addToken(part, false));
+      pieces.forEach(part => addToken(part, '', false));
       continue;
     }
 
@@ -167,16 +174,63 @@ export const formatRPGIV = (input: string): string[] => {
 
     // Everything else
     else {
-      addToken(token);
+      addToken(token, spacers[i]);
     }
   }
-
   flushLine();
 
   // Ensure semicolon terminates final statement
   if (result.length > 0 && !result[result.length - 1].trimEnd().endsWith(';')) {
     result[result.length - 1] = result[result.length - 1].trimEnd() + ';';
   }
+  if (comment && !splitOffComments) {
+    result.push(indent(contIndentLen) + comment);
+  }
 
   return result;
+}
+
+function tokenizeWithSpacing(line: string): { tokens: string[], spacers: string[] } {
+  const tokens: string[] = [];
+  const spacers: string[] = [];
+
+  const regex = /('([^']|'')*')|(?<![A-Z0-9])[*%][A-Z_][A-Z0-9_]*|[A-Z0-9_]+|[(){}\[\]+\-*/=<>:,;]|[^\sA-Z0-9_](?=\s*)|(\s*)/gi;
+
+  let match;
+  const tokenRegex = /('([^']|'')*')|(?<![A-Z0-9])[*%][A-Z_][A-Z0-9_]*|[A-Z0-9_]+|[(){}\[\]+\-*/=<>:,;]|[^\sA-Z0-9_]/gi;
+  const spacerRegex = /\s*/y;
+
+  let pos = 0;
+  while (pos < line.length) {
+    tokenRegex.lastIndex = pos;
+    const tokenMatch = tokenRegex.exec(line);
+    if (!tokenMatch) break;
+
+    const token = tokenMatch[0];
+    pos = tokenRegex.lastIndex;
+
+    spacerRegex.lastIndex = pos;
+    const spaceMatch = spacerRegex.exec(line);
+    const spaces = spaceMatch?.[0] ?? '';
+    pos = spacerRegex.lastIndex;
+
+    tokens.push(token);
+    spacers.push(spaces);
+  }
+
+  return { tokens, spacers };
+}
+
+function tokenizeWithSpacing1(line: string): { tokens: string[], spacers: string[] } {
+  const tokens: string[] = [];
+  const spacers: string[] = [];
+
+  const regex = /('([^']|'')*'|[A-Z0-9_]+|[%()\[\]+\-*/=<>:,;]|[^\s])(\s*)/gi;
+  let match;
+  while ((match = regex.exec(line)) !== null) {
+    tokens.push(match[1]);      // the actual token
+    spacers.push(match[3] ?? ''); // trailing spaces (or empty string)
+  }
+
+  return { tokens, spacers };
 }

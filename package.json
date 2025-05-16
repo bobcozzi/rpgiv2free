@@ -9,7 +9,8 @@
   "version": "0.6.0",
   "license": "SEE LICENSE in license.txt",
   "engines": {
-    "vscode": "^1.70.0"
+    "vscode": "^1.70.0",
+    "node": ">=16.0.0"
   },
   "keywords": [
     "ibmi",

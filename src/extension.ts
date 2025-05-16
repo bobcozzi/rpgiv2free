@@ -135,7 +135,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const convertedExtraDCL = extraDCLs.map(block => ({
       insertAt: block.insertAt,
-      lines: block.lines.flatMap(line => formatRPGIV(line))
+      lines: block.lines.flatMap(line => formatRPGIV(line,false))
     }));
 
     // Apply main edits

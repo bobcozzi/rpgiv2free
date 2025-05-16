@@ -72,7 +72,9 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
     if (reformattedLine.length > 0) {
       freeFormLine.push(...reformattedLine);
     } else {
-      freeFormLine.push(`${enhValues.opcode.toLowerCase()} ${enhValues.factor1} ${enhValues.factor2} ${enhValues.result};`);
+      const newLine = `${enhValues.opcode.toLowerCase()} ${enhValues.factor1} ${enhValues.factor2} ${enhValues.result}`;
+      freeFormLine.push(newLine.trimEnd() + ';');
+
     }
     if (extraDCL.length === 0 && length.trim() !== '') {
       const dataType = (decimals.trim() !== '') ? `packed(${length}:${decimals})` : `char(${length})`;
@@ -175,10 +177,29 @@ function convertOpcodeToFreeFormat(
   const condLines = convertConditionalOpcode(opcode, factor1, factor2);
   if (condLines.length > 0) return { newLines: condLines, newOpcode: opcode};
   const fullOpcode = opcode.toUpperCase();
-  const opCode = opcode.toUpperCase().replace(/\(.*\)$/, "");
+
   const newLines: string[] = [];
   let freeFormat = '';
-  let newOpcode = opCode;
+  let newOpcode = '';
+
+  let extenders: string[] = [];
+  const opcodeMatch = opcode.match(/^([A-Z\-]+)(\(\s*([A-Z\s]+)\s*\))?$/i);
+  if (opcodeMatch) {
+    newOpcode = opcodeMatch[1].toUpperCase();
+    const existingExt = opcodeMatch[3];
+    if (existingExt) {
+      // Normalize: remove whitespace and convert to uppercase letters
+      extenders = existingExt.replace(/\s+/g, "").toUpperCase().split("");
+    }
+  } else {
+    newOpcode = opcode.toUpperCase();
+  }
+   newOpcode =
+    extenders.length > 0
+      ? `${newOpcode}(${extenders.join(" ")})`
+      : newOpcode;
+  const opCode = opcode.toUpperCase().replace(/\(.*\)$/, "");
+ // newOpcode = opCode;
 
   switch (opCode.toUpperCase()) {
     case "Z-ADD":
@@ -197,6 +218,11 @@ function convertOpcodeToFreeFormat(
       break;
     case 'CHECK':
       newLines.push(...op.convertCHECK(fullOpcode, factor1, factor2, result, extraDCL));
+      newOpcode = '';
+      break;
+
+    case 'CAT':
+      newLines.push(...op.convertCAT(fullOpcode, factor1, factor2, result, extraDCL));
       newOpcode = '';
       break;
     case "ENDSR":

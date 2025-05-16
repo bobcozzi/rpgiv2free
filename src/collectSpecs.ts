@@ -132,7 +132,7 @@ export function collectStmt(
         indexes: extF2.indexes,
         comments: extF2.comments.length > 0 ? extF2.comments : null,
         isSQL: false,
-        isBOOL: false,
+        isBOOL: true,
       };
     }
   }

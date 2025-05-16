@@ -7,8 +7,11 @@ All notable changes to this project will be documented in this file.
 - A major rewrite of D spec seletion and free format line formatting.
 - Restructured how we process and convert calc spec opcodes to provide more customization for each opcode.
 - Fixed several bugs in how the full D spec statement was selected. In edge cases it was dropping the end of a Long Variable name. This has now been corrected.
+- Fully implemented CAT opcode to free format
+- Correctly a bug in reformat/paginate RPG IV line routine that was causing it to wrap prematurely.
+- Correctly as DCL-SUBF or DCL-PARM to child variables based on their parent variable type and if the name is that of an RPG opcode. For example, a parameter name of MONITOR is converted to "dcl-parm monitor ...".
 - Quoted literals on D specs are now retaining embedded consecutive blanks. It does this in two ways, (1) Avoids compressing them and (2) If the line breaks onto a new line at a set of blanks, then the - is used to continue and the next line starts in column 8. NOTE: If you migrate to fully free format RPG IV, then you will need to adjust that start position (to 1) accordingly.
-- Add a new setting for rpgiv2free generated work/temp fields. The settings are labeled tempVarNamen where "n" is a sequence number. In the initial release tempVarName1 and tempVarName2 are included. See there descriptions for details.
+- Add a new setting for rpgiv2free generated work/temp fields. The settings are labeled tempVarNamen where "n" is a sequence number. In the initial release tempVarName1 is included.
 - NOTE: NO CALC SPEC changes or enhancements have been made to this build.
 
 ## [0.5.8] - 2025-05-9

@@ -1,32 +1,6 @@
 import * as vscode from 'vscode';
 import * as ibmi from './IBMi';
-
-export function getVarName(lines: string[], startIndex = 0): { varName: string, nextIndex: number } {
-  let nameParts: string[] = [];
-  let i = startIndex;
-
-  while (i < lines.length) {
-    const line = lines[i].padEnd(80, ' ');
-    const nameChunk = line.substring(6, 80).trimEnd(); // get from col 7 to 80
-
-    if (nameChunk.endsWith('...')) {
-      nameParts.push(nameChunk.slice(0, -3));
-      i++;
-    } else {
-      // If it's the first line or not a long name continuation, fall back to default logic
-      if (i === startIndex) {
-        return { varName: '', nextIndex: startIndex };
-      }
-
-      nameParts.push(nameChunk.trim());
-      i++;
-      break;
-    }
-  }
-
-  const fullName = nameParts.join('');
-  return { varName: fullName.trim(), nextIndex: i };
-}
+import { convertChildVar } from './convertChildVar';
 
 // Function to convert D specs from fixed-format to free-format
 export function convertDSpec(lines: string[],
@@ -36,7 +10,7 @@ export function convertDSpec(lines: string[],
   curLineIndex: number
 ): string[] {
 
-  ibmi.log(`convertDSpec called. Lines: ${lines?.length ?? 'undefined'}`);
+  ibmi.log(`convertDSpec Lines: ${lines?.length ?? 'undefined'}`);
 
   if (!Array.isArray(lines) || lines.length === 0) return [];
   let varName = entityName;
@@ -144,25 +118,6 @@ export function convertDSpec(lines: string[],
         kwdArea = kwdArea ? `INZ ${kwdArea.trim()}` : 'INZ';
       }
     }
-    // If the Data Structure is something such as LIKEDS(xxx),
-    // then an END-DS keyword is NOT allowed.
-    // e.g.,  dcl-ds custmast likeds(cust_t); // END-DS is NOT allowed
-
-    // If the Data Structure is something such as EXTNAME(xxx),
-    // then an END-DS keyword is required either as a keyword style
-    // or as a separate statement.
-    // e.g.,  dcl-ds custmast extname('CUSTMAST') end-ds; // requires END-DS
-    // or
-    //        dcl-ds custmast extname('CUSTMAST');
-    //        end-ds; // requires END-DS
-    // comment out the following block since it is done elsewhere
-    // if (/\b(EXTNAME|EXTFILE|EXT)\b/i.test(kwdArea)) {
-    //   if (!/\bEND-DS\b/i.test(kwdArea)) {
-    //     if (extraDCL != null) {
-    //       extraDCL.push(`end-ds;`);
-    //     }
-    //   }
-    // }
   }
 
   kwdArea = fixKeywordArgs(kwdArea);
@@ -172,24 +127,27 @@ export function convertDSpec(lines: string[],
   switch (dclType.toLowerCase()) {
     case 'ds': decl = `dcl-ds ${varName} ${kwdArea}`.trim();
       if (!(/\b(LIKEDS)\b/i.test(kwdArea))) {
-        extraDCL?.push(`end-ds;`);
+        extraDCL?.push(`end-ds;  // ${varName}`);
       }
       break;
     case 's': decl = `dcl-s ${varName} ${fieldType} ${kwdArea ? ' ' + kwdArea : ''}`.trim(); break;
     case 'pr': decl = `dcl-pr ${varName} ${fieldType} ${kwdArea}`.trim();
-      extraDCL?.push(`end-pr;`);
+      extraDCL?.push(`end-pr;  // ${varName}`);
       break;
     case 'pi': decl = `dcl-pi ${varName} ${fieldType} ${kwdArea}`.trim();
-      extraDCL?.push(`end-pi;`);
+      extraDCL?.push(`end-pi;  // ${varName}`);
       break;
     case 'c': decl = `dcl-c ${varName} ${kwdArea}`.trim(); break;
     default:
       if (isOpCode) {
         varName = 'dcl-subf ' + varName;
       }
-      decl = `${varName} ${fieldType}${kwdArea ? ' ' + kwdArea : ''}`.trim(); break;
+      decl = `${varName} ${fieldType}${kwdArea ? ' ' + kwdArea : ''}`.trim();
+      // converts overlay to pos if needed, and changes dcl-subf to dcl-parm is needed
+      decl = convertChildVar(decl, allLines, curLineIndex);
+      break;
   }
-  decl = convertOverlayToPos(decl, allLines, curLineIndex);
+
   return [decl];
 }
 
@@ -477,55 +435,3 @@ export function combineKwdAreaLines(lines: string[]): string {
   return kwdArea.trimEnd();
 }
 
-export function convertOverlayToPos(
-  sourceLine: string,
-  fullSource: string[],
-  currentLineIndex: number
-): string {
-  const overlayRegex = /overlay\s*\(\s*([a-zA-Z0-9_]+)\s*(?::\s*([0-9]+))?\s*\)/i;
-  const match = overlayRegex.exec(sourceLine);
-
-  if (!match) return sourceLine; // No OVERLAY() found
-
-  const [fullMatch, overlayTarget, overlayOffset] = match;
-  const targetName = overlayTarget.toLowerCase();
-  let nameToken = '';
-  // Search backwards for matching D-spec or DCL-DS
-  for (let i = currentLineIndex - 1; i >= 0; i--) {
-    const line = fullSource[i].trimEnd().toLowerCase();
-    nameToken = '';
-    let lastIndex = 0;
-    if (ibmi.isNotComment(line)) {
-      if (ibmi.getSpecType(line) === 'd') {
-        if (ibmi.getDclType(line).toLowerCase() === 'ds') {
-          if (line.trimEnd().endsWith('...')) {
-            ({ varName: nameToken, nextIndex: lastIndex } = getVarName(fullSource, i));
-          }
-          else {
-            nameToken = ibmi.getCol(line, 7, 21).trim();
-          }
-          break;
-        }
-      }
-      else if (line.trimStart().startsWith('dcl-ds')) {
-        if (line.trimEnd().endsWith('...')) {
-          ({ varName: nameToken, nextIndex: lastIndex } = getVarName(fullSource, i));
-        }
-        else {
-          const match = line.match(/\bdcl-ds\s+([a-zA-Z0-9_]+)/i);
-          nameToken = match ? match[1] : '';
-        }
-        break;
-      }
-    }
-  }
-
-  if (nameToken === targetName) {
-    const posValue = overlayOffset || '1';
-    return sourceLine.replace(overlayRegex, `pos(${posValue})`);
-  }
-
-
-  // No matching DS found, return original
-  return sourceLine;
-}

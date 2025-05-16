@@ -53,8 +53,18 @@ export function collectExtOpcode(allLines: string[], startIndex: number): { line
         namedOpcode
     } = collectExtF2(allLines, firstIndex);
 
-
-    lines.push(`${namedOpcode} ${extF2};`)
+  if (namedOpcode) {
+    const match = extF2.match(/^[A-Z0-9-]+/i);
+    const firstToken = match ? match[0].toUpperCase() : null;
+    const isEvalOrCallP = (namedOpcode && ['eval', 'callp'].includes(namedOpcode.toLowerCase()));
+    const keepOpcode = (firstToken && isEvalOrCallP && (ibmi.isValidOpcode(firstToken) || ibmi.isExtOpcode(firstToken)));
+    if (!isEvalOrCallP || (isEvalOrCallP && keepOpcode)) {
+      lines.push(`${namedOpcode} ${extF2};`)
+    }
+    else {
+      lines.push(`${extF2};`)
+    }
+  }
     return {
         lines,
         indexes: usedIndexes,
@@ -105,15 +115,21 @@ export function collectExtF2(
     }
 
     const endsWith = extF2.trimEnd().slice(-1);
-    if ((endsWith === '+' || endsWith === '-') && wasQuoted) {
-
+    const endsWithDots = extF2.trimEnd().endsWith('...');
+    if ( (endsWithDots && !wasQuoted) || ((endsWith === '+' || endsWith === '-') && wasQuoted)) {
+      if (endsWithDots) {
+        extF2 = extF2.slice(0, -3).trimEnd();
+        extF2 += buffer.trimStart();
+      }
+      else {
         extF2 = extF2.replace(/[+-]$/, '');
-          if (endsWith === '-') {
-              extF2 += buffer;
-          }
-          else {
-              extF2 += buffer.trim();
-          }
+        if (endsWith === '-') {
+          extF2 += buffer;
+        }
+        else {
+          extF2 += buffer.trim();
+        }
+      }
     }
     else {
       if (endsWith && extF2) {
