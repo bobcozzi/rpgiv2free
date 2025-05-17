@@ -92,6 +92,21 @@
           "default": true,
           "description": "Add *EXT to DISK, WORKSTN, etc. when converting externally described files."
         },
+        "rpgiv2free.RemoveFREEDirective": {
+          "type": "boolean",
+          "default": true,
+          "description": "Removes (comments out) deprecated /free and /end-free directives."
+        },
+        "rpgiv2free.ReplaceCOPYwithINCLUDE_RPG": {
+          "type": "boolean",
+          "default": true,
+          "description": "Replaces /copy statements in RPGLE source types with the more modern /include directive."
+        },
+        "rpgiv2free.ReplaceCOPYwithINCLUDE_SQLRPG": {
+          "type": "boolean",
+          "default": false,
+          "description": "Replaces /copy statements in SQLRPG* source types with the more modern /include directive."
+        },
         "rpgiv2free.tempVarName1": {
           "type": "string",
           "default": "f2f_tempVar1",

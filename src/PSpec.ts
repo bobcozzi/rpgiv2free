@@ -27,18 +27,21 @@ export function convertPSpec(lines: string[], entityName: string | null): string
   const joined = lines.map(line => line.padEnd(80, ' ')).join('');
 
   const specType = ibmi.getSpecType(joined);   // Get column 6 Spec Type
-  const dclType = ibmi.getColUpper(joined, 24, 25);  // Get column 24-25 DCL Type
-  let decl = '';
+  const dclType = ibmi.getDclType(joined);  // Get column 24-25 DCL Type
+  let procDefn = '';
 
   kwdArea = combineKwdAreaLines(lines);
   kwdArea = fixKeywordArgs(kwdArea);
 
   switch (dclType.toLowerCase()) {
-    case 'b': decl = `dcl-proc ${varName} ${kwdArea}`.trim(); break;
-    case 'e': decl = `end-proc ${varName}`.trim(); break;
+    case 'b': procDefn = `dcl-proc ${varName} ${kwdArea}`.trim(); break;
+    case 'e': procDefn = `end-proc`; break;
   }
-
-  return [decl];
+  // Add the variable name as a comment
+  if (procDefn.startsWith('end-proc') && varName) {
+    procDefn += ` ${varName}`;
+  }
+  return [procDefn];
 }
 
 //  Search this kind of stuff for keywords

@@ -1,6 +1,6 @@
 # RPG IV to Free Format Conversion Tool
 
-This Visual Studio Code extension helps developers convert RPG IV fixed-format statements into free-format RPG IV code effortlessly. Whether you’re working with File (F) specs, Definition (D) specs, or Embedded SQL statements, this tool streamlines the process by automating the conversion of fixed-format RPG code into more modern, readable free-format RPG IV.
+This Visual Studio Code extension helps developers convert RPG IV fixed-format statements into free-format RPG IV code effortlessly. Whether you’re working with File (F) specs, Definition (D) specs, or Embedded SQL statements, this tool streamlines the conversion to free format process by making a one-click option on your context menu. Just put the cursor on the line(s) you want to convert to free format and select "Convert RPG IV to free format" and bam! it is converted.
 Download from the Visual Studio CODE Marketplace: [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/CozziResearch.rpgiv2free.svg?label=VS%20Code%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=CozziResearch.rpgiv2free)).
 
 
@@ -31,7 +31,31 @@ It is NOT a refactoring tool or code moderization tool. Its only purpose is to g
 
 ## Extension Settings
 
-This extension contains the following settings under `rpgiv2free`:
+This extension provides several settings to customize its behavior. You can configure these in your VS Code `settings.json` or through the extension settings user interface.
+
+### `rpgiv2free.RemoveFREEDirective`
+Automatically comments-out /free compilere directives. These were deprecated by IBM..
+
+- `true` — Remove/comment-out /free and /end-free statements.
+- `false` — Do not modify /free or /end-free statements.
+
+Default: `true`
+
+### `rpgiv2free.ReplaceCOPYwithINCLUDE_RPG`
+Converts the legacy /copy statement to the more modern and cross-language /include statement for RPGLE source type source memebers.
+
+- `true` — Any selected /copy is converted to /include.
+- `false` — /copy statements in RPGIV source members are not converted.
+
+Default: `true`
+
+### `rpgiv2free.enableExperimentalCSpecSupport`
+Converts the legacy /copy statement to the more modern and cross-language /include statement for SQLRPG* source type source memebers.
+
+- `true` — Any selected /copy is converted to /include.
+- `false` — /copy statements in SQL RPG source members are not converted.
+
+Default: `false`
 
 ### `rpgiv2free.convertBINTOINT`
 Controls whether binary (B) data types in RPG IV are converted to integers in free-format RPG.
@@ -83,18 +107,12 @@ Default: `f2f_tempVa1`
 
 ## In Development:
 
-- **Procedure (P) Specs**
-  Most aspects of P Specs are working, but will be integrated into the extension explicitly in a future release. Please review P spec conversions for confirmation of successful conversion.
-
 - **Calculation (C) Specs**
   The conversion of Calc Specs is in progress and is being updated in each release. Currently some calc specs convert fine, while others may or may not convert. Be ready with your Ctrl+Z (cmd+Z on Mac) to **undo** the conversion if it does not produce the desired results. . For now, the following features are enabled:
   - Regular "3 factor" opcodes (such as CHAIN, READE, etc.) convert to free format. But verification is recommened.
 
-  **Data Structure (DS) and Data Structure Subfields**
-- Data Structures and subfields convert fine. When a DS, PI, or PR statement is selected, rpgiv2free conversion inserts an END-xx after the last subfield or parameter of the corresponding data structure or parameter list.
-
 ## Limitations
-- Conditioning and Level Break Indicators are NOT converted. The opcodes convert but the conditioning and Level-break Indicators are lost. So some manual conversion to RPG IV conditional logic is required before converting them to free format.
+- Conditioning and Level Break Indicators are NOT converted. The opcodes convert but the conditioning and Level-break Indicators are lost. So some manual conversion to RPG IV conditional logic is required before converting them to free format. We will be adding a configuration setting to avoid converting statements with level break or conditioning indicator controlling them.
 - RPG Logical Cycle-based File Declarations (i.e. File specs with **Primary or Secondary files**) are not converted. RPG IV _hybrid_ Free format may included fixed-format code, so they can usually remain in your source code as is. However if your intent is to migrate to fully free format RPG IV, then you must remove any RPG Cycle-related code from your source file member.
 
 ## Getting Started

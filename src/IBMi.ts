@@ -1,13 +1,62 @@
 
 import * as vscode from 'vscode';
-import * as ibmi from './IBMi'
-
+import * as path from 'path';
 
 export function getEOL(): string {
   const editor = vscode.window.activeTextEditor;
   if (!editor) return '\n'; // Default to LF if no editor
   return editor.document.eol === vscode.EndOfLine.CRLF ? '\r\n' : '\n';
 }
+
+export function getActiveFileInfo(): {
+  fullPath: string;
+  fileName: string;
+  extension: string;
+} | null {
+  const activeEditor = vscode.window.activeTextEditor;
+
+  if (activeEditor) {
+    const fullPath = activeEditor.document.fileName;
+    const fileName = path.basename(fullPath);
+    const extension = path.extname(fullPath).toLowerCase();
+
+    return { fullPath, fileName, extension };
+  }
+
+  return null;
+}
+
+export interface configSettings {
+  convertBINTOINT: number;
+  addINZ: boolean;
+  indentFirstLine: number;
+  indentContLines: number;
+  maxWidth: number;
+  addEXTDEVFLAG: boolean;
+  removeFREEdir: boolean;
+  replaceCOPYinRPG: boolean;
+  replaceCOPYinSQLRPG: boolean;
+  tempVarName1: string;
+}
+
+export function getRPGIVFreeSettings(): configSettings {
+  const config = vscode.workspace.getConfiguration('rpgiv2free');
+  return {
+    convertBINTOINT: config.get<number>('convertBINTOINT', 2),
+    addINZ: config.get<boolean>('addINZ', true),
+    indentFirstLine: config.get<number>('indentFirstLine', 10),
+    indentContLines: config.get<number>('indentContinuedLines', 12),
+    maxWidth: config.get<number>('maxFreeFormatLineLength', 76),
+    addEXTDEVFLAG: config.get<boolean>('AddEXTDeviceFlag', true),
+    removeFREEdir: config.get<boolean>('RemoveFREEDirective', true),
+    replaceCOPYinRPG: config.get<boolean>('ReplaceCOPYwithINCLUDE_RPG', true),
+    replaceCOPYinSQLRPG: config.get<boolean>('ReplaceCOPYwithINCLUDE_SQLRPG', false),
+    tempVarName1: config.get<string>('tempVarName1', 'rpg2ff_temp1')
+  };
+}
+
+
+
 
 /**
  * Splits a single string into individual string (lines) using platform-agnostic line endings.
@@ -71,30 +120,53 @@ export function convertCmt(line: string): string {
   return freeComment;
 }
 
-export function isComment(line: string): boolean {
-  let isComment = (line.length > 5 && line[5] != ' ') && getCol(line, 7).trim() === '*';
-  if (isComment || getCol(line, 8, 80).trimStart().startsWith('//') ||
-    getCol(line, 1, 80).trimStart().startsWith('//')) {
-    return true;
-  }
-  return false;
+
+// for for not executable source lines, like comments, blanks line, or compiler directives
+export function isEmptyStmt(line: string): boolean {
+  const bBlankLine = line.trim().length < 6;
+
+  const bEmptyStmt = (
+    line.length > 5 &&
+    line[5].trim() !== '' &&
+    getCol(line, 8, 80).trim() === ''
+  );
+
+  return (bBlankLine || bEmptyStmt);
 }
+
+export function isDirective(line: string): boolean {
+  const bDirective = (
+    line.length > 7 &&
+    line[6] === '/' &&
+    line[7] !== '/'
+  );
+  return bDirective;
+}
+
+// for for not executable source lines, like comments, blanks line, or compiler directives
+export function isSkipStmt(line: string): boolean {
+
+  const bComment = isComment(line);  // Assumes isComment() handles RPG IV logic
+  const bEmptyStmt = isEmptyStmt(line);
+  const bDirective = isDirective(line);
+  return bComment || bDirective || bEmptyStmt;
+}
+
+export function isNotSkipStmt(line: string): boolean {
+  return (!isSkipStmt(line));
+}
+
+export function isComment(line: string): boolean {
+  const classicRPGStyle = line.length > 6 && line[6] === '*';
+  const cppStyle = getCol(line, 8, 80).trimStart().startsWith('//') ||
+                   getCol(line, 1, 80).trimStart().startsWith('//');
+  return classicRPGStyle || cppStyle;
+}
+
 export function isNotComment(line: string): boolean {
   return (!isComment(line));
 }
 
-export function getRPGIVFreeSettings() {
-  const config = vscode.workspace.getConfiguration('rpgiv2free');
-  return {
-    convertBINTOINT: config.get<number>('convertBINTOINT', 2),
-    addINZ: config.get<boolean>('addINZ', true),
-    indentFirstLine: config.get<number>('indentFirstLine', 10),
-    indentContLines: config.get<number>('indentContinuedLines', 12),
-    maxWidth: config.get<number>('maxFreeFormatLineLength', 76),
-    addEXTDEVFLAG: config.get<boolean>('AddEXTDeviceFlag', true),
-    tempVarName1: config.get<string>('tempVarName1',"rpg2ff_temp1")
-  };
-}
 
 export interface DCLInsert {
   currentLineIndex: number;
@@ -406,7 +478,7 @@ export function dNameContinues(line: string): boolean {
   // Scan columns 7 to 21 to find the first non-blank character (start of name)
   let startCol = -1;
   for (let i = 7; i <= 21; i++) {
-    const char = ibmi.getCol(line, i, i);
+    const char = getCol(line, i, i);
     if (char !== ' ') {
       startCol = i;
       break;
@@ -417,7 +489,7 @@ export function dNameContinues(line: string): boolean {
   if (startCol === -1) return false;
 
   // Extract from startCol to column 80
-  const namePart = ibmi.getCol(line, startCol, 80).trimEnd();
+  const namePart = getCol(line, startCol, 80).trimEnd();
 
   // Must end with '...'
   if (!namePart.endsWith('...')) return false;
@@ -429,7 +501,7 @@ export function dNameContinues(line: string): boolean {
 
 export function dKwdContinues(line: string): boolean {
   // Keyword area is columns 44 to 80
-  const kwdArea = ibmi.getCol(line, 44, 80).trimEnd();
+  const kwdArea = getCol(line, 44, 80).trimEnd();
 
   if (kwdArea === '') return false;
 
@@ -450,8 +522,8 @@ export function dKwdContinues(line: string): boolean {
 
 export function isJustKwds(line: string): boolean {
   // Keyword area is columns 44 to 80
-  const kwdArea = ibmi.getCol(line, 44, 80).trimEnd();
-  const nameDefnArea = ibmi.getCol(line, 7, 43).trimEnd();
+  const kwdArea = getCol(line, 44, 80).trimEnd();
+  const nameDefnArea = getCol(line, 7, 43).trimEnd();
   if (kwdArea === '') return false;
   // Case 1: Quoted literal continued with + or -
   return kwdArea.length > 0 && nameDefnArea.length === 0;
@@ -460,13 +532,13 @@ export function isJustKwds(line: string): boolean {
 export function isValidFixedDefnLine(curLine: string): boolean {
   let bValidDefn = false;
   if (dNameContinues(curLine)) return false;
-  const col6 = ibmi.getColUpper(curLine, 6)
+  const col6 = getColUpper(curLine, 6)
   if (col6 !== 'D') return false;
-  const dclType = ibmi.getDclType(curLine).toLowerCase();
-  const hasName = ibmi.getCol(curLine, 7, 21).trim().length > 0;
-  const isExtSubfield = (ibmi.getCol(curLine, 22).toUpperCase() === 'E');
-  const hasType = ibmi.getCol(curLine, 23, 25).trim().length > 0;
-  const hasAttr = ibmi.getCol(curLine, 26, 43).trim().length > 0;
+  const dclType = getDclType(curLine).toLowerCase();
+  const hasName = getCol(curLine, 7, 21).trim().length > 0;
+  const isExtSubfield = (getCol(curLine, 22).toUpperCase() === 'E');
+  const hasType = getCol(curLine, 23, 25).trim().length > 0;
+  const hasAttr = getCol(curLine, 26, 43).trim().length > 0;
 
   if ((["ds", "pr", "pi", "s", "c"].includes(dclType)) || isExtSubfield || ((hasName || hasType) && hasAttr)) {
     bValidDefn = true;
@@ -475,8 +547,8 @@ export function isValidFixedDefnLine(curLine: string): boolean {
   return bValidDefn;
 }
 export function isSpecEmpty(line: string): boolean {
-  const codeArea = ibmi.getCol(line, 7, 80).trimEnd();
-  const col6 = ibmi.getSpecType(line);
+  const codeArea = getCol(line, 7, 80).trimEnd();
+  const col6 = getSpecType(line);
   if (codeArea === '' || isComment(line)) return true;
   return false;
 }

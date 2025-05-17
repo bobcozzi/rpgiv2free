@@ -2,8 +2,10 @@
 import { collectSQLBlock } from './SQLSpec';
 import { collectBooleanOpcode } from './collectBoolean';
 import { collectHSpecs } from './collectHSpec';
+import { collectPSpecs } from './collectPSpec';
 import { collectDSpecs } from './collectDSpec';
 import { collectComments } from './collectComments';
+import { collectDirectives } from './collectDirectives';
 import { collectCaseOpcode } from './collectCASEBlock';
 import { collectExtOpcode } from './collectExtOpcode';
 
@@ -60,6 +62,17 @@ export function collectStmt(
       entityName: null,  // No entity name for SQL blocks
       lines: cmtBlock.lines,
       indexes: cmtBlock.indexes,
+      comments: comments.length > 0 ? comments : null,
+      isSQL: false,
+      isBOOL: false,
+    };
+  }
+  if (ibmi.isDirective(startLine)) { // Converting a block of comments?
+    const dirBlock = collectDirectives(allLines, startIndex);
+    return {
+      entityName: null,  // No entity name for SQL blocks
+      lines: dirBlock.lines,
+      indexes: dirBlock.indexes,
       comments: comments.length > 0 ? comments : null,
       isSQL: false,
       isBOOL: false,
@@ -154,6 +167,17 @@ export function collectStmt(
       lines: defnSpecs.lines,
       indexes: defnSpecs.indexes,
       comments: defnSpecs.comments.length > 0 ? defnSpecs.comments : null,
+      isSQL: false,
+      isBOOL: false,
+    };
+  }
+  else if (curSpec === 'p') {
+    const procSpec = collectPSpecs(allLines, startIndex); // Collect H specs if needed
+    return {
+      entityName: procSpec.entityName,
+      lines: procSpec.lines,
+      indexes: procSpec.indexes,
+      comments: procSpec.comments.length > 0 ? procSpec.comments : null,
       isSQL: false,
       isBOOL: false,
     };
