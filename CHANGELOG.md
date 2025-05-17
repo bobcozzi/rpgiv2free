@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.6.1] - 2025-05-17
+## [0.6.2] - 2025-05-17
 - Ignore File specs for input Primary/Secondary files (only the initial F spec is ignored, continuations may be problematic for these if they exist)
 - Fixed a small issue with spacing for continuation of long expressions and all the variations that RPG IV allows for such things.
 - Completed Header spec conversions. Now one CTL-OPT replaces all consecutive H specs. Looking at an option for a future release to simply translate each H spec to its own CTL-OPT statement (individually).
@@ -10,7 +10,7 @@ All notable changes to this project will be documented in this file.
 - Converts /copy statements to the more modern /include statement.
 - The P (procedure) spec was completely rewritten using our new methodology.
 - New config settings to control /free /end-free removal (default true), and to convert /copy to the more modern /include statement (default true, for RPGLE memeber, false for SQLRPGLE member; recommended: true)
--
+- I accidently pushed out a 0.6.1 build which was identical to 0.6.0 earlier and the marketplace does not permit updates to existing releases, so you have to increment it... hence 0.6.2
 
 ## [0.6.0] - 2025-05-15
 - A major rewrite of D spec seletion and free format line formatting.

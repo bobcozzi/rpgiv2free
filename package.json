@@ -6,7 +6,7 @@
   "preview": true,
   "private": false,
   "publisher": "CozziResearch",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0",
