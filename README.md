@@ -49,7 +49,7 @@ Converts the legacy /copy statement to the more modern and cross-language /inclu
 
 Default: `true`
 
-### `rpgiv2free.enableExperimentalCSpecSupport`
+### `rpgiv2free.ReplaceCOPYwithINCLUDE_SQLRPG`
 Converts the legacy /copy statement to the more modern and cross-language /include statement for SQLRPG* source type source memebers.
 
 - `true` — Any selected /copy is converted to /include.
