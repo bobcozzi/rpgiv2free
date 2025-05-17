@@ -35,14 +35,14 @@
   "contributes": {
     "commands": [
       {
-        "command": "rpgconverter.convertToRPGFree",
+        "command": "rpgiv2free.convertToRPGFree",
         "title": "Convert RPG IV to Free Format"
       }
     ],
     "menus": {
       "editor/context": [
         {
-          "command": "rpgconverter.convertToRPGFree",
+          "command": "rpgiv2free.convertToRPGFree",
           "when": "resourceExtname =~ /rpg(le)?|sqlrpgle/i",
           "group": "navigation"
         }
@@ -117,7 +117,7 @@
   },
   "main": "./out/extension.js",
   "activationEvents": [
-    "onCommand:rpgconverter.convertToRPGFree",
+    "onCommand:rpgiv2free.convertToRPGFree",
     "onStartupFinished"
   ],
   "scripts": {

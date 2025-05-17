@@ -17,7 +17,7 @@ import * as ibmi from './IBMi';
 
 
 export function activate(context: vscode.ExtensionContext) {
-  const disposable = vscode.commands.registerCommand('rpgconverter.convertToRPGFree', async () => {
+  const disposable = vscode.commands.registerCommand('rpgiv2free.convertToRPGFree', async () => {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
       vscode.window.showErrorMessage('No active editor found.');
