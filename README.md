@@ -16,10 +16,10 @@ It is NOT a refactoring tool or code moderization tool. Its only purpose is to g
   Once installed, right-click on any RPG IV fixed-format statement in your editor and select the “Convert RPG IV to Free Format” option from the context menu. The statement will be converted instantly.
 
 - **Multi-Line Support for Compound Statements**:
-  If a statement spans multiple lines, such as when a File or Definition spec has additional keywords, or you have a legacy IFEQ/OREQ/ANDEQ style conditional Calc spec, you can position the cursor on any line within the statement, and the extension converts the entire statement; no need to select the entire thing.
+  If a statement spans multiple lines, such as when a File or Definition spec has additional keywords, or you have a legacy IFEQ/OREQ/ANDEQ/CASxx style conditional Calc spec, you can position the cursor on any line within the statement, and the extension converts the entire statement; no need to select the entire thing.
 
 - **Batch Conversion of Multiple Statements**:
-  You can select multiple statements within the same file and convert them all in a single operation. The tool processes them efficiently. however is it NOT recommended to select *ALL lines and convert them. I have not tested it on things like program-described arrays, conditioning indicators (they are currently lost during conversion) or other RPGII-style edge-cases.
+  You can select multiple statements within the same file and convert them all in a single operation. The tool processes them efficiently. however is it NOT recommended to select *ALL lines and convert them. I have not tested it on things like program-described arrays, conditioning indicators (these are lost during conversion) and/or other RPGII-style edge-cases.
 
 - **Supported Specifications**:
   - Header (H) Specs
@@ -73,23 +73,30 @@ Add *EXT to DISK, WORKSTN, etc. when when converting externally described files.
 
 Default: `true`
 
+### `rpgiv2free.tempVarName1
+The name used as a workfield by the convertion extension. This field name is used when converting things like CAT and SUBST to free format. In some scenarios, a length variable is required and this variable name is used. The conversion generates a DCL-S stand-alone field defining this variable name automatically.
+
+- `f2f_tempVar1` — The default named used by the extension.
+- `<your-custom-name` — A user-specified variable name to use, must **NOT contain** special symbols such as @#$
+
+Default: `f2f_tempVa1`
+
 ## In Development:
 
-- **Header/Control (H) Specs**
-  The conversion for H Specs is currently in development. It mostly works but may require some additional tweaks for edge cases.
-
 - **Procedure (P) Specs**
-  Most aspects of P Specs are working, but some minor adjustments are still being made. I doubt you will notice any issues, but if you do, please let me know.
+  Most aspects of P Specs are working, but will be integrated into the extension explicitly in a future release. Please review P spec conversions for confirmation of successful conversion.
 
 - **Calculation (C) Specs**
-  The conversion of Calc Specs is in progress and is being updated in each release.
-  Currently some calc specs convert fine, while others may or may not convert. Be ready with your Ctrl+Z to undo the conversion if it does not work as expected. (cmd+Z on Mac). For now, the following features are enabled:
-  - IFxx/ORxx/ANDxx/WHENxx/CASxx convert as a compound statement.
-  - Regular "3 factor" opcodes (such as CHAIN, READE, etc.) convert to free format. But verification may be needed.
+  The conversion of Calc Specs is in progress and is being updated in each release. Currently some calc specs convert fine, while others may or may not convert. Be ready with your Ctrl+Z (cmd+Z on Mac) to **undo** the conversion if it does not produce the desired results. . For now, the following features are enabled:
+  - Regular "3 factor" opcodes (such as CHAIN, READE, etc.) convert to free format. But verification is recommened.
 
   **Data Structure (DS) and Data Structure Subfields**
-- Data Structures and subfields convert fine. When a DS, PI, or PR statement is selected, then rpgiv2free conversion inserts the END-xx after the last subfield or parameter in the corresponding data structure or parameter list. Eventually we plan to include a setting to also convert the subfields or parameters to free format.
--
+- Data Structures and subfields convert fine. When a DS, PI, or PR statement is selected, rpgiv2free conversion inserts an END-xx after the last subfield or parameter of the corresponding data structure or parameter list.
+
+## Limitations
+- Conditioning and Level Break Indicators are NOT converted. The opcodes convert but the conditioning and Level-break Indicators are lost. So some manual conversion to RPG IV conditional logic is required before converting them to free format.
+- RPG Logical Cycle-based File Declarations (i.e. File specs with **Primary or Secondary files**) are not converted. RPG IV _hybrid_ Free format may included fixed-format code, so they can usually remain in your source code as is. However if your intent is to migrate to fully free format RPG IV, then you must remove any RPG Cycle-related code from your source file member.
+
 ## Getting Started
 
 1. **Install the Extension**:

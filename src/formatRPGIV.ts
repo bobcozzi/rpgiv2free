@@ -162,7 +162,16 @@ export const formatRPGIV = (input: string, splitOffComments: boolean = false): s
       }
 
       const pieces = breakQuotedString(token, maxLength, contIndentLen);
-      pieces.forEach(part => addToken(part, '', false));
+
+      // const spaceBetween = (pieces.length == 1) ? spacers[i] : '';
+      // pieces.forEach(part => addToken(part, spaceBetween, false));
+
+      pieces.forEach((part, index) => {
+        const isLast = index === pieces.length - 1;
+        const spacer = isLast ? spacers[i] : '';
+        addToken(part, spacer, false);
+      });
+
       continue;
     }
 
@@ -194,18 +203,20 @@ function tokenizeWithSpacing(line: string): { tokens: string[], spacers: string[
   const tokens: string[] = [];
   const spacers: string[] = [];
 
-  const regex = /('([^']|'')*')|(?<![A-Z0-9])[*%][A-Z_][A-Z0-9_]*|[A-Z0-9_]+|[(){}\[\]+\-*/=<>:,;]|[^\sA-Z0-9_](?=\s*)|(\s*)/gi;
+  const tokenRegex1 = /('([^']|'')*')|(?<![A-Z0-9])[*%][A-Z_][A-Z0-9_]*|[A-Z0-9_]+|[(){}\[\]+\-*/=<>:,;]|[^\sA-Z0-9_](?=\s*)|(\s*)/gi;
 
   let match;
-  const tokenRegex = /('([^']|'')*')|(?<![A-Z0-9])[*%][A-Z_][A-Z0-9_]*|[A-Z0-9_]+|[(){}\[\]+\-*/=<>:,;]|[^\sA-Z0-9_]/gi;
+  const tokenRegex2 = /('([^']|'')*')|(?<![A-Z0-9])[*%][A-Z_][A-Z0-9_]*|[A-Z0-9_]+|[(){}\[\]+\-*/=<>:,;]|[^\sA-Z0-9_]/gi;
+  const tokenRegex = /('([^']|'')*')|(?<![A-Z0-9])[*%][A-Z_][A-Z0-9_]*\(|[A-Z][A-Z0-9_]*\(|(?<![A-Z0-9])[*%][A-Z_][A-Z0-9_]*|[A-Z0-9_]+|[(){}\[\]+\-*/=<>:,;]|[^\sA-Z0-9_]/gi;
   const spacerRegex = /\s*/y;
-
+  ibmi.log(`Tokenizing: ${line}`);
   let pos = 0;
+  let tokenCounter = 0;
   while (pos < line.length) {
     tokenRegex.lastIndex = pos;
     const tokenMatch = tokenRegex.exec(line);
     if (!tokenMatch) break;
-
+    tokenCounter++;
     const token = tokenMatch[0];
     pos = tokenRegex.lastIndex;
 
@@ -213,23 +224,9 @@ function tokenizeWithSpacing(line: string): { tokens: string[], spacers: string[
     const spaceMatch = spacerRegex.exec(line);
     const spaces = spaceMatch?.[0] ?? '';
     pos = spacerRegex.lastIndex;
-
+    ibmi.log(`Token: ${tokenCounter}: Spaces: ${spaces.length} => ${token}`);
     tokens.push(token);
     spacers.push(spaces);
-  }
-
-  return { tokens, spacers };
-}
-
-function tokenizeWithSpacing1(line: string): { tokens: string[], spacers: string[] } {
-  const tokens: string[] = [];
-  const spacers: string[] = [];
-
-  const regex = /('([^']|'')*'|[A-Z0-9_]+|[%()\[\]+\-*/=<>:,;]|[^\s])(\s*)/gi;
-  let match;
-  while ((match = regex.exec(line)) !== null) {
-    tokens.push(match[1]);      // the actual token
-    spacers.push(match[3] ?? ''); // trailing spaces (or empty string)
   }
 
   return { tokens, spacers };

@@ -2,7 +2,8 @@
 import * as ibmi from './IBMi';
 import { collectedStmt, stmtLines } from './types'
 
-export function collectCaseOpcode(allLines: string[], startIndex: number): { lines: string[], indexes: number[] } {
+export function collectCaseOpcode(allLines: string[], startIndex: number):
+  { lines: string[], indexes: number[] } {
   const lines: string[] = [];
   const indexes: number[] = [];
   const comments: string[] = [];

@@ -2,8 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.1] - 2025-05-17
+- Ignore File specs for input Primary/Secondary files (only the initial F spec is ignored, continuations may be problematic for these if they exist)
+- Fixed a small issue with spacing for continuation of long expressions and all the variations that RPG IV allows for such things.
+- Completed Header spec conversions. Now one CTL-OPT replaces all consecutive H specs. Looking at an option for a future release to simply translate each H spec to its own CTL-OPT statement (individually).
 
-## [0.6.0] - 2025-05-14
+6
+## [0.6.0] - 2025-05-15
 - A major rewrite of D spec seletion and free format line formatting.
 - Restructured how we process and convert calc spec opcodes to provide more customization for each opcode.
 - Fixed several bugs in how the full D spec statement was selected. In edge cases it was dropping the end of a Long Variable name. This has now been corrected.

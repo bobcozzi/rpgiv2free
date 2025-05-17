@@ -144,7 +144,7 @@ export function collectStmt(
       indexes: headerSpecs.indexes,
       comments: comments.length > 0 ? comments : null,
       isSQL: false,
-      isBOOL: false,
+      isBOOL: true,
     };
   }
   else if (curSpec === 'd') {
@@ -321,9 +321,16 @@ export function collectStmt(
     // Continued F spec?
     if (curSpec === 'f' &&
       ((index === start) || (fSpecKwd.length > 0 && fSpecCont.length === 0))) {
-      // Stop here if the nextLine is a F-spec with keyword
-      collectedIndexes.add(index);
-      collectedLines.push(line);
+      const fileDesignation = ibmi.getCol(line, 18).toLowerCase();
+      if (["f", ""].includes(fileDesignation)) {
+        // Stop here if the nextLine is a F-spec with keyword
+        collectedIndexes.add(index);
+        collectedLines.push(line);
+      }
+      else {
+        index++;
+        continue;
+      }
     }
 
     // Check if the next line begins a new declaration or new opcode

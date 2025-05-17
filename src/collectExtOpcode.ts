@@ -11,7 +11,8 @@ type CollectResult = {
     namedOpcode: string;
 };
 
-export function collectExtOpcode(allLines: string[], startIndex: number): { lines: string[], indexes: number[], comments: string[] } {
+export function collectExtOpcode(allLines: string[], startIndex: number):
+  { lines: string[], indexes: number[], comments: string[] } {
     const lines: string[] = [];
     const indexes: number[] = [];
     const comments: string[] = [];

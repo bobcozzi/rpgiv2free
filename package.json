@@ -6,7 +6,7 @@
   "preview": true,
   "private": false,
   "publisher": "CozziResearch",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0",
@@ -94,8 +94,8 @@
         },
         "rpgiv2free.tempVarName1": {
           "type": "string",
-          "default": "rpg2ff_tempVar1",
-          "description": "Temp/Workfield name to generate for CAT, SUBST etc, opcode conversions."
+          "default": "f2f_tempVar1",
+          "description": "Fixed to Free format Temp/Workfield name to generate for CAT, SUBST etc, opcode conversions."
         }
       }
     }
