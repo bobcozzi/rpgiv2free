@@ -37,6 +37,32 @@
       {
         "command": "rpgiv2free.convertToRPGFree",
         "title": "Convert RPG IV to Free Format"
+      },
+      {
+        "command": "rpgiv2free.toggleSmartTab",
+        "title": "Toggle Smart Tab"
+      }
+    ],
+    "keybindings": [
+      {
+        "key": "tab",
+        "command": "rpgsmarttab.tab",
+        "when": "editorTextFocus && editorLangId =~ /rpgle|sqlrpgle/i && !editorHasSnippetCompletions && !editorHasCompletionItemProvider"
+      },
+      {
+        "key": "tab",
+        "command": "rpgsmarttab.tab",
+        "when": "editorTextFocus && editorLangId =~ /rpgle|sqlrpgle/i"
+      },
+      {
+        "key": "shift+tab",
+        "command": "rpgsmarttab.shiftTab",
+        "when": "editorTextFocus && editorLangId =~ /rpgle|sqlrpgle/i && !editorHasSnippetCompletions && !editorHasCompletionItemProvider"
+      },
+      {
+        "key": "shift+tab",
+        "command": "rpgsmarttab.shiftTab",
+        "when": "editorTextFocus && editorLangId =~ /rpgle|sqlrpgle/i"
       }
     ],
     "menus": {
@@ -87,6 +113,11 @@
           "default": 12,
           "description": "Secondary free format lines indent/spaces (in bytes)."
         },
+        "rpgiv2free.maxRPGSourceLength": {
+          "type": "number",
+          "default": 100,
+          "description": "Maximum record length for RPG source files."
+        },
         "rpgiv2free.AddEXTDeviceFlag": {
           "type": "boolean",
           "default": true,
@@ -111,15 +142,24 @@
           "type": "string",
           "default": "f2f_tempVar1",
           "description": "Fixed to Free format Temp/Workfield name to generate for CAT, SUBST etc, opcode conversions."
+        },
+        "rpgiv2free.enableRPGSmartTab": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable RPG Smart Tab/Shift+Tab navigation in RPG IV fixed-format source lines."
         }
       }
     }
   },
   "main": "./out/extension.js",
   "activationEvents": [
-    "onCommand:rpgiv2free.convertToRPGFree",
-    "onStartupFinished"
-  ],
+  "onLanguage:rpgle",
+  "onLanguage:sqlrpgle",
+  "onCommand:rpgiv2free.convertToRPGFree",
+  "onCommand:rpgsmarttab.tab",
+  "onCommand:rpgsmarttab.shiftTab",
+  "onCommand:rpgiv2free.toggleRPGSmartTab"
+],
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "build": "tsc",

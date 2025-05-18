@@ -1,0 +1,233 @@
+import * as vscode from "vscode";
+import * as ibmi from "./IBMi";  // Using your existing functions
+
+// Tab stops by spec type — update or expand as needed
+//  *. 1 ...+... 2 ...+... 3 ...+... 4 ...+... 5 .. v
+// FFilename++IPEASF.....L.....A.Device+.Keywords++
+// FCUSTMAST  IF   E             DISK    USROPN
+// DName+++++++++++ETDsFrom+++To/L+++IDc.Keywords++
+//  *. 1 ...+... 2 ...+... 3 ...+... 4 ...+... 5 ...+... 6 ...+... 7 ...+... 8
+// CL0N01Factor1+++++++Opcode&ExtFactor2+++++++Result++++++++Len++D+HiLoEq.
+// C     baseText      CAT       A:1           X
+// CL0N01Factor1+++++++Opcode&ExtExtended-factor2++++++++++++++++++++++++++
+// C                   IF        A = B
+const RPG_TAB_STOPS: Record<string, number[]> = {
+  H: [1, 6],
+  F: [1, 6, 7, 18, 19, 20, 21, 22, 28, 34, 36, 43, 44, 80],
+  D: [1, 6, 7, 22, 23, 24, 26, 33, 40, 41, 43, 44, 80],
+  C: [1, 6, 7, 9, 12, 26, 36, 50, 64, 69, 71, 73, 75, 80],
+  CX: [1, 6, 7, 9, 26, 36, 80],
+  I: [1, 6, 7, 8, 10, 12, 17, 24, 39],
+  O: [1, 6, 7, 8, 10, 12, 17, 24, 39],
+  P: [1, 6, 7, 24, 44]
+};
+
+const tabBoxDecoration = vscode.window.createTextEditorDecorationType({
+  borderWidth: '1px',
+  borderStyle: 'solid',
+  borderColor: 'rgba(100, 200, 255, 0.7)',
+  backgroundColor: 'rgba(100, 150, 255, 0.2)',
+  borderRadius: '2px',
+  isWholeLine: false,
+});
+
+const verticalLineDecoration = vscode.window.createTextEditorDecorationType({
+  borderColor: 'rgba(255,120,120,0.7)',
+  borderStyle: 'solid',
+  borderWidth: '0 1px 0 0',
+  isWholeLine: false,
+});
+
+function getTabStops(line: string): number[] {
+  const specChar = getStmtRule(line);
+  const stops = RPG_TAB_STOPS[specChar] || [6];
+
+  return stops.map(stop => Math.max(0, stop-1));
+}
+
+function getNextStop(current: number, stops: number[], reverse: boolean): number | undefined {
+  const sorted = reverse ? [...stops].reverse() : stops;
+
+  for (const stop of sorted) {
+    if ((reverse && stop < current) || (!reverse && stop > current)) {
+      return Math.max(0, stop);
+    }
+  }
+
+  return undefined; // No valid stop found
+}
+
+function getCurrentTabRange(line: string, col: number, stops: number[]): [number, number] {
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (col >= stops[i] && col < stops[i + 1]) {
+      return [stops[i], stops[i + 1]];
+    }
+  }
+  return [0,0];
+}
+function getStmtRule(line: string): string {
+  let specType = '';
+  const lineType = ibmi.getSpecType(line);
+  switch (lineType) {
+    case 'd':
+      specType = 'D';
+      break
+    case 'f':
+      specType = 'F';
+      break;
+    case 'I':
+      specType = 'I';
+      break;
+    case 'c':
+      specType = getCType(line);
+      break;
+    case 'o':
+      specType = 'O';
+      break;
+    case 'p':
+      specType = 'P';  // only 1 type of P spec
+      break;
+  }
+  return specType;
+}
+
+export async function handleSmartTab(reverse: boolean): Promise<void> {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) return;
+
+  const doc = editor.document;
+  const lang = doc.languageId.toLowerCase();
+  if (!["rpgle", "sqlrpgle"].includes(lang)) return;
+  const config = vscode.workspace.getConfiguration('rpgiv2free');
+  const maxRPGLen = config.get<number>('maxRPGSourceLength', 100);  // Default to 80
+  const cursor = editor.selection.active;
+  const line = doc.lineAt(cursor.line);
+  const lineText = line.text;
+
+  if (lineText.length < 6) {
+    // Fall back to normal Tab or Shift+Tab
+    vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
+    return;
+  }
+
+  const specChar = getStmtRule(lineText);
+  if (!specChar || !RPG_TAB_STOPS[specChar]) {
+    vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
+    return;
+  }
+
+  const stops = getTabStops(lineText);
+  const newCol = getNextStop(cursor.character, stops, reverse);
+  if (newCol === undefined || newCol === cursor.character) {
+  const nextLine = cursor.line + 1;
+
+  if (nextLine >= doc.lineCount) {
+    // Create a new line if we're at EOF
+    await editor.edit(editBuilder => {
+      editBuilder.insert(new vscode.Position(cursor.line, lineText.length), '\n');
+    });
+  }
+
+  const nextLineText = doc.lineAt(Math.min(nextLine, doc.lineCount - 1)).text;
+  const firstTab = getTabStops(nextLineText)[0] ?? 6;
+
+  // Pad next line if needed
+  if (nextLineText.length < firstTab) {
+    const padAmount = firstTab - nextLineText.length;
+    await editor.edit(editBuilder => {
+      editBuilder.insert(new vscode.Position(nextLine, nextLineText.length), ' '.repeat(padAmount));
+    }, { undoStopBefore: false, undoStopAfter: false });
+  }
+
+  const wrappedPos = new vscode.Position(nextLine, firstTab);
+  editor.selection = new vscode.Selection(wrappedPos, wrappedPos);
+  editor.revealRange(new vscode.Range(wrappedPos, wrappedPos));
+  return;
+}
+  const [startCol, endCol] = getCurrentTabRange(lineText, cursor.character, stops);
+  if (startCol === endCol && startCol === 0) return;
+
+  const range = new vscode.Range(cursor.line, startCol, cursor.line, endCol);
+
+  // Pad only if we're moving forward AND it's within a sane range
+if (newCol > cursor.character && newCol > lineText.length && newCol <= maxRPGLen-1) {
+  const padding = " ".repeat(newCol - lineText.length);
+  await editor.edit(editBuilder => {
+    editBuilder.insert(
+      new vscode.Position(cursor.line, lineText.length),
+      padding
+    );
+  }, { undoStopBefore: false, undoStopAfter: false });
+}
+
+  const safeColumn = Math.min(newCol, maxRPGLen - 1);
+  const newPos = new vscode.Position(cursor.line, safeColumn);
+  editor.selection = new vscode.Selection(newPos, newPos);
+  editor.revealRange(new vscode.Range(newPos, newPos));
+  editor.setDecorations(tabBoxDecoration, [range]);
+}
+
+function getCType(line: string): string {
+  return 'C';
+}
+
+export function highlightCurrentTabZone(editor: vscode.TextEditor): void {
+  const cursor = editor.selection.active;
+  const doc = editor.document;
+
+  const lang = doc.languageId.toLowerCase();
+  if (!["rpgle", "sqlrpgle"].includes(lang)) return;
+
+  const lineText = doc.lineAt(cursor.line).text;
+  if (lineText.length < 6) {
+    editor.setDecorations(tabBoxDecoration, []);
+    return;
+  }
+
+  const specChar = getStmtRule(lineText);
+  if (!specChar || !RPG_TAB_STOPS[specChar]) {
+    editor.setDecorations(tabBoxDecoration, []);
+    return;
+  }
+
+  const stops = getTabStops(lineText);
+  const [startCol, endCol] = getCurrentTabRange(lineText, cursor.character, stops);
+
+  // If line is shorter than the end of the tab zone, pad it temporarily
+  if (lineText.length < endCol) {
+    const padding = ' '.repeat(endCol - lineText.length);
+    const editPos = new vscode.Position(cursor.line, lineText.length);
+
+    editor.edit(editBuilder => {
+      editBuilder.insert(editPos, padding);
+    }, {
+      undoStopBefore: false,
+      undoStopAfter: false
+    });
+  }
+
+  const range = new vscode.Range(cursor.line, startCol, cursor.line, endCol);
+  editor.setDecorations(tabBoxDecoration, [range]);
+}
+
+export function drawTabStopLines(editor: vscode.TextEditor): void {
+  const doc = editor.document;
+  const decorations: vscode.DecorationOptions[] = [];
+
+  for (let lineNum = 0; lineNum < doc.lineCount; lineNum++) {
+    const line = doc.lineAt(lineNum);
+    const specChar = getStmtRule(line.text);
+    const stops = getTabStops(line.text);
+
+    for (const stop of stops) {
+      if (stop > 0 && stop < line.text.length) {
+        const pos = new vscode.Position(lineNum, stop);
+        decorations.push({
+          range: new vscode.Range(pos, pos),
+        });
+      }
+    }
+  }
+
+  editor.setDecorations(verticalLineDecoration, decorations);
+}
