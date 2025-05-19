@@ -36,7 +36,8 @@ export interface configSettings {
   removeFREEdir: boolean;
   replaceCOPYinRPG: boolean;
   replaceCOPYinSQLRPG: boolean;
-  tempVarName1: string;
+  tempVar1STG: string;
+  tempVar2DO: string;
 }
 
 export function getRPGIVFreeSettings(): configSettings {
@@ -51,7 +52,8 @@ export function getRPGIVFreeSettings(): configSettings {
     removeFREEdir: config.get<boolean>('RemoveFREEDirective', true),
     replaceCOPYinRPG: config.get<boolean>('ReplaceCOPYwithINCLUDE_RPG', true),
     replaceCOPYinSQLRPG: config.get<boolean>('ReplaceCOPYwithINCLUDE_SQLRPG', false),
-    tempVarName1: config.get<string>('tempVarName1', 'rpg2ff_temp1')
+    tempVar1STG: config.get<string>('tempVarName1', 'rpg2ff_tempSTG'),
+    tempVar2DO: config.get<string>('tempVarName2', 'rpg2ff_tempDO')
   };
 }
 
@@ -142,10 +144,13 @@ export function isDirective(line: string): boolean {
   );
   return bDirective;
 }
+export function isValidFixedFormat(line: string): boolean {
+  const bValidFormat = (isNotSkipStmt(line) && getSpecType(line).trim() !== '');
+  return bValidFormat;
+}
 
-// for for not executable source lines, like comments, blanks line, or compiler directives
+  // for non-executable source lines, like comments, blanks line, or compiler directives
 export function isSkipStmt(line: string): boolean {
-
   const bComment = isComment(line);  // Assumes isComment() handles RPG IV logic
   const bEmptyStmt = isEmptyStmt(line);
   const bDirective = isDirective(line);
@@ -426,7 +431,7 @@ export function isValidOpcode(id: string): boolean {
 export function isUnsuppotedOpcode(id: string): boolean {
   // List of valid opcodes (operation extenders not included)
   const oldRPGOpcodes = new Set([
-    "CALL", "PARM", "KLIST", "KFLD","FREE","DEBUG"
+    "CALL", "CALLB", "PARM", "KLIST", "KFLD", "FREE", "DEBUG"
   ]);
    // Strip off operation extenders like "(EHMR)" from the ID
   const baseOpcode = id.replace(/\([A-Z]+\)$/i, "").toUpperCase();

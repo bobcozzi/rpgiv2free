@@ -4,7 +4,8 @@ import { collectStmt } from './collectSpecs';
 import {
   handleSmartTab, highlightCurrentTabZone, drawTabStopLines,
   applyColumnarDecorations
- } from './smartTab';
+} from './smartTab';
+import { handleSmartEnter } from './smartEnter';
 import { expandCompoundRange } from './compoundStmt';
 import { convertHSpec } from './HSpec';
 import { convertFSpec } from './FSpec';
@@ -100,7 +101,22 @@ export function activate(context: vscode.ExtensionContext) {
 });
 
 
+  // RPG Smart Enter key handler
+context.subscriptions.push(
+  vscode.commands.registerTextEditorCommand('rpgiv2free.smartEnter', async (editor, edit) => {
+    const config = vscode.workspace.getConfiguration('rpgiv2free');
+    const smartEnterEnabled = config.get<boolean>('enabledRPGSmartEnter', true);
+    const eol = ibmi.getEOL();
+    if (!smartEnterEnabled) {
+      // fallback to default Enter
+      await vscode.commands.executeCommand('type', { text: eol });
+      return;
+    }
 
+    const position = editor.selection.active;
+    await handleSmartEnter(editor, position);  // Note: handleSmartEnter doesn't use `edit` here
+  })
+);
   //
   // ✅ Your convertToRPGFree logic stays intact
   //
@@ -124,6 +140,9 @@ export function activate(context: vscode.ExtensionContext) {
    *
    * Errors or issues during processing are logged for debugging purposes.
    */
+
+
+
   const disposable = vscode.commands.registerCommand('rpgiv2free.convertToRPGFree', async () => {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {

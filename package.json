@@ -6,7 +6,7 @@
   "preview": true,
   "private": false,
   "publisher": "CozziResearch",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0",
@@ -44,6 +44,11 @@
       }
     ],
     "keybindings": [
+      {
+        "key": "enter",
+        "command": "rpgiv2free.smartEnter",
+        "when": "editorTextFocus && editorLangId == rpgle || editorLangId == sqlrpgle"
+      },
       {
         "key": "tab",
         "command": "rpgsmarttab.tab",
@@ -140,8 +145,23 @@
         },
         "rpgiv2free.tempVarName1": {
           "type": "string",
-          "default": "f2f_tempVar1",
+          "default": "f2f_tempSTG",
           "description": "Fixed to Free format Temp/Workfield name to generate for CAT, SUBST etc, opcode conversions."
+        },
+        "rpgiv2free.tempVarName2": {
+          "type": "string",
+          "default": "f2f_tempDO",
+          "description": "Fixed to Free format Temp/Workfield name to generate for DO operations."
+        },
+        "rpgiv2free.enabledRPGSmartEnter": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable RPG Smart Enter key behavior for RPG IV."
+        },
+        "rpgiv2free.enabledRPGCopySpecOnEnter": {
+          "type": "boolean",
+          "default": true,
+          "description": "When RPG Smart Enter is enabled, copy the RPG spec letter to column 6 and align the cursor after it."
         },
         "rpgiv2free.enableRPGSmartTab": {
           "type": "boolean",

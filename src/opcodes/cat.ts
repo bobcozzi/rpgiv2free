@@ -47,7 +47,7 @@ export function convertCAT(
     lines.push(`${result} = ${fullExpr};`);
   } else {
     // Rule: If no extender (P), wrap in %SUBST
-    const lenVar = config.tempVarName1;
+    const lenVar = config.tempVar1STG;
     lines.push(`${lenVar} = %LEN(${fullExpr});  // workfield ${lenVar} for CAT opcode`);
     lines.push(`${lenVar} = %MIN(${lenVar} : %LEN(${result})); // Avoid overlow error`);
     lines.push(`%SUBST(${result} : 1 : ${lenVar}) = ${fullExpr};`);

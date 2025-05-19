@@ -16,7 +16,7 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
 
   const line = lines[0].padEnd(80, ' '); // RPG fixed-format always assumes 80-char line
   const specType = ibmi.getSpecType(line);
- // vscode.window.showInformationMessage('convertCSpec called. SpecType: ' + specType);
+  // vscode.window.showInformationMessage('convertCSpec called. SpecType: ' + specType);
   if (specType !== 'c') return [];
 
   const levelBreak = ibmi.getCol(line, 7, 8).trim();
@@ -175,7 +175,7 @@ function convertOpcodeToFreeFormat(
 
   // First try the conditional opcode logic
   const condLines = convertConditionalOpcode(opcode, factor1, factor2);
-  if (condLines.length > 0) return { newLines: condLines, newOpcode: opcode};
+  if (condLines.length > 0) return { newLines: condLines, newOpcode: opcode };
   const fullOpcode = opcode.toUpperCase();
 
   const newLines: string[] = [];
@@ -194,12 +194,12 @@ function convertOpcodeToFreeFormat(
   } else {
     newOpcode = opcode.toUpperCase();
   }
-   newOpcode =
+  newOpcode =
     extenders.length > 0
       ? `${newOpcode}(${extenders.join(" ")})`
       : newOpcode;
   const opCode = opcode.toUpperCase().replace(/\(.*\)$/, "");
- // newOpcode = opCode;
+  // newOpcode = opCode;
 
   switch (opCode.toUpperCase()) {
     case "Z-ADD":
@@ -221,6 +221,11 @@ function convertOpcodeToFreeFormat(
       newOpcode = '';
       break;
 
+    case 'CHECKR':
+      newLines.push(...op.convertCHECK(fullOpcode, factor1, factor2, result, extraDCL));
+      newOpcode = '';
+      break;
+
     case 'CAT':
       newLines.push(...op.convertCAT(fullOpcode, factor1, factor2, result, extraDCL));
       newOpcode = '';
@@ -236,6 +241,11 @@ function convertOpcodeToFreeFormat(
         // If factor1 is empty, use the result as the first operand
         freeFormat += ` // Label: ${factor1}`;
       }
+      newLines.push(freeFormat);
+      break;
+
+    case "DSPLY":
+      freeFormat = `${opCode} ${factor1} ${factor2} ${result}; // Consider using SND-MSG instead`;
       newLines.push(freeFormat);
       break;
 
@@ -294,6 +304,10 @@ function convertOpcodeToFreeFormat(
       break;
     case "MOVE":
       newLines.push(`EVALR ${result} = ${factor2}`);
+      break;
+ case 'DO':
+      newLines.push(...op.convertDO(fullOpcode, factor1, factor2, result, extraDCL));
+      newOpcode = '';
       break;
     case "SUB":
       if (factor1) {
@@ -367,10 +381,13 @@ function convertOpcodeToFreeFormat(
       }
       break;
     default:
+      freeFormat = `${opCode} ${factor1} ${factor2} ${result};`;
+      newLines.push(freeFormat);
+      break;
       // handle unrecognized opcode
       break;
   }
-  return { newLines: newLines, newOpcode: newOpcode};;
+  return { newLines: newLines, newOpcode: newOpcode };;
 }
 
 function handleResultingIndicators(
@@ -388,7 +405,7 @@ function handleResultingIndicators(
 
   switch (normalizedOpcode) {
     case '':  // default is no Ind1, ind2=Error, ind2 = %Found()
-    if (resInd3) {
+      if (resInd3) {
         newLines.push(`*IN${resInd3} = %FOUND();`);
       }
       if (resInd2) {
@@ -450,15 +467,6 @@ function handleResultingIndicators(
       }
       break;
 
-    case "CALLP":
-      if (resInd1) {
-        newLines.push(`*IN${resInd1} = %SUCCESS(${factor2 || result});`);
-      }
-      if (resInd2) {
-        newLines.push(`*IN${resInd2} = %ERROR(${factor2 || result});`);
-      }
-      break;
-
     case "IF":
     case "DOW":
     case "DOU":
@@ -468,6 +476,12 @@ function handleResultingIndicators(
 
     default:
       // Other opcodes can be added here
+      if (resInd3) {
+        newLines.push(`*IN${resInd3} = %FOUND();`);
+      }
+      if (resInd2) {
+        newLines.push(`*IN${resInd2} = %ERROR();`);
+      }
       break;
   }
 

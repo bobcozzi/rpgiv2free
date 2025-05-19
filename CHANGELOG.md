@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.5] - 2025-05-19
+- Introduces a Smart RPG Enter Key option in our settings. This is on by default. It allows you to press the Enter key to move to the next line in a FIXED FORMAT RPG IV statement without distorying the line integrity. That is no linefeed is inserted at the cursor location when Enter is pressed (but again, only on Fixed Format code). This is similar to how the Smart Tab feature works. You can disable this feature if you prefer the old behavior of the Enter key. RPG Smart Enter key provides combined with our RPG Smart Tab feature allows a more natural editing experience for RPG IV editing.
+- The Smart Enter key feature is only available for Fixed Format RPG IV code. It is not available for Free Format RPG IV code, nor is it available for non-RPGLE or non-SQLRPGLE source files.
 ## [0.6.4] - 2025-05-19
 - Cleaned up the code for the new RPG Smart Tab toggle on/off feature. It now cleaning removes the columnar boundary rulers when the feature is disabled. It also cleaning redraws them when the feature is toggled back on.
 - We now have custom columr and width setting options for the columnar boundary rulers that apply specifically to Light Mode and Dark Mode editing.
