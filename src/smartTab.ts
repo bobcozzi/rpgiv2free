@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import * as ibmi from "./IBMi";  // Using your existing functions
+import * as types from './types';
 
 // Tab stops by spec type — update or expand as needed
 //  *. 1 ...+... 2 ...+... 3 ...+... 4 ...+... 5 .. v
@@ -40,7 +41,7 @@ const verticalLineDecoration = vscode.window.createTextEditorDecorationType({
 
 function getTabStops(line: string): number[] {
   const specChar = getStmtRule(line);
-  const stops = RPG_TAB_STOPS[specChar] || [6];
+  const stops = RPG_TAB_STOPS[specChar] || [];
 
   return stops.map(stop => Math.max(0, stop-1));
 }
@@ -57,7 +58,7 @@ function getNextStop(current: number, stops: number[], reverse: boolean): number
   return undefined; // No valid stop found
 }
 
-function getCurrentTabRange(line: string, col: number, stops: number[]): [number, number] {
+function getCurrentTabRange(col: number, stops: number[]): [number, number] {
   for (let i = 0; i < stops.length - 1; i++) {
     if (col >= stops[i] && col < stops[i + 1]) {
       return [stops[i], stops[i + 1]];
@@ -117,6 +118,12 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
   }
 
   const stops = getTabStops(lineText);
+  if (stops.length === 0 || stops[0] === 0 && stops.length === 1) {
+    // No valid tab stops found
+    vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
+    return;
+  }
+
   const newCol = getNextStop(cursor.character, stops, reverse);
   if (newCol === undefined || newCol === cursor.character) {
   const nextLine = cursor.line + 1;
@@ -144,7 +151,7 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
   editor.revealRange(new vscode.Range(wrappedPos, wrappedPos));
   return;
 }
-  const [startCol, endCol] = getCurrentTabRange(lineText, cursor.character, stops);
+  const [startCol, endCol] = getCurrentTabRange(cursor.character, stops);
   if (startCol === endCol && startCol === 0) return;
 
   const range = new vscode.Range(cursor.line, startCol, cursor.line, endCol);
@@ -171,7 +178,7 @@ function getCType(line: string): string {
   return 'C';
 }
 
-export function highlightCurrentTabZone(editor: vscode.TextEditor): void {
+export async function highlightCurrentTabZone(editor: vscode.TextEditor): Promise<void> {
   const cursor = editor.selection.active;
   const doc = editor.document;
 
@@ -179,7 +186,7 @@ export function highlightCurrentTabZone(editor: vscode.TextEditor): void {
   if (!["rpgle", "sqlrpgle"].includes(lang)) return;
 
   const lineText = doc.lineAt(cursor.line).text;
-  if (lineText.length < 6) {
+  if (lineText.length < 6 || ibmi.isSkipStmt(lineText)) {
     editor.setDecorations(tabBoxDecoration, []);
     return;
   }
@@ -191,19 +198,31 @@ export function highlightCurrentTabZone(editor: vscode.TextEditor): void {
   }
 
   const stops = getTabStops(lineText);
-  const [startCol, endCol] = getCurrentTabRange(lineText, cursor.character, stops);
+  if (!stops || stops.length === 0 || (stops[0] === 0 && stops.length === 1)) {
+    editor.setDecorations(tabBoxDecoration, []);
+    return;
+  }
 
-  // If line is shorter than the end of the tab zone, pad it temporarily
-  if (lineText.length < endCol) {
+  const [startCol, endCol] = getCurrentTabRange(cursor.character, stops);
+
+  if (lineText.length === 0 && 999 < endCol) {
     const padding = ' '.repeat(endCol - lineText.length);
     const editPos = new vscode.Position(cursor.line, lineText.length);
 
-    editor.edit(editBuilder => {
+    types.setSuppressTabZoneUpdate(true);
+
+    await editor.edit(editBuilder => {
       editBuilder.insert(editPos, padding);
     }, {
-      undoStopBefore: false,
-      undoStopAfter: false
+      undoStopBefore: true,
+      undoStopAfter: true
     });
+
+    setTimeout(() => {
+      types.setSuppressTabZoneUpdate(false);
+    }, 50);
+
+    return; // skip drawing tab zone until after padding
   }
 
   const range = new vscode.Range(cursor.line, startCol, cursor.line, endCol);

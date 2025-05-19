@@ -9,6 +9,7 @@ import { convertDSpec } from './DSpec';
 import { convertPSpec } from './PSpec';
 import { convertCSpec } from './CSpec';
 import { convertToFreeFormSQL } from './SQLSpec';
+import * as types from './types';
 import * as ibmi from './IBMi';
 
 let rpgSmartTabEnabled = true;  // ← In-memory toggle
@@ -63,18 +64,24 @@ export function activate(context: vscode.ExtensionContext) {
     handleSmartTab(true);
   });
 
+  let tabStopDebounceTimer: NodeJS.Timeout | undefined;
   context.subscriptions.push(tabCmd, shiftTabCmd);
 
   // add listener for character/non-tab cursor movement
-  let tabStopDebounceTimer: NodeJS.Timeout | undefined;
   vscode.window.onDidChangeTextEditorSelection((e) => {
-    if (!e.textEditor || !rpgSmartTabEnabled) return;
-    if (tabStopDebounceTimer) clearTimeout(tabStopDebounceTimer);
-    tabStopDebounceTimer = setTimeout(() => {
-      highlightCurrentTabZone(e.textEditor);
+  if (!e.textEditor || !rpgSmartTabEnabled) return;
+
+  if (tabStopDebounceTimer) clearTimeout(tabStopDebounceTimer);
+
+  tabStopDebounceTimer = setTimeout(async () => {
+    try {
+      await highlightCurrentTabZone(e.textEditor);
       drawTabStopLines(e.textEditor);
-    }, 100); // Adjust debounce delay as needed
-  });
+    } catch (err) {
+      console.error("Tab zone debounce error:", err);
+    }
+  }, 100);
+});
 
 
 

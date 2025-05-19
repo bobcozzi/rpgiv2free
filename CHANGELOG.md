@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.3] - 2025-05-19
+- Introducing RPG Smart Tabbing! This feature automatically adjusts the cursor when TAB is pressed for your RPG code. It moves from "column to column" based on the RPG IV specification you are on. Both forward tab and backwards tab (shift+TAB) move the cursor on the line without disrupting the existing code position. No more shifting code when tabbing!
+- Introducing a new setting to control the "RPG Smart Tab" feature. This setting is called "rpgiv2free.smartTab" and is set to true by default. You can disable it if you prefer the old default tab behavior. There is also a status bar button to toggle the feature on and off. Note that on non-fixed format RPG IV code as well as non-RPGLE, non-SQLRPGLE source files, the smart tab feature is disabled by default.
+- Introducing a new "RPG Columnar Rular" that shows you visually where your code is to help with alignment errors in the editor. For example, Factor 1, Opcode, Factor 2, and Result are along with all the other indicator fields are now outlined for you. Note the due to VS CODE limitations, this outline is only for code that exists and doesn't apply to so called "empty space" on the line.
+- For the RPGIV2Free extension, the all specifications, H, F, D, P are fully supported to be converted. Howeve the Calc specs while working well, are not converted and should be reviewed as we still do not support all edge cases fully, and do not support conditioning indicators at all (and do not intent to in the future).
 ## [0.6.2] - 2025-05-17
 - Ignore File specs for input Primary/Secondary files (only the initial F spec is ignored, continuations may be problematic for these if they exist)
 - Fixed a small issue with spacing for continuation of long expressions and all the variations that RPG IV allows for such things.
