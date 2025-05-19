@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import * as ibmi from "./IBMi";  // Using your existing functions
 import * as types from './types';
 
+
 // Tab stops by spec type — update or expand as needed
 //  *. 1 ...+... 2 ...+... 3 ...+... 4 ...+... 5 .. v
 // FFilename++IPEASF.....L.....A.Device+.Keywords++
@@ -13,14 +14,14 @@ import * as types from './types';
 // CL0N01Factor1+++++++Opcode&ExtExtended-factor2++++++++++++++++++++++++++
 // C                   IF        A = B
 const RPG_TAB_STOPS: Record<string, number[]> = {
-  H: [1, 6],
+  H: [1, 6, 7, 80],
   F: [1, 6, 7, 18, 19, 20, 21, 22, 28, 34, 36, 43, 44, 80],
   D: [1, 6, 7, 22, 23, 24, 26, 33, 40, 41, 43, 44, 80],
   C: [1, 6, 7, 9, 12, 26, 36, 50, 64, 69, 71, 73, 75, 80],
   CX: [1, 6, 7, 9, 26, 36, 80],
   I: [1, 6, 7, 8, 10, 12, 17, 24, 39],
   O: [1, 6, 7, 8, 10, 12, 17, 24, 39],
-  P: [1, 6, 7, 24, 44]
+  P: [1, 6, 7, 24, 44, 80]
 };
 
 const tabBoxDecoration = vscode.window.createTextEditorDecorationType({
@@ -32,10 +33,32 @@ const tabBoxDecoration = vscode.window.createTextEditorDecorationType({
   isWholeLine: false,
 });
 
+// Read user-specified color from settings, fallback to default if not set
+const config = vscode.workspace.getConfiguration('rpgiv2free');
+const themeKind = vscode.window.activeColorTheme.kind;
+const isDarkMode = themeKind === vscode.ColorThemeKind.Dark;
+
+// Get user-specified color for the active theme
+const colorSetting = isDarkMode
+  ? 'verticalTabStopColor_DarkMode'
+  : 'verticalTabStopColor_LightMode';
+const widthSetting = isDarkMode
+  ? 'verticalTabStopWidth_DarkMode'
+  : 'verticalTabStopWidth_LightMode';
+
+const defaultDarkColor = 'rgba(80, 255, 80, 0.5)';
+const defaultLightColor = 'rgba(0, 128, 0, 0.7)';
+const defaultWidth = isDarkMode ? 0.6 : 1;
+
+// Read from config with sensible defaults
+const userColor = config.get<string>(colorSetting, isDarkMode ? defaultDarkColor : defaultLightColor);
+const lineWidth = config.get<number>(widthSetting, defaultWidth);
+
+// Create the decoration type
 const verticalLineDecoration = vscode.window.createTextEditorDecorationType({
-  borderColor: 'rgba(255,120,120,0.7)',
+  borderColor: userColor,
   borderStyle: 'solid',
-  borderWidth: '0 1px 0 0',
+  borderWidth: `0 ${lineWidth}px 0 0`,  // Right-side vertical border
   isWholeLine: false,
 });
 
@@ -43,7 +66,7 @@ function getTabStops(line: string): number[] {
   const specChar = getStmtRule(line);
   const stops = RPG_TAB_STOPS[specChar] || [];
 
-  return stops.map(stop => Math.max(0, stop-1));
+  return stops.map(stop => Math.max(0, stop - 1));
 }
 
 function getNextStop(current: number, stops: number[], reverse: boolean): number | undefined {
@@ -64,18 +87,22 @@ function getCurrentTabRange(col: number, stops: number[]): [number, number] {
       return [stops[i], stops[i + 1]];
     }
   }
-  return [0,0];
+  // return [0, 0];
+  return [-1, -1];
 }
 function getStmtRule(line: string): string {
   let specType = '';
   const lineType = ibmi.getSpecType(line);
   switch (lineType) {
-    case 'd':
-      specType = 'D';
+    case 'h':
+      specType = 'H';
       break
     case 'f':
       specType = 'F';
       break;
+    case 'd':
+      specType = 'D';
+      break
     case 'I':
       specType = 'I';
       break;
@@ -126,46 +153,51 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
 
   const newCol = getNextStop(cursor.character, stops, reverse);
   if (newCol === undefined || newCol === cursor.character) {
-  const nextLine = cursor.line + 1;
+    const nextLine = cursor.line + 1;
 
-  if (nextLine >= doc.lineCount) {
-    // Create a new line if we're at EOF
-    await editor.edit(editBuilder => {
-      editBuilder.insert(new vscode.Position(cursor.line, lineText.length), '\n');
-    });
+    if (nextLine >= doc.lineCount) {
+      // Create a new line if we're at EOF
+      await editor.edit(editBuilder => {
+        editBuilder.insert(new vscode.Position(cursor.line, lineText.length), '\n');
+      });
+    }
+
+    const nextLineText = doc.lineAt(Math.min(nextLine, doc.lineCount - 1)).text;
+    const nextStops = getTabStops(nextLineText);
+    const firstTab = nextStops.length > 0 ? nextStops[0] : 6;
+
+    // Pad next line if needed
+    if (nextLineText.length < firstTab) {
+      const padAmount = firstTab - nextLineText.length;
+      await editor.edit(editBuilder => {
+        editBuilder.insert(new vscode.Position(nextLine, nextLineText.length), ' '.repeat(padAmount));
+      }, { undoStopBefore: false, undoStopAfter: false });
+    }
+
+    const wrappedPos = new vscode.Position(nextLine, firstTab);
+    editor.selection = new vscode.Selection(wrappedPos, wrappedPos);
+    editor.revealRange(new vscode.Range(wrappedPos, wrappedPos));
+    return;
   }
-
-  const nextLineText = doc.lineAt(Math.min(nextLine, doc.lineCount - 1)).text;
-  const firstTab = getTabStops(nextLineText)[0] ?? 6;
-
-  // Pad next line if needed
-  if (nextLineText.length < firstTab) {
-    const padAmount = firstTab - nextLineText.length;
-    await editor.edit(editBuilder => {
-      editBuilder.insert(new vscode.Position(nextLine, nextLineText.length), ' '.repeat(padAmount));
-    }, { undoStopBefore: false, undoStopAfter: false });
-  }
-
-  const wrappedPos = new vscode.Position(nextLine, firstTab);
-  editor.selection = new vscode.Selection(wrappedPos, wrappedPos);
-  editor.revealRange(new vscode.Range(wrappedPos, wrappedPos));
-  return;
-}
   const [startCol, endCol] = getCurrentTabRange(cursor.character, stops);
-  if (startCol === endCol && startCol === 0) return;
 
+  if (startCol < 0 || endCol < 0) return; // Don't draw decoration
+  if ((startCol === endCol && startCol === 0) ||
+    cursor.character >= stops[stops.length - 1]) {
+    return; // At or beyond final tab stop — don't decorate
+  }
   const range = new vscode.Range(cursor.line, startCol, cursor.line, endCol);
 
   // Pad only if we're moving forward AND it's within a sane range
-if (newCol > cursor.character && newCol > lineText.length && newCol <= maxRPGLen-1) {
-  const padding = " ".repeat(newCol - lineText.length);
-  await editor.edit(editBuilder => {
-    editBuilder.insert(
-      new vscode.Position(cursor.line, lineText.length),
-      padding
-    );
-  }, { undoStopBefore: false, undoStopAfter: false });
-}
+  if (newCol > cursor.character && newCol > lineText.length && newCol <= maxRPGLen - 1) {
+    const padding = " ".repeat(newCol - lineText.length);
+    await editor.edit(editBuilder => {
+      editBuilder.insert(
+        new vscode.Position(cursor.line, lineText.length),
+        padding
+      );
+    }, { undoStopBefore: false, undoStopAfter: false });
+  }
 
   const safeColumn = Math.min(newCol, maxRPGLen - 1);
   const newPos = new vscode.Position(cursor.line, safeColumn);
@@ -249,4 +281,37 @@ export function drawTabStopLines(editor: vscode.TextEditor): void {
   }
 
   editor.setDecorations(verticalLineDecoration, decorations);
+}
+
+export function applyColumnarDecorations(editor: vscode.TextEditor, smartTabEnabled: boolean) {
+  if (!editor) return;
+
+  const doc = editor.document;
+  const lang = doc.languageId.toLowerCase();
+  if (!["rpgle", "sqlrpgle"].includes(lang)) return;
+
+  if (smartTabEnabled) {
+    const ranges: vscode.Range[] = [];
+
+    // Create "vertical line" decoration by adding a range at specific columns
+    for (let i = 0; i < editor.document.lineCount; i++) {
+      const line = editor.document.lineAt(i);
+      if (ibmi.isSkipStmt(line.text)) continue; // Skip if line is a skip statement
+      if (ibmi.isComment(line.text)) continue; // Skip if line is a comment
+      const stops = getTabStops(line.text); // Get tab stops for the current line
+      if (!stops || stops.length === 0) continue; // Skip if no tab stops found
+      stops.forEach(col => {
+        if (line.text.length > col) {
+          const pos = new vscode.Position(i, col);
+          ranges.push(new vscode.Range(pos, pos));
+        }
+      });
+
+      }
+
+    editor.setDecorations(verticalLineDecoration, ranges);
+  } else {
+    // Clear decorations
+    editor.setDecorations(verticalLineDecoration, []);
+  }
 }

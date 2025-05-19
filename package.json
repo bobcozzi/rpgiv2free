@@ -6,7 +6,7 @@
   "preview": true,
   "private": false,
   "publisher": "CozziResearch",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0",
@@ -147,19 +147,39 @@
           "type": "boolean",
           "default": true,
           "description": "Enable RPG Smart Tab/Shift+Tab navigation in RPG IV fixed-format source lines."
+        },
+        "rpgiv2free.verticalTabStopColor_DarkMode": {
+          "type": "color",
+          "default": "rgba(80, 255, 80, 0.5)",
+          "description": "Fixed format RPG IV vertical columnar boundary ruler color for dark mode editing."
+        },
+        "rpgiv2free.verticalTabStopColor_LightMode": {
+          "type": "color",
+          "default": "rgba(0, 128, 0, 0.7)",
+          "description": "Fixed format RPG IV vertical columnar boundary ruler color for light mode editing."
+        },
+        "rpgiv2free.verticalTabStopWidth_LightMode": {
+          "type": "number",
+          "default": 1,
+          "description": "Line width (in pixels) for vertical tab stops in light mode."
+        },
+        "rpgiv2free.verticalTabStopWidth_DarkMode": {
+          "type": "number",
+          "default": 1,
+          "description": "Line width (in pixels) for vertical tab stops in dark mode."
         }
       }
     }
   },
   "main": "./out/extension.js",
   "activationEvents": [
-  "onLanguage:rpgle",
-  "onLanguage:sqlrpgle",
-  "onCommand:rpgiv2free.convertToRPGFree",
-  "onCommand:rpgsmarttab.tab",
-  "onCommand:rpgsmarttab.shiftTab",
-  "onCommand:rpgiv2free.toggleRPGSmartTab"
-],
+    "onLanguage:rpgle",
+    "onLanguage:sqlrpgle",
+    "onCommand:rpgiv2free.convertToRPGFree",
+    "onCommand:rpgsmarttab.tab",
+    "onCommand:rpgsmarttab.shiftTab",
+    "onCommand:rpgiv2free.toggleRPGSmartTab"
+  ],
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "build": "tsc",

@@ -1,7 +1,10 @@
 import * as vscode from 'vscode';
 import { formatRPGIV } from './formatRPGIV';
 import { collectStmt } from './collectSpecs';
-import { handleSmartTab, highlightCurrentTabZone, drawTabStopLines } from './smartTab';
+import {
+  handleSmartTab, highlightCurrentTabZone, drawTabStopLines,
+  applyColumnarDecorations
+ } from './smartTab';
 import { expandCompoundRange } from './compoundStmt';
 import { convertHSpec } from './HSpec';
 import { convertFSpec } from './FSpec';
@@ -11,6 +14,7 @@ import { convertCSpec } from './CSpec';
 import { convertToFreeFormSQL } from './SQLSpec';
 import * as types from './types';
 import * as ibmi from './IBMi';
+
 
 let rpgSmartTabEnabled = true;  // ← In-memory toggle
 
@@ -36,12 +40,24 @@ export function activate(context: vscode.ExtensionContext) {
    * This command enables or disables the Smart Tab functionality without requiring a reload.
    * The current state is persisted in the global state and reflected in the status bar.
    */
-  const toggleRPGSmartTabCmd = vscode.commands.registerCommand('rpgiv2free.toggleRPGSmartTab', async () => {
-    rpgSmartTabEnabled = !rpgSmartTabEnabled;
-    await context.globalState.update('enableRPGSmartTab', rpgSmartTabEnabled);  // ⬅️ persist it
-    updateSmartTabStatusBar();
-    vscode.window.showInformationMessage(`Smart Tab is now ${rpgSmartTabEnabled ? 'enabled' : 'disabled'}.`);
-  });
+ const toggleRPGSmartTabCmd = vscode.commands.registerCommand('rpgiv2free.toggleRPGSmartTab', async () => {
+  // Toggle the setting
+  rpgSmartTabEnabled = !rpgSmartTabEnabled;
+
+  // Persist the setting
+  await context.globalState.update('rpgSmartTabEnabled', rpgSmartTabEnabled);
+
+  // Update UI
+  updateSmartTabStatusBar();
+  // vscode.window.showInformationMessage(`Smart Tab is now ${rpgSmartTabEnabled ? 'enabled' : 'disabled'}.`);
+
+  // Reapply or clear decorations based on new setting
+  const editor = vscode.window.activeTextEditor;
+  if (editor) {
+    applyColumnarDecorations(editor, rpgSmartTabEnabled);
+  }
+});
+
   context.subscriptions.push(toggleRPGSmartTabCmd);
   updateSmartTabStatusBar();
 

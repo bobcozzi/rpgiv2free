@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.4] - 2025-05-19
+- Cleaned up the code for the new RPG Smart Tab toggle on/off feature. It now cleaning removes the columnar boundary rulers when the feature is disabled. It also cleaning redraws them when the feature is toggled back on.
+- We now have custom columr and width setting options for the columnar boundary rulers that apply specifically to Light Mode and Dark Mode editing.
 ## [0.6.3] - 2025-05-19
 - Introducing RPG Smart Tabbing! This feature automatically adjusts the cursor when TAB is pressed for your RPG code. It moves from "column to column" based on the RPG IV specification you are on. Both forward tab and backwards tab (shift+TAB) move the cursor on the line without disrupting the existing code position. No more shifting code when tabbing!
 - Introducing a new setting to control the "RPG Smart Tab" feature. This setting is called "rpgiv2free.smartTab" and is set to true by default. You can disable it if you prefer the old default tab behavior. There is also a status bar button to toggle the feature on and off. Note that on non-fixed format RPG IV code as well as non-RPGLE, non-SQLRPGLE source files, the smart tab feature is disabled by default.
