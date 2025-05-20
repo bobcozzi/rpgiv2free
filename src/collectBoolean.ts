@@ -1,6 +1,5 @@
 
 import * as ibmi from './IBMi';
-
 import { stmtLines } from './types';
 
 export function collectBooleanOpcode(allLines: string[], startIndex: number): stmtLines {
@@ -53,6 +52,11 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number): st
     } else if (opcode.startsWith('WHEN')) {
       ffOpcode = 'WHEN';
       isWhen = true;
+
+    } else if (opcode.startsWith('DOW')) {
+      ffOpcode = 'DOW';
+    } else if (opcode.startsWith('DOU')) {
+      ffOpcode = 'DOU';
     }
     booleanExpr = `${ffOpcode} ${factor1} ${comparison} ${factor2}`;
   }

@@ -149,7 +149,7 @@ export function isValidFixedFormat(line: string): boolean {
   return bValidFormat;
 }
 
-  // for non-executable source lines, like comments, blanks line, or compiler directives
+// for non-executable source lines, like comments, blanks line, or compiler directives
 export function isSkipStmt(line: string): boolean {
   const bComment = isComment(line);  // Assumes isComment() handles RPG IV logic
   const bEmptyStmt = isEmptyStmt(line);
@@ -164,7 +164,7 @@ export function isNotSkipStmt(line: string): boolean {
 export function isComment(line: string): boolean {
   const classicRPGStyle = line.length > 6 && line[6] === '*';
   const cppStyle = getCol(line, 8, 80).trimStart().startsWith('//') ||
-                   getCol(line, 1, 80).trimStart().startsWith('//');
+    getCol(line, 1, 80).trimStart().startsWith('//');
   return classicRPGStyle || cppStyle;
 }
 
@@ -356,6 +356,16 @@ export function isOpcodeIFxx(line: string): boolean {
   // Only matches IF followed by a valid boolean operator
   return (isComment(line)) ? false : /^IF(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
 }
+export function isOpcodeDOUxx(line: string): boolean {
+  const opcode = getOpcode(line);
+  // Only matches IF followed by a valid boolean operator
+  return (isComment(line)) ? false : /^DOU(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
+}
+export function isOpcodeDOWxx(line: string): boolean {
+  const opcode = getOpcode(line);
+  // Only matches IF followed by a valid boolean operator
+  return (isComment(line)) ? false : /^DOW(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
+}
 
 export function isOpcodeWHENxx(line: string): boolean {
   const opcode = getOpcode(line);
@@ -389,6 +399,8 @@ export function isCASEOpcode(line: string): boolean {
 export function isStartBooleanOpcode(line: string): boolean {
   return (isNotComment(line) &&
     (isOpcodeIFxx(line) ||
+      isOpcodeDOWxx(line) ||
+      isOpcodeDOUxx(line) ||
       isOpcodeSELECT(line))
   );
 }
@@ -396,6 +408,8 @@ export function isStartBooleanOpcode(line: string): boolean {
 export function isBooleanOpcode(line: string): boolean {
   return (isNotComment(line) &&
     (isOpcodeIFxx(line) ||
+      isOpcodeDOWxx(line) ||
+      isOpcodeDOUxx(line) ||
       isOpcodeWHENxx(line) ||
       isOpcodeANDxxORxx(line))
   );
@@ -433,7 +447,7 @@ export function isUnsuppotedOpcode(id: string): boolean {
   const oldRPGOpcodes = new Set([
     "CALL", "CALLB", "PARM", "KLIST", "KFLD", "FREE", "DEBUG"
   ]);
-   // Strip off operation extenders like "(EHMR)" from the ID
+  // Strip off operation extenders like "(EHMR)" from the ID
   const baseOpcode = id.replace(/\([A-Z]+\)$/i, "").toUpperCase();
 
   return oldRPGOpcodes.has(baseOpcode);

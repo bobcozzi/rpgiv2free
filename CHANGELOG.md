@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.6] - 2025-05-20
+- Added support for the DOWxx and DOUxx opcodes. They now convert to free format using the same syntax as the IFxx opcodes. The DOWxx and DOUxx opcodes are now fully supported in the RPG IV to Free Format conversion.
 ## [0.6.5] - 2025-05-19
 - Introduces a Smart RPG Enter Key option in our settings. This is on by default. It allows you to press the Enter key to move to the next line in a FIXED FORMAT RPG IV statement without distorying the line integrity. That is no linefeed is inserted at the cursor location when Enter is pressed (but again, only on Fixed Format code). This is similar to how the Smart Tab feature works. You can disable this feature if you prefer the old behavior of the Enter key. RPG Smart Enter key provides combined with our RPG Smart Tab feature allows a more natural editing experience for RPG IV editing.
 - The Smart Enter key feature is only available for Fixed Format RPG IV code. It is not available for Free Format RPG IV code, nor is it available for non-RPGLE or non-SQLRPGLE source files.
