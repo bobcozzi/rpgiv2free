@@ -224,7 +224,7 @@ function tokenizeWithSpacing(line: string): { tokens: string[], spacers: string[
     const spaceMatch = spacerRegex.exec(line);
     const spaces = spaceMatch?.[0] ?? '';
     pos = spacerRegex.lastIndex;
-    ibmi.log(`Token: ${tokenCounter}: Spaces: ${spaces.length} => ${token}`);
+    // ibmi.log(`Token: ${tokenCounter}: Spaces: ${spaces.length} => ${token}`);
     tokens.push(token);
     spacers.push(spaces);
   }

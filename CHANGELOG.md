@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.8] - 2025-05-20
+- Improved Smart Tab and Smart Enter integration with VS Code's suggestion and inline suggestion features. Now, pressing Tab or Enter will first accept inline or dropdown suggestions before running custom RPG IV logic, ensuring a smoother editing experience.
+- Fixed an issue where columnar boundary guidelines were not removed when switching a source member to **FREE format; decorations are now cleared immediately when **FREE is detected.
+- Updated documentation and guidance for users on how to control inline suggestions globally and per-language, including RPGLE and SQLRPGLE.
+- Minor code cleanup and improved comments for maintainability.
+-
 ## [0.6.6] - 2025-05-20
 - Added support for the DOWxx and DOUxx opcodes. They now convert to free format using the same syntax as the IFxx opcodes. The DOWxx and DOUxx opcodes are now fully supported in the RPG IV to Free Format conversion.
 ## [0.6.5] - 2025-05-19

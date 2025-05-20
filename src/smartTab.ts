@@ -40,11 +40,11 @@ const isDarkMode = themeKind === vscode.ColorThemeKind.Dark;
 
 // Get user-specified color for the active theme
 const colorSetting = isDarkMode
-  ? 'verticalTabStopColor_DarkMode'
-  : 'verticalTabStopColor_LightMode';
+  ? 'verticalTabColor_DarkMode'
+  : 'verticalTabColor_LightMode';
 const widthSetting = isDarkMode
-  ? 'verticalTabStopWidth_DarkMode'
-  : 'verticalTabStopWidth_LightMode';
+  ? 'verticalTabWidth_DarkMode'
+  : 'verticalTabWidth_LightMode';
 
 const defaultDarkColor = 'rgba(80, 255, 80, 0.5)';
 const defaultLightColor = 'rgba(0, 128, 0, 0.7)';
@@ -123,9 +123,15 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor) return;
 
+  // Early exit: If suggestion widget is visible, let VS Code handle Tab
+  if ((vscode as any).window.activeTextEditor?.options.suggestWidgetVisible) {
+    await vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
+    return;
+  }
+
   const doc = editor.document;
-  const lang = doc.languageId.toLowerCase();
-  if (!["rpgle", "sqlrpgle"].includes(lang)) return;
+  if (ibmi.isNOTFixedFormatRPG(doc)) return;
+
   const config = vscode.workspace.getConfiguration('rpgiv2free');
   const maxRPGLen = config.get<number>('maxRPGSourceLength', 100);  // Default to 80
   const cursor = editor.selection.active;
@@ -145,7 +151,7 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
   }
 
   const stops = getTabStops(lineText);
-  if (stops.length === 0 || stops[0] === 0 && stops.length === 1) {
+  if (stops.length === 0 || (stops[0] === 0 && stops.length === 1)) {
     // No valid tab stops found
     vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
     return;
@@ -181,12 +187,31 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
   }
   const [startCol, endCol] = getCurrentTabRange(cursor.character, stops);
 
-  if (startCol < 0 || endCol < 0) return; // Don't draw decoration
-  if ((startCol === endCol && startCol === 0) ||
-    cursor.character >= stops[stops.length - 1]) {
-    return; // At or beyond final tab stop — don't decorate
+// Only skip decoration, not logic
+let range: vscode.Range | undefined = undefined;
+if (startCol >= 0 && endCol >= 0 && !(startCol === endCol && startCol === 0) &&
+    cursor.character < stops[stops.length - 1]) {
+  range = new vscode.Range(cursor.line, startCol, cursor.line, endCol);
   }
-  const range = new vscode.Range(cursor.line, startCol, cursor.line, endCol);
+
+// ...existing code...
+
+// If Shift+Tab and cursor is at or beyond the last tab stop, trim trailing spaces
+if (
+  reverse &&
+  cursor.character >= stops[stops.length - 1] &&
+  /\s+$/.test(lineText)
+) {
+  const trimmed = lineText.replace(/\s+$/, "");
+  await editor.edit(editBuilder => {
+  editBuilder.replace(
+    new vscode.Range(cursor.line, 0, cursor.line, lineText.length),
+    trimmed
+  );
+}, { undoStopBefore: false, undoStopAfter: false });
+}
+
+// ...existing code...
 
   // Pad only if we're moving forward AND it's within a sane range
   if (newCol > cursor.character && newCol > lineText.length && newCol <= maxRPGLen - 1) {
@@ -203,7 +228,9 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
   const newPos = new vscode.Position(cursor.line, safeColumn);
   editor.selection = new vscode.Selection(newPos, newPos);
   editor.revealRange(new vscode.Range(newPos, newPos));
-  editor.setDecorations(tabBoxDecoration, [range]);
+  if (range) {
+    editor.setDecorations(tabBoxDecoration, [range]);
+  }
 }
 
 function getCType(line: string): string {
@@ -215,7 +242,7 @@ export async function highlightCurrentTabZone(editor: vscode.TextEditor): Promis
   const doc = editor.document;
 
   const lang = doc.languageId.toLowerCase();
-  if (!["rpgle", "sqlrpgle"].includes(lang)) return;
+  if (!ibmi.isFixedFormatRPG(doc)) return;
 
   const lineText = doc.lineAt(cursor.line).text;
   if (lineText.length < 6 || ibmi.isSkipStmt(lineText)) {

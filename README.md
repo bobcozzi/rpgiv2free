@@ -148,6 +148,31 @@ Default: `f2f_tempDO`
 - **Calc Specs (C Specs)**:
   Currently under development. Some opcodes are translated fine while others are sketchy. Conditioning Indicators logic is not supported and there is currently no plan to support conditioning indicators.
 
+## Controlling Inline Suggestions in VS Code
+
+VS Code provides **inline suggestions** ("ghost text" "code completions") by default. You can control this feature globally or for specific languages such as RPGLE and SQLRPGLE.
+
+If you are primarily coding in fixed format RPG IV, I recommend you tune off this feature for RPGLE and possibly SQLRPGLE also.
+
+### Globally Enable/Disable Inline Suggestions
+
+1. Open **Settings** (`Ctrl+,` or `Cmd+,` on Mac).
+2. Search for **Inline Suggest**.
+3. Toggle **Editor: Inline Suggest Enabled** to turn inline suggestions on or off for all languages.
+
+### Disable Inline Suggestions for RPGLE and SQLRPGLE Only
+
+If you want to disable inline suggestions only for RPGLE and/or SQLRPGLE files, then add either or both of the following to your `settings.json`:
+
+```json
+"[rpgle]": {
+  "editor.inlineSuggest.enabled": false
+},
+"[sqlrpgle]": {
+  "editor.inlineSuggest.enabled": false
+}
+
+
 ## Roadmap
 
 - **Implementation of Calc Specs**:

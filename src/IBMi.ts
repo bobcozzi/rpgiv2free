@@ -2,6 +2,14 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 
+
+export enum SmartEnterMode {
+  FixedOnly = 1,
+  FixedAndFree = 2,
+  allSource = 3,
+  Disabled = 0
+}
+
 export function getEOL(): string {
   const editor = vscode.window.activeTextEditor;
   if (!editor) return '\n'; // Default to LF if no editor
@@ -415,6 +423,40 @@ export function isBooleanOpcode(line: string): boolean {
   );
 }
 
+export function getSmartEnterMode(): SmartEnterMode {
+  const config = vscode.workspace.getConfiguration('rpgiv2free');
+  const setting = config.get<string>('enableRPGSmartEnter');
+
+  switch (setting?.toLowerCase()) {
+    case 'fixedonly':
+      return SmartEnterMode.FixedOnly;
+    case 'fixedandfree':
+      return SmartEnterMode.FixedAndFree;
+    case '*all':
+    case 'all':
+      return SmartEnterMode.allSource;
+    case 'disable':
+      return SmartEnterMode.Disabled;
+    default:
+      return SmartEnterMode.Disabled; // fallback to disabled
+  }
+}
+
+export function isRPGDocument(document: vscode.TextDocument): boolean {
+  if (!document) return false;
+  const langId = document.languageId.toLowerCase();
+  return langId === 'rpgle' || langId.startsWith('sqlrpg');
+}
+
+export function isFixedFormatRPG(document: vscode.TextDocument): boolean {
+  if (!isRPGDocument(document)) return false;
+  const firstLine = document.lineAt(0).text;
+  return !/^\s*\*\*FREE/i.test(firstLine);
+}
+
+export function isNOTFixedFormatRPG(document: vscode.TextDocument): boolean {
+  return !isFixedFormatRPG(document);
+}
 
 export function isOpcodeEnd(line: string): boolean {
   const opcode = getOpcode(line);
