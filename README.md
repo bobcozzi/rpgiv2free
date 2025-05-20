@@ -171,7 +171,7 @@ If you want to disable inline suggestions only for RPGLE and/or SQLRPGLE files, 
 "[sqlrpgle]": {
   "editor.inlineSuggest.enabled": false
 }
-
+```
 
 ## Roadmap
 
