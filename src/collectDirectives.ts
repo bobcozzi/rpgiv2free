@@ -55,9 +55,11 @@ function convertDirective(line: string, extension: string,  settings: ibmi.confi
   }
   let enhancedDir = '';
   const isSQLType = extension?.startsWith('.sql');
-  const dir = ibmi.getCol(line, 7, 80).trimEnd();
-  const dirLower = dir.trim().toLowerCase();
+  // ...existing code...
+  const col = ibmi.getCol(line, 7, 80);
+  const dir = typeof col === 'string' ? col.trimEnd() : '';
   if (dir) {
+    const dirLower = dir.trim().toLowerCase();
     if (settings.removeFREEdir &&
        (dirLower === '/free' ||
         dirLower === '/end-free')) {

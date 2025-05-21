@@ -66,8 +66,6 @@ export function getRPGIVFreeSettings(): configSettings {
 }
 
 
-
-
 /**
  * Splits a single string into individual string (lines) using platform-agnostic line endings.
  * Handles \n (Unix), \r\n (Windows), and \r (legacy Mac) just in case.
@@ -80,11 +78,12 @@ export function splitLines(text: string): string[] {
 export function log(message: any) {
   console.log(message);
 }
+
 export function getCol(line: string | null | undefined, from: number, to?: number): string {
   if (!line || from < 1) return '';
-  line = line.padEnd(80, ' ');
   const end = to ?? from; // default 'to' to 'from' if not provided
   if (end < from) return '';
+  line = line.padEnd(end, ' ');
   return line.substring(from - 1, end);
 }
 
@@ -152,6 +151,7 @@ export function isDirective(line: string): boolean {
   );
   return bDirective;
 }
+
 export function isValidFixedFormat(line: string): boolean {
   const bValidFormat = (isNotSkipStmt(line) && getSpecType(line).trim() !== '');
   return bValidFormat;
@@ -451,7 +451,14 @@ export function isRPGDocument(document: vscode.TextDocument): boolean {
 export function isFixedFormatRPG(document: vscode.TextDocument): boolean {
   if (!isRPGDocument(document)) return false;
   const firstLine = document.lineAt(0).text;
-  return !/^\s*\*\*FREE/i.test(firstLine);
+
+  // Must be at least 6 chars, no leading whitespace, exactly **FREE in columns 1-6
+  // Only allow whitespace after column 6
+  const hasFree = firstLine.length >= 6 &&
+    firstLine.substring(0, 6).toUpperCase() === '**FREE' &&
+    (firstLine.length === 6 || /^[ \t]*$/.test(firstLine.substring(6)));
+
+  return !hasFree;
 }
 
 export function isNOTFixedFormatRPG(document: vscode.TextDocument): boolean {
