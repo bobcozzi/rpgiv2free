@@ -398,7 +398,6 @@ export function isOpcodeANDxxORxx(line: string): boolean {
 }
 
 
-
 export function isCASEOpcode(line: string): boolean {
   const opcode = getOpcode(line);
   return (isComment(line)) ? false : /^CAS(EQ|NE|LT|LE|GT|GE)?$/.test(opcode);

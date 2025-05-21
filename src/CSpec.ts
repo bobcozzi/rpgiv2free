@@ -69,12 +69,16 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
         extraDCL
       ));
 
-    if (reformattedLine.length > 0) {
-      freeFormLine.push(...reformattedLine);
-    } else {
-      const newLine = `${enhValues.opcode.toLowerCase()} ${enhValues.factor1} ${enhValues.factor2} ${enhValues.result}`;
-      freeFormLine.push(newLine.trimEnd() + ';');
-
+    if (enhValues.opcode == '*DLT') {
+      enhValues.opcode = opcode;
+    }
+    else {
+      if (reformattedLine.length > 0) {
+        freeFormLine.push(...reformattedLine);
+      } else {
+        const newLine = `${enhValues.opcode.toLowerCase()} ${enhValues.factor1} ${enhValues.factor2} ${enhValues.result}`;
+        freeFormLine.push(newLine.trimEnd() + ';');
+      }
     }
     if (extraDCL.length === 0 && length.trim() !== '') {
       const dataType = (decimals.trim() !== '') ? `packed(${length}:${decimals})` : `char(${length})`;
@@ -201,7 +205,14 @@ function convertOpcodeToFreeFormat(
   const opCode = opcode.toUpperCase().replace(/\(.*\)$/, "");
   // newOpcode = opCode;
 
+  let lValue = '';
+  let kwd = '';
+  let bif = '';
   switch (opCode.toUpperCase()) {
+    case 'COMP':   // Skippable non-opcode in free format (indy manipulations only)
+    case 'SETON':
+    case 'SETOFF':
+      newOpcode = '*DLT';
     case "Z-ADD":
       newLines.push(`${result} = ${factor2}`);
       break;
@@ -249,6 +260,13 @@ function convertOpcodeToFreeFormat(
       newLines.push(freeFormat);
       break;
 
+    case 'EXTRCT':
+    case 'EXTRACT':
+      [lValue, kwd] = factor2.split(':').map(s => s.trim());
+      freeFormat = `${result} = %SUBDT(${lValue} : ${ kwd });`;
+      newLines.push(freeFormat);
+      break;
+
     case "ADDDUR":
       const [value, keyword] = factor2.split(':').map(s => s.trim());
       const add_builtinFunc = keyword?.startsWith('*') ? `%${keyword.slice(1).toLowerCase()}` : `// INVALID DURATION`;
@@ -261,6 +279,7 @@ function convertOpcodeToFreeFormat(
       }
       newLines.push(freeFormat);
       break;
+
     case "SUBDUR":
       freeFormat = '';
       if (factor2.includes(':')) {
@@ -269,7 +288,7 @@ function convertOpcodeToFreeFormat(
         const keyword = keywordRaw || '';
         const builtinFunc = keyword.startsWith('*')
           ? `%${keyword.slice(1).toLowerCase()}`
-          : '/* INVALID or missing keyword */';
+          : '// INVALID or missing keyword ';
         if (factor1.trim() === '') {
           freeFormat = `${result} -= ${builtinFunc}(${value});`;
         }
@@ -284,7 +303,7 @@ function convertOpcodeToFreeFormat(
         freeFormat = `${target} = %diff(${factor1} : ${factor2} : ${keyword.toLowerCase()});`;
       } else {
         // fallback
-        freeFormat = `/* Unrecognized SUBDUR format */`;
+        freeFormat = `// Unrecognized SUBDUR format `;
       }
       newLines.push(freeFormat);
       break;
@@ -298,6 +317,15 @@ function convertOpcodeToFreeFormat(
     case "DEALLOC":
       newLines.push(`${opcode} ${result};`);
       break
+    case "XFOOT":
+      newLines.push(`${result} = %XFOOT(${factor2})`);
+      break
+    case 'XLATE':
+      const [from1, to1] = factor1.split(':').map(s => s.trim());
+      const [src2, start2] = factor2.split(':').map(s => s.trim());
+      freeFormat = `${result} = %XLATE(${from1}:${to1} : ${src2} : ${start2});`;
+      newLines.push(freeFormat);
+      break;
 
     case "MOVEL":
       newLines.push(`${result} = ${factor2}`);
@@ -305,7 +333,7 @@ function convertOpcodeToFreeFormat(
     case "MOVE":
       newLines.push(`EVALR ${result} = ${factor2}`);
       break;
- case 'DO':
+    case 'DO':
       newLines.push(...op.convertDO(fullOpcode, factor1, factor2, result, extraDCL));
       newOpcode = '';
       break;
@@ -352,7 +380,7 @@ function convertOpcodeToFreeFormat(
       }
       newDEFN +=
         extraDCL.push(newDEFN);
-      newDEFN = `          // ${factor1} ${opcode} ${factor2} ${result}; // See converted DCL-xx`;
+      newDEFN = `           // ${factor1} ${opcode} ${factor2} ${result}; // See converted DCL-xx`;
       newLines.push(newDEFN);
       break;
     case "MULT":
@@ -412,10 +440,35 @@ function handleResultingIndicators(
         newLines.push(`*IN${resInd2} = %ERROR();`);
       }
       break;
+    case 'SETON':
+          if (resInd1) {
+        newLines.push(`*IN${resInd1} = *ON;`);
+      }
+      if (resInd2) {
+        newLines.push(`*IN${resInd2} = *ON;`);
+      }
+      if (resInd3) {
+        newLines.push(`*IN${resInd3} = *ON;`);
+      }
+      break;
+    case 'SETOF':
+    case 'SETOFF':
+      if (resInd1) {
+        newLines.push(`*IN${resInd1} = *OFF;`);
+      }
+      if (resInd2) {
+        newLines.push(`*IN${resInd2} = *OFF;`);
+      }
+      if (resInd3) {
+        newLines.push(`*IN${resInd3} = *OFF;`);
+      }
+      break;
+
     case "ADD":
     case "SUB":
     case "MULLT":
     case "DIV":
+    case 'XFOOT':
       if (resInd1) {
         newLines.push(`*IN${resInd1} = (${result} > 0);`);
       }
@@ -424,6 +477,18 @@ function handleResultingIndicators(
       }
       if (resInd3) {
         newLines.push(`*IN${resInd3} = (${result} = 0);`);
+      }
+      break;
+
+    case "COMP":
+      if (resInd1) {
+        newLines.push(`*IN${resInd1} = (${factor1} > ${factor2});`);
+      }
+      if (resInd2) {
+        newLines.push(`*IN${resInd2} = (${factor1} < ${factor2});`);
+      }
+      if (resInd3) {
+        newLines.push(`*IN${resInd3} = (${factor1} = ${factor2});`);
       }
       break;
 
@@ -446,11 +511,30 @@ function handleResultingIndicators(
     case "READP":
     case "READPE":
     case "READC":
-      if (resInd1) {
-        newLines.push(`*IN${resInd1} = NOT %FOUND(${factor2});`);
+      if (resInd3) {
+        newLines.push(`*IN${resInd3} = %EOF();`);
       }
       if (resInd2) {
-        newLines.push(`*IN${resInd2} = %ERROR(${factor2});`);
+        newLines.push(`*IN${resInd2} = %ERROR();`);
+      }
+      break;
+    case "SETGT":
+      if (resInd1) {
+        newLines.push(`*IN${resInd3} = NOT %FOUND();`);
+      }
+      if (resInd2) {
+        newLines.push(`*IN${resInd2} = %ERROR();`);
+      }
+      break;
+    case "SETLL":
+      if (resInd1) {
+        newLines.push(`*IN${resInd3} = NOT %FOUND();`);
+      }
+      if (resInd2) {
+        newLines.push(`*IN${resInd2} = %ERROR();`);
+      }
+      if (resInd3) {
+        newLines.push(`*IN${resInd3} = %EOF();`);
       }
       break;
 
@@ -464,6 +548,9 @@ function handleResultingIndicators(
     case "WRITE":
       if (resInd2) {
         newLines.push(`*IN${resInd2} = %ERROR(${factor2});`);
+      }
+      if (resInd3) {
+        newLines.push(`*IN${resInd2} = %EOF();`);
       }
       break;
 

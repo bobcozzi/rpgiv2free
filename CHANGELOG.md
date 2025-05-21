@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.11] - 2025-05-21
+- Completed work on opcode migration. All opcodes that can be converted, should now be convert properly. Note that conditioning indicators are not converted, and are currently lost. In the final release, they will cause the extension to not convert the conditioned opcode. Today those conditioned opcodes are converted but their indicators are lost. So use Ctrl+Z (Cmd+Z) undo to recover them if you inadvertently.
+
 ## [0.6.10] - 2025-05-21
 - Corrected an issue where selecting an entire source file to convert at one caused and error if the last line in the source file is a compiler directive, such as "/end-free".
 - Improved the performance of and optimized the memory use in our internal getCol (retrieve source line columns) function.
