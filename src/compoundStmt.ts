@@ -5,12 +5,15 @@ export function expandCompoundRange(lines: string[], selectedIndex: number): num
   const expanded: number[] = [];
 
   const selectedLine = lines[selectedIndex];
+  const lineCount = lines.length;
   const opcode = rpgiv.getOpcode(selectedLine);
 
   if (!rpgiv.isBooleanOpcode(selectedLine) && !rpgiv.isCASEOpcode(selectedLine)) {
     expanded.push(selectedIndex);
     return expanded;
   }
+  let bIsSelect = false;
+  let bIsWhen = false;
 
   let start = selectedIndex;
   let end = selectedIndex + 1;
@@ -38,25 +41,49 @@ export function expandCompoundRange(lines: string[], selectedIndex: number): num
     // Boolean expression handling (IFxx, WHENxx, etc.)
     while (start > 0) {
       const prevLine = lines[start - 1];
-      if (rpgiv.isOpcodeANDxxORxx(prevLine)) {
+      if (rpgiv.isOpcodeANDxxORxx(prevLine)) { // boolean continuator/conjunction opcode?
         start--;
-      } else if (rpgiv.isOpcodeIFxx(prevLine) || rpgiv.isOpcodeWHENxx(prevLine)) {
-        start--;
+      } else if (rpgiv.isOpcodeIFxx(prevLine)) {
+        start--;  // IFxx or WHENxx opcode?
         break;
+      }
+      else if (rpgiv.isOpcodeWHENxx(prevLine)) {
+        bIsWhen = true;
+        start--;  // IFxx or WHENxx opcode?
+        if (!bIsSelect) break;
       }
       else if (rpgiv.isOpcodeSELECT(prevLine)) {
+        bIsSelect = true;  // fixed-format SELECT opcode?
         start--;
         break;
       }
+      break;
     }
     end = start + 1;
+  //  while (end < lines.length) {
+  //    const nextLine = lines[end];
+  //    if (bIsSelect && rpgiv.isOpcodeWHENxx(nextLine)) {
+  //      end++;
+  //      continue;
+  //    }
+  //    else if (!rpgiv.isOpcodeANDxxORxx(nextLine) && !rpgiv.isOpcodeEnd(nextLine)) {
+  //      break;
+  //    }
+  //    end++;
+  //  }
+
     while (end < lines.length) {
       const nextLine = lines[end];
-      if (!rpgiv.isOpcodeANDxxORxx(nextLine) && !rpgiv.isOpcodeEnd(nextLine)) {
+      if ((bIsSelect || bIsWhen) && rpgiv.isOpcodeWHENxx(nextLine)) {
+        end++;
+        continue;
+      }
+      else if (!rpgiv.isOpcodeANDxxORxx(nextLine) && !rpgiv.isOpcodeEnd(nextLine)) {
         break;
       }
       end++;
     }
+
   }
 
   for (let i = start; i < end; i++) {

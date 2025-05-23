@@ -6,7 +6,7 @@
   "preview": true,
   "private": false,
   "publisher": "CozziResearch",
-  "version": "0.6.15",
+  "version": "0.6.16",
   "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0",
@@ -131,7 +131,7 @@
         "rpgiv2free.AddEXTDeviceFlag": {
           "type": "boolean",
           "title": "Add *EXT to device ID on File specs",
-          "default": true,
+          "default": false,
           "description": "Add *EXT to DISK, WORKSTN, etc. when converting externally described files."
         },
         "rpgiv2free.RemoveFREEDirective": {

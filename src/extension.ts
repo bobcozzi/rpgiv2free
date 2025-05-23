@@ -29,6 +29,7 @@ export function activate(context: vscode.ExtensionContext) {
     rpgSmartTabEnabled = config.get<boolean>('enableRPGSmartEnter', true);
   }
 
+
   //
   // ✅ Smart Tab Toggle UI (no reload required)
   //
@@ -146,17 +147,17 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerTextEditorCommand('rpgiv2free.smartEnter', async (editor, edit) => {
       // 1. Try to commit inline suggestion first
-    const didCommit = await vscode.commands.executeCommand('editor.action.inlineSuggest.commit');
-    if (didCommit !== undefined) {
-      // If an inline suggestion was committed, do nothing else
-      return;
-    }
+      const didCommit = await vscode.commands.executeCommand('editor.action.inlineSuggest.commit');
+      if (didCommit !== undefined) {
+        // If an inline suggestion was committed, do nothing else
+        return;
+      }
 
-    // 2. If the suggestion widget is visible, accept it
-    if ((vscode as any).window.activeTextEditor?.options.suggestWidgetVisible) {
-      await vscode.commands.executeCommand('acceptSelectedSuggestion');
-      return;
-    }
+      // 2. If the suggestion widget is visible, accept it
+      if ((vscode as any).window.activeTextEditor?.options.suggestWidgetVisible) {
+        await vscode.commands.executeCommand('acceptSelectedSuggestion');
+        return;
+      }
 
       const eol = rpgiv.getEOL();
       const mode = rpgiv.getSmartEnterMode();
@@ -182,10 +183,12 @@ export function activate(context: vscode.ExtensionContext) {
 
   const disposable = vscode.commands.registerCommand('rpgiv2free.convertToRPGFree', async () => {
     const editor = vscode.window.activeTextEditor;
+
     if (!editor) {
       vscode.window.showErrorMessage('No active editor found.');
       return;
     }
+    rpgiv.log('CMD Handler Start');
 
     const activeLine = editor.selection.active.line;
     rpgiv.log('Active line: ' + activeLine);
@@ -199,11 +202,9 @@ export function activate(context: vscode.ExtensionContext) {
       rpgiv.log('ERROR getting line text: ' + (e as Error).message);
     }
 
+    // Use getText to get all lines at once, splitting by the document's EOL into an array of all lines
     const doc = editor.document;
-    const allLines: string[] = [];
-    for (let i = 0; i < doc.lineCount; i++) {
-      allLines.push(doc.lineAt(i).text);
-    }
+    const allLines = doc.getText().split(rpgiv.getEOL());
 
     const processedLines = new Set<number>();
     rpgiv.log('Total lines: ' + allLines.length);
@@ -217,7 +218,9 @@ export function activate(context: vscode.ExtensionContext) {
         if (sel.isEmpty) {
           selectedLineIndexes.add(sel.active.line);
         } else {
-          for (let i = sel.start.line; i <= sel.end.line; i++) {
+          const start = Math.min(sel.start.line, sel.end.line);
+          const end = Math.max(sel.start.line, sel.end.line);
+          for (let i = start; i <= end; i++) {
             selectedLineIndexes.add(i);
           }
         }
@@ -227,21 +230,42 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     const expandedLineIndexes = new Set<number>();
+    rpgiv.log('CMD Handler expanding range selections');
 
-    for (const line of selectedLineIndexes) {
-      const expanded = expandCompoundRange(allLines, line);
-      for (const idx of expanded) expandedLineIndexes.add(idx);
+    for (const lineNbr of selectedLineIndexes) {
+      if (expandedLineIndexes.has(lineNbr)) {
+        continue; // skip this one?
+      }
+      const expanded = expandCompoundRange(allLines, lineNbr);
+      for (const idx of expanded) {
+        // Only add if not already present (skip duplicates)
+        if (!expandedLineIndexes.has(idx)) {
+          expandedLineIndexes.add(idx);
+        }
+      }
     }
+    rpgiv.log('CMD Handler expanding range selections');
 
     const selectedLineList = [...expandedLineIndexes].sort((a, b) => a - b);
-
+    rpgiv.log('CMD Handler checking selections');
     for (const i of selectedLineList) {
       if (processedLines.has(i) || i >= allLines.length) continue;
       const collectedStmts = collectStmt(allLines, i);
+      rpgiv.log(`Collected ${collectedStmts?.indexes.length} statements for line: ` + i+1);
+
+      // ...and so on for each major step
       if (!collectedStmts) continue;
 
       const { lines: specLines, indexes, comments, isSQL, isBOOL, entityName } = collectedStmts;
-      if (!specLines.length || indexes.some(idx => processedLines.has(idx))) continue;
+
+     // if (i !== indexes[0]) continue;
+
+      if (!specLines.length) {
+        continue;
+      }
+      if (indexes.some(idx => processedLines.has(idx))) {
+        continue;
+      }
 
       let convertedText = '';
       let extraDCL: string[] = [];
@@ -297,6 +321,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     if (edits.length > 0) {
       try {
+        rpgiv.log('CMD Handler Applying edits');
         const success = await editor.edit(editBuilder => {
           for (const edit of edits) {
             editBuilder.replace(edit.range, edit.text);
@@ -318,9 +343,15 @@ export function activate(context: vscode.ExtensionContext) {
         extraDCL: dcl.lines
       })));
     }
+    rpgiv.log('CMD Handler ending');
   });
 
   context.subscriptions.push(disposable);
+}
+
+// This method is called when your extension is deactivated
+export function deactivate() {
+  console.log('[rpgiv2free] deactivated');
 }
 
 function evaluateAndApplyFeatures(document: vscode.TextDocument) {

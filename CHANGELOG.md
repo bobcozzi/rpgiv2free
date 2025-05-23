@@ -2,10 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.6.15] - 2025-05-23
+## [0.6.16] - 2025-05-23
 - Added support for column 81+ "comments" to be converted to `// <comments>` in free format (D specs only). Support for C spec column 81 comments may be comming soon.
 - Corrected an issue with File spec conversion that was omitted from the earlier release.
 - Know issue with WHENEQ/ANDEQ and possibly IFEQ/ANDEQ style conditional logic. This was working, but we broke it. It'll be resolved in the next build. The work around right now is to selected those lines independently of others and they should convert.
+- Correct issues related to stand-alone WHENxx statements (i.e., the secondary WHENxx in a SELECT block). Fixed several issues related to **select all** behaving badly.
+- The File spec was being processed by an old routine that in one case thought it was a D spec, so yikes... yeah that's been fixed.
+- Good solid select-all test of late 1990s style RPG by S/36 developers (so mostly RPGIII looking RPG IV) and it converted great.
+- Still zero support for Conditioning Indicators, so continue to watch out for that.
 ## [0.6.12] - 2025-05-23
 - Renamed our primary helper function namespace to `rpgiv` (it was ibmi) and the namespace container file name is now rpgedit.ts instead of IBMi.ts to avoid potential future conflicts with other extensions. This is an internal own change and should not impact the UX.
 - Corrected an issue with empty P and D spec lines when converted with lines that follow them.

@@ -16,7 +16,7 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number): st
 
   // Backtrack to find the starting boolean opcode line
   let i = startIndex;
-  while (i >= 0 && !rpgiv.isStartBooleanOpcode(allLines[i])) {
+  while (i >= 0 && !rpgiv.isStartBooleanOpcode(allLines[i]) && !rpgiv.isOpcodeANDxxORxx(allLines[i])) {
     i--;
   }
   if (i < 0) return { lines: [], indexes: [], comments: null };
@@ -42,8 +42,8 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number): st
   }
 
   if (isSelect) {
-    ffOpcode = 'select;' + rpgiv.getEOL();
-    booleanExpr = ffOpcode;
+    ffOpcode = 'select;';
+    lines.push(ffOpcode);
   }
   else {
     if (opcode.startsWith('IF')) {

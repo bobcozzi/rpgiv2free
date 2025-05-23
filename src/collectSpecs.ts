@@ -111,7 +111,7 @@ export function collectStmt(
   }
 
   if (curSpec === 'c' && !rpgiv.isUnsuppotedOpcode(rpgiv.getOpcode(startLine))) {
-    if (rpgiv.isBooleanOpcode(startLine)) {
+    if (rpgiv.isBooleanOpcode(startLine) || rpgiv.isOpcodeSELECT(startLine)) {
       // Handle boolean opcode lines separately
       const booleanOpcodeResult = collectBooleanOpcode(allLines, startIndex);
       return {

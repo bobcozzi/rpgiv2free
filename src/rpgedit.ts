@@ -76,7 +76,7 @@ export function splitLines(text: string): string[] {
 
 // Log function with condition for Debug
 export function log(message: any) {
-  console.log(message);
+  console.log(`[rpgiv2free] ${message}`);
 }
 
 export function getCol(line: string | null | undefined, from: number, to?: number): string {
@@ -356,24 +356,29 @@ function isFreeFormCalcStmt(line: string): boolean {
 
 
 // Extracts the opcode from a C-spec line
+/**
+ * Extracts the opcode from a C-spec line (columns 26-35, inclusive).
+ * Returns '' if not a C-spec or is a comment.
+ */
 export function getOpcode(line: string): string {
-  return getColUpper(line.padEnd(80, ' '), 26, 35).trim();
+  if (!line || getSpecType(line) !== 'c' || isComment(line)) return '';
+  return getColUpper(line, 26, 35).trim();
 }
 
 export function isOpcodeIFxx(line: string): boolean {
   const opcode = getOpcode(line);
   // Only matches IF followed by a valid boolean operator
-  return (isComment(line)) ? false : /^IF(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
+  return /^IF(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
 }
 export function isOpcodeDOUxx(line: string): boolean {
   const opcode = getOpcode(line);
   // Only matches IF followed by a valid boolean operator
-  return (isComment(line)) ? false : /^DOU(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
+  return  /^DOU(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
 }
 export function isOpcodeDOWxx(line: string): boolean {
   const opcode = getOpcode(line);
   // Only matches IF followed by a valid boolean operator
-  return (isComment(line)) ? false : /^DOW(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
+  return /^DOW(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
 }
 
 export function isOpcodeWHENxx(line: string): boolean {
@@ -385,40 +390,42 @@ export function isOpcodeWHENxx(line: string): boolean {
 export function isOpcodeSELECT(line: string): boolean {
   const opcode = getOpcode(line);
   // Only matches WHEN followed by a valid boolean operator
-  return (isComment(line)) ? false : (opcode.toUpperCase() === 'SELECT');
+  return (opcode.toUpperCase() === 'SELECT');
 }
 export function isOpcodeWHENStart(line: string): boolean {
   const opcode = getOpcode(line);
   // Only matches WHEN followed by a valid boolean operator
-  return (isComment(line)) ? false : (opcode.toUpperCase() === 'SELECT');
+  return (opcode.toUpperCase() === 'SELECT');
 }
+export function isCASEOpcode(line: string): boolean {
+  const opcode = getOpcode(line);
+  return /^CAS(EQ|NE|LT|LE|GT|GE)?$/.test(opcode);
+}
+
 
 export function isOpcodeANDxxORxx(line: string): boolean {
   const opcode = getOpcode(line);
-  return (isComment(line)) ? false : /^(AND|OR)(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
+  return /^(AND|OR)(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
 }
 
-
-export function isCASEOpcode(line: string): boolean {
-  const opcode = getOpcode(line);
-  return (isComment(line)) ? false : /^CAS(EQ|NE|LT|LE|GT|GE)?$/.test(opcode);
-}
 
 export function isStartBooleanOpcode(line: string): boolean {
-  return (isNotComment(line) &&
-    (isOpcodeIFxx(line) ||
-      isOpcodeDOWxx(line) ||
-      isOpcodeDOUxx(line) ||
-      isOpcodeSELECT(line))
-  );
-}
-
-export function isBooleanOpcode(line: string): boolean {
-  return (isNotComment(line) &&
+  return (
     (isOpcodeIFxx(line) ||
       isOpcodeDOWxx(line) ||
       isOpcodeDOUxx(line) ||
       isOpcodeWHENxx(line) ||
+      isOpcodeWHENStart(line))
+  );
+}
+
+export function isBooleanOpcode(line: string): boolean {
+  return (
+    (isOpcodeIFxx(line) ||
+      isOpcodeDOWxx(line) ||
+      isOpcodeDOUxx(line) ||
+      isOpcodeWHENxx(line) ||
+      isOpcodeWHENStart(line) ||
       isOpcodeANDxxORxx(line))
   );
 }
@@ -467,7 +474,7 @@ export function isNOTFixedFormatRPG(document: vscode.TextDocument): boolean {
 
 export function isOpcodeEnd(line: string): boolean {
   const opcode = getOpcode(line);
-  return (isComment(line)) ? false : /^END(?:IF|DO|FOR|MON|SL|CS|SR)?$/.test(opcode);
+  return /^END(?:IF|DO|FOR|MON|SL|CS|SR)?$/.test(opcode);
 }
 
 export function isValidOpcode(id: string): boolean {
