@@ -1,11 +1,14 @@
 node_modules/
 .vscode/
-
 src/
 test/
+backup/
+-install/
 *.map
 *.ts
+.git/
 .gitignore
 .vscodeignore
 tsconfig.json
-README.md
+xpackage.json
+.DS_Store
