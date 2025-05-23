@@ -227,15 +227,6 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     const expandedLineIndexes = new Set<number>();
-    const anchorLineIndexes = new Set<number>();
-
-    for (const line of selectedLineIndexes) {
-      const expanded = expandCompoundRange(allLines, line);
-      const anchor = Math.min(...expanded);
-      anchorLineIndexes.add(anchor);
-    }
-
-    const anchorLineList = [...anchorLineIndexes].sort((a, b) => a - b);
 
     for (const line of selectedLineIndexes) {
       const expanded = expandCompoundRange(allLines, line);

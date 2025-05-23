@@ -2,6 +2,7 @@
 import { collectSQLBlock } from './SQLSpec';
 import { collectBooleanOpcode } from './collectBoolean';
 import { collectHSpecs } from './collectHSpec';
+import { collectFSpecs } from './collectFSpec';
 import { collectPSpecs } from './collectPSpec';
 import { collectDSpecs } from './collectDSpec';
 import { collectComments } from './collectComments';
@@ -182,6 +183,18 @@ export function collectStmt(
       isBOOL: false,
     };
   }
+    else if (curSpec === 'f') {
+    const defnSpecs = collectFSpecs(allLines, startIndex); // Collect H specs if needed
+    return {
+      entityName: defnSpecs.entityName,
+      lines: defnSpecs.lines,
+      indexes: defnSpecs.indexes,
+      comments: defnSpecs.comments.length > 0 ? defnSpecs.comments : null,
+      isSQL: false,
+      isBOOL: false,
+    };
+  }
+
   // Special case: Unnamed Data Structure
 
   // Step 1: Walk backward to find the start of the declaration
@@ -226,11 +239,11 @@ export function collectStmt(
           break;
         }
       }
-    }
-    if (!curEndsWithDots && curDclType === 'DS' && curSpec === 'd') {
-      // Special case: Unnamed Data Structure (DS) with attributes
-      // Stop here if the current line is a DS and has no name
-      break;
+      if (!curEndsWithDots && curDclType === 'DS') {
+        // Special case: Unnamed Data Structure (DS) with attributes
+        // Stop here if the current line is a DS and has no name
+        break;
+      }
     }
     if (curSpec === 'c') {
       if (curOpCode.length === 0 && !hasFactor1) {

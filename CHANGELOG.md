@@ -2,7 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.6.12] - 2025-05-22
+## [0.6.15] - 2025-05-23
+- Added support for column 81+ "comments" to be converted to `// <comments>` in free format (D specs only). Support for C spec column 81 comments may be comming soon.
+- Corrected an issue with File spec conversion that was omitted from the earlier release.
+- Know issue with WHENEQ/ANDEQ and possibly IFEQ/ANDEQ style conditional logic. This was working, but we broke it. It'll be resolved in the next build. The work around right now is to selected those lines independently of others and they should convert.
+## [0.6.12] - 2025-05-23
 - Renamed our primary helper function namespace to `rpgiv` (it was ibmi) and the namespace container file name is now rpgedit.ts instead of IBMi.ts to avoid potential future conflicts with other extensions. This is an internal own change and should not impact the UX.
 - Corrected an issue with empty P and D spec lines when converted with lines that follow them.
 - Added POS(n) keyword to legacy D specs that contains From and To columns. Previously only the new type keyword and field length were translating, now if from and to columns are specified, CHAR(len) POS(from) are specified.

@@ -43,21 +43,19 @@ export function expandCompoundRange(lines: string[], selectedIndex: number): num
       } else if (rpgiv.isOpcodeIFxx(prevLine) || rpgiv.isOpcodeWHENxx(prevLine)) {
         start--;
         break;
-      } else {
+      }
+      else if (rpgiv.isOpcodeSELECT(prevLine)) {
+        start--;
         break;
       }
     }
-
+    end = start + 1;
     while (end < lines.length) {
       const nextLine = lines[end];
-      if (rpgiv.isOpcodeANDxxORxx(nextLine)) {
-        end++;
-      } else if (rpgiv.isOpcodeEnd(nextLine)) {
-        end++;
-        break;
-      } else {
+      if (!rpgiv.isOpcodeANDxxORxx(nextLine) && !rpgiv.isOpcodeEnd(nextLine)) {
         break;
       }
+      end++;
     }
   }
 

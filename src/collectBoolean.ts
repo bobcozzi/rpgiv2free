@@ -76,7 +76,7 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number): st
     indexes.push(i);
 
     const contFactor1 = rpgiv.getCol(line, 12, 25).trim();
-    const contOpcode = rpgiv.getOpcode(line); // ANDGT, ORLE, etc.
+    const contOpcode = rpgiv.getOpcode(line).toUpperCase().trimEnd(); // ANDGT, ORLE, etc.
     const contFactor2 = rpgiv.getCol(line, 36, 49).trim();
 
     const logicOp = contOpcode.startsWith('OR') ? 'or' :

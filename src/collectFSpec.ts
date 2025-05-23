@@ -2,7 +2,7 @@
 import * as rpgiv from './rpgedit';
 import { collectedStmt } from './types';
 
-export function collectDSpecs(
+export function collectFSpecs(
   allLines: string[],
   startIndex: number
 ): {
@@ -13,11 +13,31 @@ export function collectDSpecs(
   comments: string[] | [];
 } {
 
-  function isDefnSpecLine(line: string): boolean {
-    return rpgiv.getSpecType(line) === 'd' && rpgiv.isNotComment(line);
+  function isFileSpec(line: string): boolean {
+    return rpgiv.getSpecType(line) === 'f' && rpgiv.isNotComment(line);
+  }
+  function isFileDescCont(line: string): boolean {
+    if (typeof line !== 'string' || line.length === 0) return false;
+    if (rpgiv.getSpecType(line) !== 'f') return false;
+    if (!rpgiv.isNotComment(line)) return false;
+
+    const specArea = rpgiv.getCol(line, 7, 43);
+    if (typeof specArea !== 'string') return false;
+    if (specArea.trim().length > 0) return false;
+
+    return true;
+  }
+  function isFileDesc(line: string): boolean {
+    if (typeof line !== 'string' || line.length === 0) return false;
+    if (rpgiv.getSpecType(line) !== 'f') return false;
+    if (!rpgiv.isNotComment(line)) return false;
+    const specArea = rpgiv.getCol(line, 7, 43);
+    if (typeof specArea !== 'string') return false;
+    const trimmedSpecArea = specArea.trim();
+    return trimmedSpecArea.length > 0;
   }
 
-  if (!isDefnSpecLine(allLines[startIndex])) {
+  if (!isFileSpec(allLines[startIndex])) {
     return {
       lines: [],
       indexes: [],
@@ -30,8 +50,6 @@ export function collectDSpecs(
 
   // Walk BACKWARD to find the starting line of the statement
   let firstIndex = startIndex;
-  let bDefn = false;
-  let bContName = false;
   for (let i = firstIndex; i >= 0; i--) {
     const line = allLines[i];
     let prevLine = '';
@@ -40,37 +58,19 @@ export function collectDSpecs(
     }
     if (rpgiv.isComment(line)) continue;
     if (rpgiv.isSpecEmpty(line)) continue;
-    if (!isDefnSpecLine(line)) break;
+    if (!isFileSpec(line)) break;
 
-    // once a continued name is detected (reading backwards) and
-    // this line is not also a continued name, then we are done reading backwards.
+    // Once a File Description spec (includes file name) is reached, we're at the start
+
 
     const isKwdOnly = rpgiv.isJustKwds(line);
-    const isNameCont = rpgiv.dNameContinues(prevLine);
-    const isKwdCont = rpgiv.dKwdContinues(prevLine);
-
-    if (bContName && !isNameCont) {
+    if (isFileDesc(line)) {
       firstIndex = i;
-      break
-    };
-
-    bContName = isNameCont;
-
-    if (rpgiv.isValidFixedDefnLine(line)) {
-      if (bDefn) {
-        break;
-      }
-      else {
-        bDefn = true;
-      }
-    } else if (bDefn && !isNameCont) {
-      break;
-    } else if (!isNameCont && !isKwdOnly && !isKwdCont) {
       break;
     }
-
-
-    firstIndex = i;
+    if (isFileDescCont(line)) {
+      firstIndex = i;  // continue
+    }
   }
 
   // Walk FORWARD
@@ -80,7 +80,7 @@ export function collectDSpecs(
   let kwdAreaParts: string[] = [];
   let specType: string | null = null;
   let comments: string[] = [];
-  let bValidDefnLine = false;
+  let bValidFileSpec = false;
 
   // Walk FORWARD to collect the full statement
   for (let i = firstIndex; i < allLines.length; i++) {
@@ -91,49 +91,25 @@ export function collectDSpecs(
       indexes.push(i);
       continue;
     }
-    else if (!isDefnSpecLine(line)) {
-      break;
+    else if (rpgiv.isSkipStmt(line)) {
+      continue;
     }
+    if (!isFileSpec(line)) break;
 
-    if (bValidDefnLine && rpgiv.isValidFixedDefnLine(line)) {
+    if (i > firstIndex && isFileDesc(line)) {
       break;  // If we already had a declare and this is also a declare, then we're done
+    }
+    else if (isFileDesc(line)) {
+      entityNameParts.push(rpgiv.getCol(line, 7, 16));  // File names are max 10-char
     }
 
     indexes.push(i);
+    lines.push(line);
 
-    if (!bValidDefnLine) {
-      bValidDefnLine = rpgiv.isValidFixedDefnLine(line);
-    }
-    const dclType = rpgiv.getDclType(line);
-
-    // Entity name: characters from col 7 to 80, stopping before col 44
-
-    if (rpgiv.dNameContinues(line)) {
-      const namePart = rpgiv.getCol(line, 7, 80).trim();
-      entityNameParts.push(namePart.replace(/\.\.\.$/, '').trim());
-    }
-    else  // if not a contnuined name line, then save the line itself (but always save the line index)
-    {
-      const namePart = rpgiv.getCol(line, 7, 21).trim();
-      entityNameParts.push(namePart.replace(/\.\.\.$/, '').trim());
-      lines.push(line);
-    }
-    let isKwdOnly = false;
-    let isCommentNext = false;
-    if (bValidDefnLine && i+1 < allLines.length) { // Peak at next line
-      isKwdOnly = rpgiv.isJustKwds(allLines[i + 1]);
-      if (!isKwdOnly) {
-        isCommentNext = rpgiv.isComment(allLines[i + 1]);
-      }
-    }
-    // going forward through the lines, if we hit a Defn spec (DS, PI, C, PR, S) we're done
-    if (!rpgiv.dNameContinues(line) && !rpgiv.dKwdContinues(line) && (bValidDefnLine && !isKwdOnly && !isCommentNext)) {
-      break;
-    }
   }
 
   return {
-    specType: 'D',
+    specType: 'F',
     lines,
     indexes,
     entityName: entityNameParts.length > 0 ? entityNameParts.join('') : null,
