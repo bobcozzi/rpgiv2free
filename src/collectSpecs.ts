@@ -9,7 +9,7 @@ import { collectDirectives } from './collectDirectives';
 import { collectCaseOpcode } from './collectCASEBlock';
 import { collectExtOpcode } from './collectExtOpcode';
 
-import * as ibmi from './IBMi';
+import * as rpgiv from './rpgedit';
 import * as vscode from 'vscode';
 
 export { }; // forces module scope
@@ -56,7 +56,7 @@ export function collectStmt(
       isBOOL: false,
     };
   }
-  if (ibmi.isComment(startLine)) { // Converting a block of comments?
+  if (rpgiv.isComment(startLine)) { // Converting a block of comments?
     const cmtBlock = collectComments(allLines, startIndex);
     return {
       entityName: null,  // No entity name for SQL blocks
@@ -67,7 +67,7 @@ export function collectStmt(
       isBOOL: false,
     };
   }
-  if (ibmi.isDirective(startLine)) { // Converting a block of comments?
+  if (rpgiv.isDirective(startLine)) { // Converting a block of comments?
     const dirBlock = collectDirectives(allLines, startIndex);
     return {
       entityName: null,  // No entity name for SQL blocks
@@ -79,21 +79,21 @@ export function collectStmt(
     };
   }
 
-  const curSpec = ibmi.getSpecType(startLine);
-  if ((!curSpec && ibmi.isNotComment(startLine)) || isLineEmpty(startLine)) return null;
+  const curSpec = rpgiv.getSpecType(startLine);
+  if ((!curSpec && rpgiv.isNotComment(startLine)) || isLineEmpty(startLine)) return null;
 
-  if (ibmi.isComment(startLine)) {
+  if (rpgiv.isComment(startLine)) {
     let commentBlock: string[] = [];
     let commentIndex: number[] = [];
     let idx = startIndex;
-    while (idx < allLines.length && ibmi.isComment(allLines[idx].padEnd(80, ' '))) {
-      commentBlock.push(ibmi.convertCmt(allLines[idx]));
+    while (idx < allLines.length && rpgiv.isComment(allLines[idx].padEnd(80, ' '))) {
+      commentBlock.push(rpgiv.convertCmt(allLines[idx]));
       commentIndex.push(idx);
       idx++;
     }
     idx = startIndex - 1;
-    while (idx >= 0 && ibmi.isComment(allLines[idx].padEnd(80, ' '))) {
-      commentBlock.push(ibmi.convertCmt(allLines[idx]));
+    while (idx >= 0 && rpgiv.isComment(allLines[idx].padEnd(80, ' '))) {
+      commentBlock.push(rpgiv.convertCmt(allLines[idx]));
       commentIndex.push(idx);
       idx--;
     }
@@ -109,8 +109,8 @@ export function collectStmt(
     }
   }
 
-  if (curSpec === 'c' && !ibmi.isUnsuppotedOpcode(ibmi.getOpcode(startLine))) {
-    if (ibmi.isBooleanOpcode(startLine)) {
+  if (curSpec === 'c' && !rpgiv.isUnsuppotedOpcode(rpgiv.getOpcode(startLine))) {
+    if (rpgiv.isBooleanOpcode(startLine)) {
       // Handle boolean opcode lines separately
       const booleanOpcodeResult = collectBooleanOpcode(allLines, startIndex);
       return {
@@ -121,7 +121,7 @@ export function collectStmt(
         isSQL: false,
         isBOOL: true,
       };
-    } else if (ibmi.isCASEOpcode(startLine)) {
+    } else if (rpgiv.isCASEOpcode(startLine)) {
       // Handle CASE/CASxx blocks
       const caseOpcodeResult = collectCaseOpcode(allLines, startIndex);
       return {
@@ -132,8 +132,8 @@ export function collectStmt(
         isSQL: false,
         isBOOL: false,
       };
-    } else if (ibmi.isExtOpcode(ibmi.getOpcode(startLine)) ||
-      ibmi.getCol(startLine, 8, 35).trim() == '') {
+    } else if (rpgiv.isExtOpcode(rpgiv.getOpcode(startLine)) ||
+      rpgiv.getCol(startLine, 8, 35).trim() == '') {
       // if Calc spec and Extended Factor 2 opcode or nothing in Factor 1 or Opcode, then
       // this is a continued Extended Factor 2 spec. So read backwards
       // until we find an opcode or any free format statement.
@@ -193,34 +193,34 @@ export function collectStmt(
       prevLine = allLines[start - 1].padEnd(80, ' ');
     }
 
-    if (ibmi.isComment(curLine)) {
-      // comments.push(ibmi.convertCmt(curLine));
+    if (rpgiv.isComment(curLine)) {
+      // comments.push(rpgiv.convertCmt(curLine));
       start--;
       continue;
     }
-    if (ibmi.isNotComment(prevLine)) {
-      if (ibmi.getSpecType(prevLine) !== curSpec) break;
+    if (rpgiv.isNotComment(prevLine)) {
+      if (rpgiv.getSpecType(prevLine) !== curSpec) break;
     }
 
-    const curDclType = ibmi.getDclType(curLine);
-    const prevDclType = ibmi.getDclType(prevLine).trim();
-    const prevTrimmedLine = ibmi.getCol(prevLine, 7, 80).trimEnd();
-    const curTrimmed = ibmi.getCol(prevLine, 7, 80).trimEnd();
+    const curDclType = rpgiv.getDclType(curLine);
+    const prevDclType = rpgiv.getDclType(prevLine).trim();
+    const prevTrimmedLine = rpgiv.getCol(prevLine, 7, 80).trimEnd();
+    const curTrimmed = rpgiv.getCol(prevLine, 7, 80).trimEnd();
     const prevEndsWithDots = prevTrimmedLine.endsWith('...');
     const curEndsWithDots = curTrimmed.endsWith('...');
-    const prevHasName = ibmi.getCol(prevLine, 7, 21).trim().length > 0;
-    const curOpCode = ibmi.getCol(curLine, 25, 35).trim();
-    const prevOpCode = ibmi.getCol(prevLine, 25, 35).trim().length > 0;
-    const hasFactor1 = ibmi.getCol(curLine, 12, 25).trim().length;
-    const curHasName = ibmi.getCol(curLine, 7, 21).trim().length > 0;
+    const prevHasName = rpgiv.getCol(prevLine, 7, 21).trim().length > 0;
+    const curOpCode = rpgiv.getCol(curLine, 25, 35).trim();
+    const prevOpCode = rpgiv.getCol(prevLine, 25, 35).trim().length > 0;
+    const hasFactor1 = rpgiv.getCol(curLine, 12, 25).trim().length;
+    const curHasName = rpgiv.getCol(curLine, 7, 21).trim().length > 0;
 
     // The very fringe case of a long name ending on prior line
     //  D  thisIsALongNameThatIsNotContinued
     //  D                SDS
     if (curSpec === 'd') {
-      const fieldDefn = ibmi.getCol(curLine, 7, 32).trim();
-      const prevDefn = ibmi.getCol(prevLine, 33, 42).trim();
-      const fieldAttr = ibmi.getCol(curLine, 7, 32).trim();
+      const fieldDefn = rpgiv.getCol(curLine, 7, 32).trim();
+      const prevDefn = rpgiv.getCol(prevLine, 33, 42).trim();
+      const fieldAttr = rpgiv.getCol(curLine, 7, 32).trim();
       if (!prevEndsWithDots) {
         if ((["ds", "pr", "pi"].includes(prevDclType) || prevDefn !== '') || fieldAttr === '') {
           break;
@@ -239,7 +239,7 @@ export function collectStmt(
         continue;
       }
       else if (curOpCode.length > 0) {
-        if (ibmi.isOpcodeANDxxORxx(curLine)) {
+        if (rpgiv.isOpcodeANDxxORxx(curLine)) {
           start--;
           continue;
         }
@@ -283,30 +283,30 @@ export function collectStmt(
     // Next line (only if index + 1 < totalLines)
     const nextLine = index + 1 < totalLines ? allLines[index + 1].padEnd(80, ' ') : '';
 
-    if (ibmi.isComment(line)) {
-      comments.push(ibmi.convertCmt(line));
+    if (rpgiv.isComment(line)) {
+      comments.push(rpgiv.convertCmt(line));
       collectedIndexes.add(index);
       index++;
       continue;
     }
 
-    if (ibmi.getSpecType(line) !== curSpec) break;
+    if (rpgiv.getSpecType(line) !== curSpec) break;
 
-    const namePartTrimmed = ibmi.getCol(line, 7, 21).trim();
-    const fSpecCont = ibmi.getCol(line, 7, 43).trim();
-    const fSpecKwd = ibmi.getCol(line, 44, 80).trim();
+    const namePartTrimmed = rpgiv.getCol(line, 7, 21).trim();
+    const fSpecCont = rpgiv.getCol(line, 7, 43).trim();
+    const fSpecKwd = rpgiv.getCol(line, 44, 80).trim();
 
-    const attr22to43 = ibmi.getCol(line, 22, 43).trimEnd();
-    const prevEndsWithDots = ibmi.getCol(prevLine, 7, 80).trimEnd().endsWith('...');
-    const curEndsWithDots = ibmi.getCol(line, 7, 80).trimEnd().endsWith('...');
-    const hasOpcode = ibmi.getCol(line, 25, 35).trim().length > 0;
-    const hasFactor1 = ibmi.getCol(line, 12, 25).trim().length;
+    const attr22to43 = rpgiv.getCol(line, 22, 43).trimEnd();
+    const prevEndsWithDots = rpgiv.getCol(prevLine, 7, 80).trimEnd().endsWith('...');
+    const curEndsWithDots = rpgiv.getCol(line, 7, 80).trimEnd().endsWith('...');
+    const hasOpcode = rpgiv.getCol(line, 25, 35).trim().length > 0;
+    const hasFactor1 = rpgiv.getCol(line, 12, 25).trim().length;
 
     let fullName = '';
     if (curEndsWithDots) {
-      fullName = ibmi.getCol(line, 7, 80).trimEnd().slice(0, -3).trimEnd();
+      fullName = rpgiv.getCol(line, 7, 80).trimEnd().slice(0, -3).trimEnd();
     } else {
-      fullName = ibmi.getCol(line, 7, 21).trimEnd();
+      fullName = rpgiv.getCol(line, 7, 21).trimEnd();
     }
 
     if (["d", "p"].includes(curSpec)) {
@@ -325,7 +325,7 @@ export function collectStmt(
 
     if (curSpec === 'c') {
       if (index !== start) {
-        if (hasOpcode && !ibmi.isOpcodeANDxxORxx(line)) {
+        if (hasOpcode && !rpgiv.isOpcodeANDxxORxx(line)) {
           break;
         }
       }
@@ -345,7 +345,7 @@ export function collectStmt(
     // Continued F spec?
     if (curSpec === 'f' &&
       ((index === start) || (fSpecKwd.length > 0 && fSpecCont.length === 0))) {
-      const fileDesignation = ibmi.getCol(line, 18).toLowerCase();
+      const fileDesignation = rpgiv.getCol(line, 18).toLowerCase();
       if (["f", ""].includes(fileDesignation)) {
         // Stop here if the nextLine is a F-spec with keyword
         collectedIndexes.add(index);
@@ -362,18 +362,18 @@ export function collectStmt(
     if (!nextLine) break; // No more lines to process?
 
     const bStartNewLine = isStartOfNewEntity(nextLine, curSpec);
-    if ((finalNameLineFound || (curSpec === 'c') && !ibmi.isComment(nextLine)) &&
+    if ((finalNameLineFound || (curSpec === 'c') && !rpgiv.isComment(nextLine)) &&
       nextLine.trim() !== '' && bStartNewLine) {
       break;
     }
 
-    const nextSpec = ibmi.getSpecType(nextLine);
-    const nextOpcode = ibmi.getCol(nextLine, 25, 35).trim().length > 0;
-    const nextFactor1 = ibmi.getCol(nextLine, 12, 25).trim().length;
-    const nextfSpecCont = ibmi.getCol(nextLine, 7, 43).trim();
-    const nextfSpecKwd = ibmi.getCol(nextLine, 44, 80).trim();
+    const nextSpec = rpgiv.getSpecType(nextLine);
+    const nextOpcode = rpgiv.getCol(nextLine, 25, 35).trim().length > 0;
+    const nextFactor1 = rpgiv.getCol(nextLine, 12, 25).trim().length;
+    const nextfSpecCont = rpgiv.getCol(nextLine, 7, 43).trim();
+    const nextfSpecKwd = rpgiv.getCol(nextLine, 44, 80).trim();
 
-    let isNextComment = ibmi.isComment(nextLine);
+    let isNextComment = rpgiv.isComment(nextLine);
 
     if (!isNextComment) {
       if (curSpec != nextSpec || (nextSpec === 'c' && (nextOpcode || nextFactor1))) {
@@ -403,20 +403,20 @@ export function collectStmt(
 }
 
 function isStartOfNewEntity(line: string, curSpec: string): boolean {
-  if (ibmi.getSpecType(line) !== curSpec) return true;
+  if (rpgiv.getSpecType(line) !== curSpec) return true;
 
-  const name = ibmi.getCol(line, 7, 21).trim();
-  const attr22to43 = ibmi.getCol(line, 22, 43).trimEnd();
-  const hasDots = ibmi.getCol(line, 7, 80).trimEnd().endsWith('...');
-  const nextSpec = ibmi.getSpecType(line);
-  const nextOpcode = ibmi.getCol(line, 25, 35).trim().length > 0;
-  const nextFactor1 = ibmi.getCol(line, 12, 25).trim().length;
+  const name = rpgiv.getCol(line, 7, 21).trim();
+  const attr22to43 = rpgiv.getCol(line, 22, 43).trimEnd();
+  const hasDots = rpgiv.getCol(line, 7, 80).trimEnd().endsWith('...');
+  const nextSpec = rpgiv.getSpecType(line);
+  const nextOpcode = rpgiv.getCol(line, 25, 35).trim().length > 0;
+  const nextFactor1 = rpgiv.getCol(line, 12, 25).trim().length;
 
-  let isNextComment = ibmi.getCol(line, 7, 7).trim() === '*';
-  const bBooleanContinuation = ibmi.isOpcodeANDxxORxx(line);
+  let isNextComment = rpgiv.getCol(line, 7, 7).trim() === '*';
+  const bBooleanContinuation = rpgiv.isOpcodeANDxxORxx(line);
 
   if (!isNextComment) {
-    isNextComment = ibmi.getCol(line, 7, 80).trim().startsWith('//');
+    isNextComment = rpgiv.getCol(line, 7, 80).trim().startsWith('//');
   }
 
   // A line is a new entity if:

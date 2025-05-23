@@ -1,6 +1,6 @@
 
 import * as vscode from 'vscode';
-import * as ibmi from '../IBMi';
+import * as rpgiv from '../rpgedit';
 
 export function convertDO(
     opcode: string,
@@ -16,7 +16,7 @@ export function convertDO(
     const extenderMatch = opcode.match(/\(([^)]+)\)/);
     const extender = extenderMatch ? extenderMatch[1].toUpperCase() : '';
     const hasP = extender.includes('P');
-    const config = ibmi.getRPGIVFreeSettings();
+    const config = rpgiv.getRPGIVFreeSettings();
 
     let exprParts: string[] = [];
 
@@ -33,7 +33,7 @@ export function convertDO(
     if (f3 === '') {
         f3 = config.tempVar2DO;
     }
-    if (!ibmi.isVarDcl(f3)) {
+    if (!rpgiv.isVarDcl(f3)) {
         extraDCL.push(`DCL-S ${f3} INT(10); // Ad hoc counter used by DO opcode `);
     }
 

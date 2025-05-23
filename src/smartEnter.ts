@@ -1,6 +1,6 @@
 
 import * as vscode from 'vscode';
-import * as ibmi from './IBMi';
+import * as rpgiv from './rpgedit';
 
 export async function handleSmartEnter(editor: vscode.TextEditor, position: vscode.Position) {
   const config = vscode.workspace.getConfiguration('rpgiv2free');
@@ -9,7 +9,7 @@ export async function handleSmartEnter(editor: vscode.TextEditor, position: vsco
   const doc = editor.document;
   const line = doc.lineAt(position.line);
   const text = line.text;
-  const eol = ibmi.getEOL();
+  const eol = rpgiv.getEOL();
   const col1To5 = text.substring(0, 5);
   const specPrefix = text.substring(0, 6);
   const afterSpec = text.substring(6);

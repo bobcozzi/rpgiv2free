@@ -1,5 +1,5 @@
 
-import * as ibmi from './IBMi';
+import * as rpgiv from './rpgedit';
 import { collectedStmt, stmtLines } from './types'
 
 export function collectCaseOpcode(allLines: string[], startIndex: number):
@@ -7,7 +7,7 @@ export function collectCaseOpcode(allLines: string[], startIndex: number):
   const lines: string[] = [];
   const indexes: number[] = [];
   const comments: string[] = [];
-  const eol = ibmi.getEOL();
+  const eol = rpgiv.getEOL();
 
   const opMap: { [key: string]: string } = {
     EQ: '=', NE: '<>', GT: '>', LT: '<', GE: '>=', LE: '<='
@@ -22,16 +22,16 @@ export function collectCaseOpcode(allLines: string[], startIndex: number):
 
   while (i < allLines.length) {
     const line = allLines[i];
-    if (ibmi.isComment(line)) {
+    if (rpgiv.isComment(line)) {
       comments.push(line);
       indexes.push(i);
       i++;
       continue;
     }
-    const opCode = ibmi.getColUpper(line, 26, 35).trim();
-    const f1 = ibmi.getCol(line, 12, 25).trim();
-    const f2 = ibmi.getCol(line, 36, 49).trim();
-    const result = ibmi.getCol(line, 50, 63).trim();
+    const opCode = rpgiv.getColUpper(line, 26, 35).trim();
+    const f1 = rpgiv.getCol(line, 12, 25).trim();
+    const f2 = rpgiv.getCol(line, 36, 49).trim();
+    const result = rpgiv.getCol(line, 50, 63).trim();
 
     if (opCode === 'ENDCS' || opCode === 'END') {
       indexes.push(i);
@@ -64,7 +64,7 @@ export function collectCaseOpcode(allLines: string[], startIndex: number):
   }
 
   if (elseLineIndex !== null) {
-    const elseResult = ibmi.getCol(allLines[elseLineIndex], 50, 63).trim();
+    const elseResult = rpgiv.getCol(allLines[elseLineIndex], 50, 63).trim();
     comparisons.push(`OTHER;${eol}${indent}exsr ${elseResult}`);
     // comparisons.push(``);
   }

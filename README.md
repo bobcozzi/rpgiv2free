@@ -7,7 +7,10 @@ For a list of changes and release notes, see the [Changelog](https://github.com/
 
 This extension is an RPG IV to Free Format statement converter. You select the RPG IV fixed format statements you want to
 convert to free format, right-click and select "Convert RPG IV to free format".
-It is NOT a refactoring tool or code modernization tool. Its only purpose is to get an RPG IV fixed-format statement into free format RPG IV syntax.
+It is **NOT a refactoring tool** or code modernization tool. Its only purpose is to convert an RPG IV fixed-format statement into free format RPG IV syntax.
+## Warnings
+- **Conditioning Indicators on Calc Specs are not Supported**:
+  Presently we swallow conditioning indicators in Calc Specs. The extension does nothing with them and therefore the indicators dissapear if you convert a line that is conditioned by indicators, it may convert but the conditioned Calc spec normally, but conditioning indicators will be lost. So use your UNDO function to get the line and the Conditioning indicators back. Note that Resulting Indicators are fully supported, however.
 
 ## Features
 

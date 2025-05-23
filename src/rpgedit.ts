@@ -613,9 +613,11 @@ export function isValidFixedDefnLine(curLine: string): boolean {
 
   return bValidDefn;
 }
+
 export function isSpecEmpty(line: string): boolean {
+  if (!line || typeof line !== 'string') return true;
+  if (line.length < 7) return true;
   const codeArea = getCol(line, 7, 80).trimEnd();
-  const col6 = getSpecType(line);
   if (codeArea === '' || isComment(line)) return true;
   return false;
 }

@@ -14,7 +14,7 @@ import { convertPSpec } from './PSpec';
 import { convertCSpec } from './CSpec';
 import { convertToFreeFormSQL } from './SQLSpec';
 import * as types from './types';
-import * as ibmi from './IBMi';
+import * as rpgiv from './rpgedit';
 
 
 let rpgSmartTabEnabled = true;  // ← In-memory toggle
@@ -54,7 +54,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(
     vscode.workspace.onDidChangeTextDocument((event) => {
-      if (!ibmi.isRPGDocument(event.document)) return;
+      if (!rpgiv.isRPGDocument(event.document)) return;
 
       if (event.contentChanges.some(change => change.range.start.line === 0)) {
         evaluateAndApplyFeatures(event.document);
@@ -103,7 +103,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
     const editor = vscode.window.activeTextEditor;
     const doc = editor?.document;
-    if (!doc || !rpgSmartTabEnabled || ibmi.isNOTFixedFormatRPG(doc)) {
+    if (!doc || !rpgSmartTabEnabled || rpgiv.isNOTFixedFormatRPG(doc)) {
       await vscode.commands.executeCommand('tab');
       return;
     }
@@ -113,7 +113,7 @@ export function activate(context: vscode.ExtensionContext) {
   const shiftTabCmd = vscode.commands.registerCommand('rpgsmarttab.shiftTab', async () => {
     const editor = vscode.window.activeTextEditor;
     const doc = editor?.document;
-    if (!doc || !rpgSmartTabEnabled || ibmi.isNOTFixedFormatRPG(doc)) {
+    if (!doc || !rpgSmartTabEnabled || rpgiv.isNOTFixedFormatRPG(doc)) {
       await vscode.commands.executeCommand('outdent');  // VS Code's default Shift+Tab
       return;
     }
@@ -127,7 +127,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.window.onDidChangeTextEditorSelection((e) => {
       if (!e.textEditor || !rpgSmartTabEnabled) return;
-      if (ibmi.isNOTFixedFormatRPG(e.textEditor.document)) return;
+      if (rpgiv.isNOTFixedFormatRPG(e.textEditor.document)) return;
 
       if (tabStopDebounceTimer) clearTimeout(tabStopDebounceTimer);
 
@@ -158,19 +158,19 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
 
-      const eol = ibmi.getEOL();
-      const mode = ibmi.getSmartEnterMode();
+      const eol = rpgiv.getEOL();
+      const mode = rpgiv.getSmartEnterMode();
       const doc = editor.document;
 
       const fallBackOnEnter =
-        mode === ibmi.SmartEnterMode.Disabled ||
-        (mode === ibmi.SmartEnterMode.FixedOnly && ibmi.isNOTFixedFormatRPG(doc)) ||
-        (mode === ibmi.SmartEnterMode.FixedAndFree && !ibmi.isRPGDocument(doc));
+        mode === rpgiv.SmartEnterMode.Disabled ||
+        (mode === rpgiv.SmartEnterMode.FixedOnly && rpgiv.isNOTFixedFormatRPG(doc)) ||
+        (mode === rpgiv.SmartEnterMode.FixedAndFree && !rpgiv.isRPGDocument(doc));
       // Check if the document is not RPG or if the mode is disabled
       // If the selection is on the first row, first position and Enter is pressed,
       // we treat it like a normal Enter key and fallback to the default behavior.
       if (fallBackOnEnter || (editor.selection.start.line === 0 && editor.selection.start.character === 0)) {
-        await vscode.commands.executeCommand('default:type', { text: ibmi.getEOL() });
+        await vscode.commands.executeCommand('default:type', { text: rpgiv.getEOL() });
         return;
       }
       const position = editor.selection.active;
@@ -188,15 +188,15 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     const activeLine = editor.selection.active.line;
-    ibmi.log('Active line: ' + activeLine);
+    rpgiv.log('Active line: ' + activeLine);
     const totalLines = editor.document.lineCount;
-    ibmi.log(`Document line count: ${totalLines}`);
+    rpgiv.log(`Document line count: ${totalLines}`);
 
     try {
       const line = editor.document.lineAt(editor.selection.active.line).text;
-      ibmi.log('Current line: ' + line);
+      rpgiv.log('Current line: ' + line);
     } catch (e) {
-      ibmi.log('ERROR getting line text: ' + (e as Error).message);
+      rpgiv.log('ERROR getting line text: ' + (e as Error).message);
     }
 
     const doc = editor.document;
@@ -206,7 +206,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     const processedLines = new Set<number>();
-    ibmi.log('Total lines: ' + allLines.length);
+    rpgiv.log('Total lines: ' + allLines.length);
 
     const selectedLineIndexes = new Set<number>();
     const edits: { range: vscode.Range, text: string }[] = [];
@@ -223,7 +223,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
       }
     } catch (e) {
-      ibmi.log('Error collecting selected lines: ' + (e as Error).message);
+      rpgiv.log('Error collecting selected lines: ' + (e as Error).message);
     }
 
     const expandedLineIndexes = new Set<number>();
@@ -256,9 +256,9 @@ export function activate(context: vscode.ExtensionContext) {
       let extraDCL: string[] = [];
 
       if (isSQL) {
-        convertedText = convertToFreeFormSQL(specLines).join(ibmi.getEOL());
+        convertedText = convertToFreeFormSQL(specLines).join(rpgiv.getEOL());
       } else if (isBOOL) {
-        convertedText = specLines.flatMap(line => formatRPGIV(line)).join(ibmi.getEOL());
+        convertedText = specLines.flatMap(line => formatRPGIV(line)).join(rpgiv.getEOL());
       } else {
         const line = specLines[0] ?? '';
         const specType = line.length > 5 ? line.charAt(5).toLowerCase().trim() : '';
@@ -269,10 +269,10 @@ export function activate(context: vscode.ExtensionContext) {
                 : specType === 'p' ? convertPSpec(specLines, entityName)
                   : specType === 'c' ? convertCSpec(specLines, extraDCL)
                     : specLines;
-        convertedText = converted.flatMap(line => formatRPGIV(line)).join(ibmi.getEOL());
+        convertedText = converted.flatMap(line => formatRPGIV(line)).join(rpgiv.getEOL());
       }
 
-      const eol = ibmi.getEOL();
+      const eol = rpgiv.getEOL();
       if (Array.isArray(comments) && comments.length > 0) {
         if (!convertedText.endsWith(eol) && convertedText.length > 0) {
           convertedText += eol;
@@ -321,8 +321,8 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     if (convertedExtraDCL.length > 0) {
-      const lines = ibmi.splitLines(editor.document.getText());
-      await ibmi.insertExtraDCLLinesBatch(editor, lines, convertedExtraDCL.map(dcl => ({
+      const lines = rpgiv.splitLines(editor.document.getText());
+      await rpgiv.insertExtraDCLLinesBatch(editor, lines, convertedExtraDCL.map(dcl => ({
         currentLineIndex: dcl.insertAt,
         extraDCL: dcl.lines
       })));
@@ -337,7 +337,7 @@ function evaluateAndApplyFeatures(document: vscode.TextDocument) {
 
   if (!editor) return;
 
-  if (ibmi.isNOTFixedFormatRPG(document)) {
+  if (rpgiv.isNOTFixedFormatRPG(document)) {
     // Clear decorations if not fixed format
     applyColumnarDecorations(editor, false);
     return;

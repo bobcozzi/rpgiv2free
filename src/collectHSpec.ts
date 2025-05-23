@@ -1,4 +1,4 @@
-import * as ibmi from './IBMi'
+import * as rpgiv from './rpgedit'
 
 
 type CollectResult = {
@@ -40,15 +40,15 @@ export function collectHKeywords(
 
   for (let i = firstIndex; i < allLines.length; i++) {
     const line = allLines[i];
-    if (ibmi.isComment(line)) {
-      comments.push(ibmi.convertCmt(line));
+    if (rpgiv.isComment(line)) {
+      comments.push(rpgiv.convertCmt(line));
       indexes.push(i);
       continue;
     }
-    if (ibmi.isSpecEmpty(line)) continue;
-    if (ibmi.getSpecType(line) !== 'h') break;
+    if (rpgiv.isSpecEmpty(line)) continue;
+    if (rpgiv.getSpecType(line) !== 'h') break;
 
-    const ctlopt = ibmi.getCol(line, 7, 80).trimEnd();
+    const ctlopt = rpgiv.getCol(line, 7, 80).trimEnd();
 
     let buffer = '';
     for (let j = 0; j < ctlopt.length; j++) {

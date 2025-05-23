@@ -1,6 +1,6 @@
 
 import * as vscode from 'vscode';
-import * as ibmi from '../IBMi';
+import * as rpgiv from '../rpgedit';
 
 export function convertCAT(
   opcode: string,
@@ -15,7 +15,7 @@ export function convertCAT(
   const extenderMatch = opcode.match(/\(([^)]+)\)/);
   const extender = extenderMatch ? extenderMatch[1].toUpperCase() : '';
   const hasP = extender.includes('P');
-  const config = ibmi.getRPGIVFreeSettings();
+  const config = rpgiv.getRPGIVFreeSettings();
 
   let exprParts: string[] = [];
 
@@ -51,7 +51,7 @@ export function convertCAT(
     lines.push(`${lenVar} = %LEN(${fullExpr});  // workfield ${lenVar} for CAT opcode`);
     lines.push(`${lenVar} = %MIN(${lenVar} : %LEN(${result})); // Avoid overlow error`);
     lines.push(`%SUBST(${result} : 1 : ${lenVar}) = ${fullExpr};`);
-    if (!ibmi.isVarDcl(lenVar)) { // If not already declared, declare work field
+    if (!rpgiv.isVarDcl(lenVar)) { // If not already declared, declare work field
       extraDCL.push(`DCL-S ${lenVar} INT(10); // Ad hoc length field used by CAT opcode `);
       }
   }

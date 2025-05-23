@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import * as ibmi from "./IBMi";  // Using your existing functions
+import * as rpgiv from "./rpgedit";  // Using your existing functions
 import * as types from './types';
 
 
@@ -83,7 +83,7 @@ function getNextStop(current: number, stops: number[], reverse: boolean): number
 
 function getCurrentTabRange(col: number, stops: number[]): [number, number] {
   for (let i = 0; i < stops.length - 1; i++) {
-    if (col >= stops[i] && col < stops[i + 1]) {
+    if (col >= stops[i] && ((i+1) < stops.length && col < stops[i + 1])) {
       return [stops[i], stops[i + 1]];
     }
   }
@@ -92,7 +92,7 @@ function getCurrentTabRange(col: number, stops: number[]): [number, number] {
 }
 function getStmtRule(line: string): string {
   let specType = '';
-  const lineType = ibmi.getSpecType(line);
+  const lineType = rpgiv.getSpecType(line);
   switch (lineType) {
     case 'h':
       specType = 'H';
@@ -130,7 +130,7 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
   }
 
   const doc = editor.document;
-  if (ibmi.isNOTFixedFormatRPG(doc)) return;
+  if (rpgiv.isNOTFixedFormatRPG(doc)) return;
 
   const config = vscode.workspace.getConfiguration('rpgiv2free');
   const maxRPGLen = config.get<number>('maxRPGSourceLength', 100);  // Default to 80
@@ -242,10 +242,10 @@ export async function highlightCurrentTabZone(editor: vscode.TextEditor): Promis
   const doc = editor.document;
 
   const lang = doc.languageId.toLowerCase();
-  if (!ibmi.isFixedFormatRPG(doc)) return;
+  if (!rpgiv.isFixedFormatRPG(doc)) return;
 
   const lineText = doc.lineAt(cursor.line).text;
-  if (lineText.length < 6 || ibmi.isSkipStmt(lineText)) {
+  if (lineText.length < 6 || rpgiv.isSkipStmt(lineText)) {
     editor.setDecorations(tabBoxDecoration, []);
     return;
   }
@@ -323,8 +323,8 @@ export function applyColumnarDecorations(editor: vscode.TextEditor, smartTabEnab
     // Create "vertical line" decoration by adding a range at specific columns
     for (let i = 0; i < editor.document.lineCount; i++) {
       const line = editor.document.lineAt(i);
-      if (ibmi.isSkipStmt(line.text)) continue; // Skip if line is a skip statement
-      if (ibmi.isComment(line.text)) continue; // Skip if line is a comment
+      if (rpgiv.isSkipStmt(line.text)) continue; // Skip if line is a skip statement
+      if (rpgiv.isComment(line.text)) continue; // Skip if line is a comment
       const stops = getTabStops(line.text); // Get tab stops for the current line
       if (!stops || stops.length === 0) continue; // Skip if no tab stops found
       stops.forEach(col => {

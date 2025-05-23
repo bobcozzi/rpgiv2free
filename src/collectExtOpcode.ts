@@ -1,5 +1,5 @@
 
-import * as ibmi from './IBMi';
+import * as rpgiv from './rpgedit';
 import { collectedStmt, stmtLines } from './types'
 
 
@@ -16,7 +16,7 @@ export function collectExtOpcode(allLines: string[], startIndex: number):
     const lines: string[] = [];
     const indexes: number[] = [];
     const comments: string[] = [];
-    const eol = ibmi.getEOL();
+    const eol = rpgiv.getEOL();
 
 
     // Walk BACKWARD to find the starting line of the statement
@@ -24,18 +24,18 @@ export function collectExtOpcode(allLines: string[], startIndex: number):
     for (let i = firstIndex; i >= 0; i--) {
         const line = allLines[i];
 
-        if (ibmi.isComment(line)) continue;
-        if (ibmi.isSpecEmpty(line)) continue;
-        if (ibmi.getSpecType(line) !== 'c') {
+        if (rpgiv.isComment(line)) continue;
+        if (rpgiv.isSpecEmpty(line)) continue;
+        if (rpgiv.getSpecType(line) !== 'c') {
             firstIndex = i;
             break;
         }
-        const factor2 = ibmi.getCol(line, 36, 80).trimEnd();
-        const opArea = ibmi.getCol(line, 8, 35).trim();
-        const opCode = ibmi.getOpcode(line);
+        const factor2 = rpgiv.getCol(line, 36, 80).trimEnd();
+        const opArea = rpgiv.getCol(line, 8, 35).trim();
+        const opCode = rpgiv.getOpcode(line);
         if (opArea === '') continue;
 
-        if (ibmi.isExtOpcode(opCode)) {
+        if (rpgiv.isExtOpcode(opCode)) {
             firstIndex = i;
             // We found the starting point of the Extended Factor 2 Opcode
             break;
@@ -58,7 +58,7 @@ export function collectExtOpcode(allLines: string[], startIndex: number):
     const match = extF2.match(/^[A-Z0-9-]+/i);
     const firstToken = match ? match[0].toUpperCase() : null;
     const isEvalOrCallP = (namedOpcode && ['eval', 'callp'].includes(namedOpcode.toLowerCase()));
-    const keepOpcode = (firstToken && isEvalOrCallP && (ibmi.isValidOpcode(firstToken) || ibmi.isExtOpcode(firstToken)));
+    const keepOpcode = (firstToken && isEvalOrCallP && (rpgiv.isValidOpcode(firstToken) || rpgiv.isExtOpcode(firstToken)));
     if (!isEvalOrCallP || (isEvalOrCallP && keepOpcode)) {
       lines.push(`${namedOpcode} ${extF2};`)
     }
@@ -87,17 +87,17 @@ export function collectExtF2(
 
   for (let i = firstIndex; i < allLines.length; i++) {
     const line = allLines[i];
-    if (ibmi.isComment(line)) {
-      comments.push(ibmi.convertCmt(line));
+    if (rpgiv.isComment(line)) {
+      comments.push(rpgiv.convertCmt(line));
       indexes.push(i);
       continue;
     }
-    if (ibmi.isSpecEmpty(line)) continue;
-    if (ibmi.getSpecType(line) !== 'c') break;
+    if (rpgiv.isSpecEmpty(line)) continue;
+    if (rpgiv.getSpecType(line) !== 'c') break;
 
-    const opCode = ibmi.getOpcode(line);
-    const opArea = ibmi.getCol(line, 8, 35).trim();
-    const factor2 = ibmi.getCol(line, 36, 80).trimEnd();
+    const opCode = rpgiv.getOpcode(line);
+    const opArea = rpgiv.getCol(line, 8, 35).trim();
+    const factor2 = rpgiv.getCol(line, 36, 80).trimEnd();
 
     if (opArea !== '' && opCode !== '') {
       if (namedOpcode) break; // Already collecting; new opcode, stop

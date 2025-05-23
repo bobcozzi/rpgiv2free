@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import * as ibmi from './IBMi';
+import * as rpgiv from './rpgedit';
 import { combineKwdAreaLines } from './DSpec'; // borrow some DSpec functions
 
 // Function to convert D specs from fixed-format to free-format
@@ -10,13 +10,13 @@ export function convertPSpec(lines: string[], entityName: string | null): string
   let varName = entityName;
   let nextIndex = 0;
   let kwdArea = '';
-  const settings = ibmi.getRPGIVFreeSettings();
+  const settings = rpgiv.getRPGIVFreeSettings();
 
   const dftName = '*n'; // Default name for D specs
 
   if (!varName) {
     const joined = lines.map(line => line.padEnd(80, ' ')).join('');
-    varName = ibmi.getCol(joined, 7, 21).trim(); // fallback to default extraction
+    varName = rpgiv.getCol(joined, 7, 21).trim(); // fallback to default extraction
   } else {
     lines = lines.slice(nextIndex);
   }
@@ -26,8 +26,8 @@ export function convertPSpec(lines: string[], entityName: string | null): string
 
   const joined = lines.map(line => line.padEnd(80, ' ')).join('');
 
-  const specType = ibmi.getSpecType(joined);   // Get column 6 Spec Type
-  const dclType = ibmi.getDclType(joined);  // Get column 24-25 DCL Type
+  const specType = rpgiv.getSpecType(joined);   // Get column 6 Spec Type
+  const dclType = rpgiv.getDclType(joined);  // Get column 24-25 DCL Type
   let procDefn = '';
 
   kwdArea = combineKwdAreaLines(lines);

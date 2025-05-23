@@ -1,7 +1,7 @@
 
 
 import * as vscode from 'vscode';
-import * as ibmi from '../IBMi';
+import * as rpgiv from '../rpgedit';
 
 export function convertCHECK(
     opcode: string,
@@ -12,7 +12,7 @@ export function convertCHECK(
 ): string[] {
     const lines: string[] = [];
 
-    const config = ibmi.getRPGIVFreeSettings();
+    const config = rpgiv.getRPGIVFreeSettings();
 
     // === Extract Extender (e.g., from CHECK(E)) ===
     const extenderMatch = opcode.match(/\(([^)]+)\)/);
@@ -67,7 +67,7 @@ export function convertCHECKR(
 ): string[] {
     const lines: string[] = [];
 
-    const config = ibmi.getRPGIVFreeSettings();
+    const config = rpgiv.getRPGIVFreeSettings();
 
     // === Extract Extender (e.g., from CHECK(E)) ===
     const extenderMatch = opcode.match(/\(([^)]+)\)/);

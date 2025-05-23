@@ -1,6 +1,6 @@
 
 import * as vscode from 'vscode';
-import * as ibmi from './IBMi';
+import * as rpgiv from './rpgedit';
 
 function extractComment(line: string): { code: string, comment: string | null } {
   let insideSingleQuote = false;
@@ -8,7 +8,7 @@ function extractComment(line: string): { code: string, comment: string | null } 
 
   for (let i = 0; i < line.length - 1; i++) {
     const ch = line[i];
-    const next = line[i + 1];
+    const next = i + 1 < line.length ? line[i + 1] : '';
 
     if (ch === "'" && !insideDoubleQuote) insideSingleQuote = !insideSingleQuote;
     else if (ch === '"' && !insideSingleQuote) insideDoubleQuote = !insideDoubleQuote;
@@ -23,7 +23,7 @@ function extractComment(line: string): { code: string, comment: string | null } 
   return { code: line.trimEnd(), comment: null };
 }
 export const formatRPGIV = (input: string, splitOffComments: boolean = false): string[] => {
-  const config = ibmi.getRPGIVFreeSettings();
+  const config = rpgiv.getRPGIVFreeSettings();
   const firstIndentLen = config.indentFirstLine - 1;
   const contIndentLen = config.indentContLines - 1;
   const maxLength = config.maxWidth;
@@ -209,7 +209,7 @@ function tokenizeWithSpacing(line: string): { tokens: string[], spacers: string[
   const tokenRegex2 = /('([^']|'')*')|(?<![A-Z0-9])[*%][A-Z_][A-Z0-9_]*|[A-Z0-9_]+|[(){}\[\]+\-*/=<>:,;]|[^\sA-Z0-9_]/gi;
   const tokenRegex = /('([^']|'')*')|(?<![A-Z0-9])[*%][A-Z_][A-Z0-9_]*\(|[A-Z][A-Z0-9_]*\(|(?<![A-Z0-9])[*%][A-Z_][A-Z0-9_]*|[A-Z0-9_]+|[(){}\[\]+\-*/=<>:,;]|[^\sA-Z0-9_]/gi;
   const spacerRegex = /\s*/y;
-  ibmi.log(`Tokenizing: ${line}`);
+  rpgiv.log(`Tokenizing: ${line}`);
   let pos = 0;
   let tokenCounter = 0;
   while (pos < line.length) {
@@ -224,7 +224,7 @@ function tokenizeWithSpacing(line: string): { tokens: string[], spacers: string[
     const spaceMatch = spacerRegex.exec(line);
     const spaces = spaceMatch?.[0] ?? '';
     pos = spacerRegex.lastIndex;
-    // ibmi.log(`Token: ${tokenCounter}: Spaces: ${spaces.length} => ${token}`);
+    // rpgiv.log(`Token: ${tokenCounter}: Spaces: ${spaces.length} => ${token}`);
     tokens.push(token);
     spacers.push(spaces);
   }

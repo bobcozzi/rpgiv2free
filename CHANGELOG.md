@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.12] - 2025-05-22
+- Renamed our primary helper function namespace to `rpgiv` (it was ibmi) and the namespace container file name is now rpgedit.ts instead of IBMi.ts to avoid potential future conflicts with other extensions. This is an internal own change and should not impact the UX.
+- Corrected an issue with empty P and D spec lines when converted with lines that follow them.
+- Added POS(n) keyword to legacy D specs that contains From and To columns. Previously only the new type keyword and field length were translating, now if from and to columns are specified, CHAR(len) POS(from) are specified.
+
 ## [0.6.11] - 2025-05-21
 - Completed work on opcode migration. All opcodes that can be converted, should now be convert properly. Note that conditioning indicators are not converted, and are currently lost. In the final release, they will cause the extension to not convert the conditioned opcode. Today those conditioned opcodes are converted but their indicators are lost. So use Ctrl+Z (Cmd+Z) undo to recover them if you inadvertently.
 

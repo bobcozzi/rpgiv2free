@@ -1,6 +1,6 @@
 
 import * as vscode from 'vscode';
-import * as ibmi from './IBMi';
+import * as rpgiv from './rpgedit';
 import * as op from './opcodes';
 
 
@@ -15,31 +15,31 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
   if (!Array.isArray(lines) || lines.length === 0) return [];
 
   const line = lines[0].padEnd(80, ' '); // RPG fixed-format always assumes 80-char line
-  const specType = ibmi.getSpecType(line);
+  const specType = rpgiv.getSpecType(line);
   // vscode.window.showInformationMessage('convertCSpec called. SpecType: ' + specType);
   if (specType !== 'c') return [];
 
-  const levelBreak = ibmi.getCol(line, 7, 8).trim();
-  const indicators = ibmi.getCol(line, 9, 11).trim();
-  const factor1 = ibmi.getCol(line, 12, 25).trim();
-  let opcode = ibmi.getOpcode(line);
-  const factor2 = ibmi.getCol(line, 36, 49).trim();
-  const factor2Ext = ibmi.getCol(line, 36, 80).trim();
-  const result = ibmi.getCol(line, 50, 63).trim();
-  const length = ibmi.getCol(line, 64, 68).trim();
-  const decimals = ibmi.getCol(line, 69, 70).trim();
-  const resInd1 = ibmi.getCol(line, 71, 72).trim();
-  const resInd2 = ibmi.getCol(line, 73, 74).trim();
-  const resInd3 = ibmi.getCol(line, 75, 76).trim();
-  let extFactor2 = ibmi.getCol(line, 36, 80).trim();
+  const levelBreak = rpgiv.getCol(line, 7, 8).trim();
+  const indicators = rpgiv.getCol(line, 9, 11).trim();
+  const factor1 = rpgiv.getCol(line, 12, 25).trim();
+  let opcode = rpgiv.getOpcode(line);
+  const factor2 = rpgiv.getCol(line, 36, 49).trim();
+  const factor2Ext = rpgiv.getCol(line, 36, 80).trim();
+  const result = rpgiv.getCol(line, 50, 63).trim();
+  const length = rpgiv.getCol(line, 64, 68).trim();
+  const decimals = rpgiv.getCol(line, 69, 70).trim();
+  const resInd1 = rpgiv.getCol(line, 71, 72).trim();
+  const resInd2 = rpgiv.getCol(line, 73, 74).trim();
+  const resInd3 = rpgiv.getCol(line, 75, 76).trim();
+  let extFactor2 = rpgiv.getCol(line, 36, 80).trim();
 
   let freeFormLine: string[] = [];
 
-  if (ibmi.isExtOpcode(opcode)) {
+  if (rpgiv.isExtOpcode(opcode)) {
     if (lines.length > 1) {
       // Extract cols 36–80 (1-based) from each line starting with index 1
       extFactor2 = lines
-        .map(line => ibmi.getCol(line, 36, 80))  // reuse your getCol helper
+        .map(line => rpgiv.getCol(line, 36, 80))  // reuse your getCol helper
         .join(' ')
         .trim();
     }
@@ -49,7 +49,7 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
       opcode = "";  // EVAL/callp is not needed in free-form
     }
     freeFormLine.push(`${opcode.toLowerCase()} ${extFactor2}`);
-  } else if (!ibmi.isUnsuppotedOpcode(opcode)) {
+  } else if (!rpgiv.isUnsuppotedOpcode(opcode)) {
     // Common 3-operand statement: result = factor1 opcode factor2;
     const enhValues: OpcodeEnhancement = enhanceOpcode(opcode, factor1, factor2, result, length, decimals, resInd1, resInd2, resInd3);
 

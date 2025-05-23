@@ -1,6 +1,6 @@
 
 import * as vscode from 'vscode';
-import * as ibmi from '../IBMi';
+import * as rpgiv from '../rpgedit';
 
 export function convertSUBST(
     opcode: string,
@@ -11,7 +11,7 @@ export function convertSUBST(
 ): string[] {
     const lines: string[] = [];
 
-    const config = ibmi.getRPGIVFreeSettings();
+    const config = rpgiv.getRPGIVFreeSettings();
 
     // === Extract Extender (e.g., from SUBST(P)) ===
     const extenderMatch = opcode.match(/\(([^)]+)\)/);

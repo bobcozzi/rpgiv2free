@@ -1,13 +1,13 @@
 
-import * as ibmi from './IBMi'
+import * as rpgiv from './rpgedit'
 import { stmtLines } from './types';
 
 export function collectDirectives(allLines: string[], startIndex: number): stmtLines {
   const lines: string[] = [];
   const indexes: number[] = [];
   const comments: string[] = [];
-  const eol = ibmi.getEOL();
-  const settings = ibmi.getRPGIVFreeSettings();
+  const eol = rpgiv.getEOL();
+  const settings = rpgiv.getRPGIVFreeSettings();
 
   // NOTE: Updates various compiler directives to modern versions
 
@@ -15,7 +15,7 @@ export function collectDirectives(allLines: string[], startIndex: number): stmtL
   let start = startIndex;
   while (start > 0) {
     const line = allLines[start-1].trimEnd();
-    if (ibmi.isEmptyStmt(line) || ibmi.isDirective(line)) {
+    if (rpgiv.isEmptyStmt(line) || rpgiv.isDirective(line)) {
       start--;
     } else {
       break;
@@ -26,15 +26,15 @@ export function collectDirectives(allLines: string[], startIndex: number): stmtL
   let end = start;
   while (end < allLines.length) {
     const line = allLines[end+1].trimEnd();
-     if (ibmi.isEmptyStmt(line) || ibmi.isDirective(line)) {
+     if (rpgiv.isEmptyStmt(line) || rpgiv.isDirective(line)) {
       end++;
     } else {
       break;
     }
   }
-  const fileInfo = ibmi.getActiveFileInfo();
+  const fileInfo = rpgiv.getActiveFileInfo();
   const ext = fileInfo?.extension ? fileInfo.extension.trim() : '';
-  const config = ibmi.getRPGIVFreeSettings();
+  const config = rpgiv.getRPGIVFreeSettings();
 
   for (let i = start; i <= end; i++) {
     lines.push(convertDirective(allLines[i],ext, config));
@@ -48,15 +48,15 @@ export function collectDirectives(allLines: string[], startIndex: number): stmtL
   };
 }
 
-function convertDirective(line: string, extension: string,  settings: ibmi.configSettings): string {
+function convertDirective(line: string, extension: string,  settings: rpgiv.configSettings): string {
 
-  if (!ibmi.isDirective(line)) {
+  if (!rpgiv.isDirective(line)) {
     return line;
   }
   let enhancedDir = '';
   const isSQLType = extension?.startsWith('.sql');
   // ...existing code...
-  const col = ibmi.getCol(line, 7, 80);
+  const col = rpgiv.getCol(line, 7, 80);
   const dir = typeof col === 'string' ? col.trimEnd() : '';
   if (dir) {
     const dirLower = dir.trim().toLowerCase();

@@ -1,5 +1,5 @@
 
-import * as ibmi from './IBMi';
+import * as rpgiv from './rpgedit';
 import { collectedStmt } from './types';
 
 export function collectPSpecs(
@@ -14,7 +14,7 @@ export function collectPSpecs(
 } {
 
   function isProcSpec(line: string): boolean {
-    return (ibmi.getSpecType(line) === 'p');
+    return (rpgiv.getSpecType(line) === 'p');
   }
 
   if (!isProcSpec(allLines[startIndex])) {
@@ -38,15 +38,15 @@ export function collectPSpecs(
     if (i > 0) {
       prevLine = allLines[i - 1];
     }
-    if (ibmi.isSkipStmt(line)) continue;
+    if (rpgiv.isSkipStmt(line)) continue;
     if (!isProcSpec(line)) break;
 
     // Once a continued name is detected (reading backwards) and
     // this line is not also a continued name, then we are done reading backwards.
 
-    const isKwdOnly = ibmi.isJustKwds(line);
-    const isNameCont = ibmi.dNameContinues(prevLine);
-    const isKwdCont = ibmi.dKwdContinues(prevLine);
+    const isKwdOnly = rpgiv.isJustKwds(line);
+    const isNameCont = rpgiv.dNameContinues(prevLine);
+    const isKwdCont = rpgiv.dKwdContinues(prevLine);
 
     if (bContName && !isNameCont) {
       firstIndex = i;
@@ -78,51 +78,53 @@ export function collectPSpecs(
   for (let i = firstIndex; i < allLines.length; i++) {
     const line = allLines[i];
 
-    if (ibmi.isComment(line)) {
-      comments.push(ibmi.convertCmt(line));
+    if (rpgiv.isComment(line)) {
+      comments.push(rpgiv.convertCmt(line));
       indexes.push(i);
       continue;
     }
-    else if (ibmi.isEmptyStmt(line)) {
+    else if (rpgiv.isEmptyStmt(line)) {
       continue;
     }
-    else if (!isProcSpec(line) && !ibmi.isSkipStmt(line)) {
+    else if (!isProcSpec(line) && !rpgiv.isSkipStmt(line)) {
       break;
     }
 
     indexes.push(i);
 
-    const dclType = ibmi.getDclType(line);  // B or E (for begin or End proc)
+    const dclType = rpgiv.getDclType(line);  // B or E (for begin or End proc)
 
     // Entity name: characters from col 7 to 80, stopping before col 44
 
-    if (ibmi.dNameContinues(line)) {
-      const namePart = ibmi.getCol(line, 7, 80).trim();
+    if (rpgiv.dNameContinues(line)) {
+      const namePart = rpgiv.getCol(line, 7, 80).trim();
       entityNameParts.push(namePart.replace(/\.\.\.$/, '').trim());
     }
     else  // if not a contnuined name line, then save the line itself (but always save the line index)
     {
-      const namePart = ibmi.getCol(line, 7, 21).trim();
-      entityNameParts.push(namePart.replace(/\.\.\.$/, '').trim());
-      lines.push(line);
+      if (!rpgiv.isEmptyStmt(line)) { // If not an empty Spec (e.g., "D <allblanks...>") add it
+        const namePart = rpgiv.getCol(line, 7, 21).trim();
+        entityNameParts.push(namePart.replace(/\.\.\.$/, '').trim());
+        lines.push(line);
+      }
     }
     let isKwdOnly = false;
     let isCommentNext = false;
     let nextLine = '';
     let bNextIsPSpec = false;
-    if (i < allLines.length) { // Peak at next line
+    if (i+1 < allLines.length) { // Peak at next line
           nextLine = allLines[i + 1];
         bNextIsPSpec = (isProcSpec(allLines[i + 1]))
     }
 
     if (bNextIsPSpec) { // Peak at next line
-      isKwdOnly = ibmi.isJustKwds(nextLine);
+      isKwdOnly = rpgiv.isJustKwds(nextLine);
       if (!isKwdOnly) {
-        isCommentNext = (ibmi.isComment(nextLine) || ibmi.isSkipStmt(nextLine) );
+        isCommentNext = (rpgiv.isComment(nextLine) || rpgiv.isSkipStmt(nextLine) );
       }
     }
     // going forward through the lines, if we hit a Defn spec (DS, PI, C, PR, S) we're done
-    if (!ibmi.dNameContinues(line) && !ibmi.dKwdContinues(line) && (!isKwdOnly && !isCommentNext)) {
+    if (!rpgiv.dNameContinues(line) && !rpgiv.dKwdContinues(line) && (!isKwdOnly && !isCommentNext)) {
       break;
     }
   }

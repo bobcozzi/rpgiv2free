@@ -1,13 +1,13 @@
 
-import * as ibmi from './IBMi.js';
+import * as rpgiv from './rpgedit'
 
 export function expandCompoundRange(lines: string[], selectedIndex: number): number[] {
   const expanded: number[] = [];
 
   const selectedLine = lines[selectedIndex];
-  const opcode = ibmi.getOpcode(selectedLine);
+  const opcode = rpgiv.getOpcode(selectedLine);
 
-  if (!ibmi.isBooleanOpcode(selectedLine) && !ibmi.isCASEOpcode(selectedLine)) {
+  if (!rpgiv.isBooleanOpcode(selectedLine) && !rpgiv.isCASEOpcode(selectedLine)) {
     expanded.push(selectedIndex);
     return expanded;
   }
@@ -15,20 +15,20 @@ export function expandCompoundRange(lines: string[], selectedIndex: number): num
   let start = selectedIndex;
   let end = selectedIndex + 1;
 
-  if (ibmi.isCASEOpcode(selectedLine)) {
+  if (rpgiv.isCASEOpcode(selectedLine)) {
     // Expand upward to the first CASxx or CAS
-    while (start > 0 && ibmi.isCASEOpcode(lines[start - 1])) {
+    while (start > 0 && rpgiv.isCASEOpcode(lines[start - 1])) {
       start--;
     }
 
     // Expand downward until ENDCS or non-CAS opcode
     while (end < lines.length) {
       const nextLine = lines[end];
-      const nextOpcode = ibmi.getOpcode(nextLine);
+      const nextOpcode = rpgiv.getOpcode(nextLine);
       if (nextOpcode === 'ENDCS' || nextOpcode === 'END') {
         end++; // include ENDCS line
         break;
-      } else if (ibmi.isCASEOpcode(nextLine)) {
+      } else if (rpgiv.isCASEOpcode(nextLine)) {
         end++;
       } else {
         break;
@@ -38,9 +38,9 @@ export function expandCompoundRange(lines: string[], selectedIndex: number): num
     // Boolean expression handling (IFxx, WHENxx, etc.)
     while (start > 0) {
       const prevLine = lines[start - 1];
-      if (ibmi.isOpcodeANDxxORxx(prevLine)) {
+      if (rpgiv.isOpcodeANDxxORxx(prevLine)) {
         start--;
-      } else if (ibmi.isOpcodeIFxx(prevLine) || ibmi.isOpcodeWHENxx(prevLine)) {
+      } else if (rpgiv.isOpcodeIFxx(prevLine) || rpgiv.isOpcodeWHENxx(prevLine)) {
         start--;
         break;
       } else {
@@ -50,9 +50,9 @@ export function expandCompoundRange(lines: string[], selectedIndex: number): num
 
     while (end < lines.length) {
       const nextLine = lines[end];
-      if (ibmi.isOpcodeANDxxORxx(nextLine)) {
+      if (rpgiv.isOpcodeANDxxORxx(nextLine)) {
         end++;
-      } else if (ibmi.isOpcodeEnd(nextLine)) {
+      } else if (rpgiv.isOpcodeEnd(nextLine)) {
         end++;
         break;
       } else {
@@ -72,9 +72,9 @@ export function expandRange(lines: string[], selectedIndex: number): number[] {
   const expanded: number[] = [];
 
   const selectedLine = lines[selectedIndex];
-  const opcode = ibmi.getColUpper(selectedLine.padEnd(80, ' '), 26, 35);
+  const opcode = rpgiv.getColUpper(selectedLine.padEnd(80, ' '), 26, 35);
 
-  if (!ibmi.isBooleanOpcode(selectedLine)) {
+  if (!rpgiv.isBooleanOpcode(selectedLine)) {
     expanded.push(selectedIndex);
     return expanded;
   }
@@ -83,9 +83,9 @@ export function expandRange(lines: string[], selectedIndex: number): number[] {
   let start = selectedIndex;
   while (start > 0) {
     const prevLine = lines[start - 1];
-    if (ibmi.isOpcodeANDxxORxx(prevLine)) {
+    if (rpgiv.isOpcodeANDxxORxx(prevLine)) {
       start--;
-    } else if (ibmi.isOpcodeIFxx(prevLine) || ibmi.isOpcodeWHENxx(prevLine)) {
+    } else if (rpgiv.isOpcodeIFxx(prevLine) || rpgiv.isOpcodeWHENxx(prevLine)) {
       start--;
       break;
     } else {
@@ -97,9 +97,9 @@ export function expandRange(lines: string[], selectedIndex: number): number[] {
   let end = selectedIndex + 1;
   while (end < lines.length) {
     const nextLine = lines[end];
-    if (ibmi.isOpcodeANDxxORxx(nextLine)) {
+    if (rpgiv.isOpcodeANDxxORxx(nextLine)) {
       end++;
-    } else if (ibmi.isOpcodeEnd(nextLine)) {
+    } else if (rpgiv.isOpcodeEnd(nextLine)) {
       end++;
       break;
     } else {

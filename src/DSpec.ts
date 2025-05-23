@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
-import * as ibmi from './IBMi';
+import * as rpgiv from './rpgedit';
 import { convertChildVar } from './convertChildVar';
+
+const isDigits = (s: string) => /^\d+$/.test(s);
 
 // Function to convert D specs from fixed-format to free-format
 export function convertDSpec(lines: string[],
@@ -10,19 +12,19 @@ export function convertDSpec(lines: string[],
   curLineIndex: number
 ): string[] {
 
-  ibmi.log(`convertDSpec Lines: ${lines?.length ?? 'undefined'}`);
+  rpgiv.log(`convertDSpec Lines: ${lines?.length ?? 'undefined'}`);
 
   if (!Array.isArray(lines) || lines.length === 0) return [];
   let varName = entityName;
   let nextIndex = 0;
   let kwdArea = '';
-  const settings = ibmi.getRPGIVFreeSettings();
+  const settings = rpgiv.getRPGIVFreeSettings();
 
   const dftName = '*n'; // Default name for D specs
 
   if (!varName) {
     const joined = lines.map(line => line.padEnd(80, ' ')).join('');
-    varName = ibmi.getCol(joined, 7, 21).trim(); // fallback to classic defn name extraction
+    varName = rpgiv.getCol(joined, 7, 21).trim(); // fallback to classic defn name extraction
   }
   // If still empty, then use the default "name" which is '*n' meaning "no name"
   if (!varName) {
@@ -31,14 +33,14 @@ export function convertDSpec(lines: string[],
 
   const joined = lines.map(line => line.padEnd(80, ' ')).join('');
 
-  const specType = ibmi.getSpecType(joined).trim();   // Get column 6 Spec Type
-  const dclType = ibmi.getColUpper(joined, 24, 25).trim();  // Get column 24-25 DCL Type
-  const extType = ibmi.getColUpper(joined, 22).trim();  // Get column 22 Ext Type
-  const PSDS = ibmi.getColUpper(joined, 23).trim();  // Get column 23 PSDS Flag
-  const fromPos = ibmi.getColUpper(joined, 26, 32).trim();
-  let toPosOrLen = ibmi.getColUpper(joined, 33, 39).trim();
-  const dataType = ibmi.getColUpper(joined, 40).trim(); // Get column 40 Data Type
-  const decPos = ibmi.getColUpper(joined, 41, 42).trim();
+  const specType = rpgiv.getSpecType(joined).trim();   // Get column 6 Spec Type
+  const dclType = rpgiv.getColUpper(joined, 24, 25).trim();  // Get column 24-25 DCL Type
+  const extType = rpgiv.getColUpper(joined, 22).trim();  // Get column 22 Ext Type
+  const PSDS = rpgiv.getColUpper(joined, 23).trim();  // Get column 23 PSDS Flag
+  const fromPos = rpgiv.getColUpper(joined, 26, 32).trim();
+  let toPosOrLen = rpgiv.getColUpper(joined, 33, 39).trim();
+  const dataType = rpgiv.getColUpper(joined, 40).trim(); // Get column 40 Data Type
+  const decPos = rpgiv.getColUpper(joined, 41, 42).trim();
 
   kwdArea = combineKwdAreaLines(lines);
 
@@ -46,7 +48,7 @@ export function convertDSpec(lines: string[],
   let fmt = '*ISO'; // Default format
 
   const lenMatch = kwdArea.match(/LEN\(([^)]+)\)/i);
-
+  let fieldStartPos = '';
   if (lenMatch && lenMatch[1]) {
     toPosOrLen = lenMatch[1];
   }
@@ -56,6 +58,7 @@ export function convertDSpec(lines: string[],
     fieldType = `pos(${specPos.trim()})`;
   }
   else {
+    fieldStartPos = isDigits(fromPos) ? `POS(${fromPos}) ` : '';
     ({ fieldType, kwds: kwdArea } = convertTypeToKwd(dclType.trim(), dataType.trim(), fromPos.trim(), toPosOrLen.trim(), decPos.trim(), fmt.trim(), kwdArea.trim()));
   }
 
@@ -81,7 +84,10 @@ export function convertDSpec(lines: string[],
       }
     }
   }
-
+  // Adds POS keyword when from and to columns are specified
+  if (fieldStartPos) {
+    fieldType = `${fieldType} ${fieldStartPos}`;
+  }
 
   if (lenMatch && lenMatch[1]) {
     const lenValue = lenMatch[1];
@@ -122,7 +128,7 @@ export function convertDSpec(lines: string[],
 
   kwdArea = fixKeywordArgs(kwdArea);
   fieldType = (fieldType?.length >= 2) ? fieldType : '';
-  const isOpCode = ibmi.isValidOpcode(varName);
+  const isOpCode = rpgiv.isValidOpcode(varName);
 
   switch (dclType.toLowerCase()) {
     case 'ds': decl = `dcl-ds ${varName} ${kwdArea}`.trim();
@@ -196,7 +202,7 @@ function fixKeywordArgs(KwdArea: string): string {
  * - If dataType is 'P', use packed decimal rules: positions = toPos - (fromPos - 1); if positions is even, length = positions - 1; if odd, length = positions
  */
 function calcLength(dataType: string, fromPos: string, toPos: string): number {
-  const isDigits = (s: string) => /^\d+$/.test(s);
+
   if (dataType === 'P') {
     if (isDigits(fromPos) && isDigits(toPos)) {
       // Packed: number of digits = toPos - (fromPos - 1)
@@ -219,7 +225,7 @@ function calcLength(dataType: string, fromPos: string, toPos: string): number {
 }
 
 function calcIntLength(dataType: string, fromPos: string, toPos: string): number {
-  const isDigits = (s: string) => /^\d+$/.test(s);
+
   if (dataType === 'I' || dataType === 'U') {
     if (isDigits(fromPos) && isDigits(toPos)) {
       // Packed: number of digits = toPos - (fromPos - 1)
@@ -272,7 +278,7 @@ function convertTypeToKwd(
   let fieldType = '';
   const datfmtMatch = kwds.match(/DATFMT\(([^)]+)\)/i);
   const timfmtMatch = kwds.match(/TIMFMT\(([^)]+)\)/i);
-  const settings = ibmi.getRPGIVFreeSettings(); //
+  const settings = rpgiv.getRPGIVFreeSettings(); //
   if (settings.convertBINTOINT === 2) {
     // Do conditional conversion
   }

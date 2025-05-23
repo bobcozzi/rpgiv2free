@@ -1,6 +1,6 @@
 
 import * as vscode from 'vscode';
-import * as ibmi from './IBMi'
+import * as rpgiv from './rpgedit'
 
 
 export function getVarName(lines: string[], startIndex = 0): { varName: string, nextIndex: number } {
@@ -58,15 +58,15 @@ export function convertChildVar(
         const line = fullSource[i].trimEnd().toLowerCase();
         nameToken = '';
         let lastIndex = 0;
-        if (ibmi.isNotComment(line)) {
-            if (ibmi.getSpecType(line) === 'd') {
-                dclType = ibmi.getDclType(line).toLowerCase();
+        if (rpgiv.isNotComment(line)) {
+            if (rpgiv.getSpecType(line) === 'd') {
+                dclType = rpgiv.getDclType(line).toLowerCase();
                 if (["ds", "pr", "pi"].includes(dclType)) {
                     if (line.trimEnd().endsWith('...')) {
                         ({ varName: nameToken, nextIndex: lastIndex } = getVarName(fullSource, i));
                     }
                     else {
-                        nameToken = ibmi.getCol(line, 7, 21).trim();
+                        nameToken = rpgiv.getCol(line, 7, 21).trim();
                     }
                     break;
                 }

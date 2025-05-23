@@ -1,12 +1,12 @@
 
-import * as ibmi from './IBMi';
+import * as rpgiv from './rpgedit';
 import { stmtLines } from './types';
 
 export function collectBooleanOpcode(allLines: string[], startIndex: number): stmtLines {
   const lines: string[] = [];
   const indexes: number[] = [];
   const comments: string[] = [];
-  const eol = ibmi.getEOL();
+  const eol = rpgiv.getEOL();
 
   const indent = ' '.repeat(12);
 
@@ -16,7 +16,7 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number): st
 
   // Backtrack to find the starting boolean opcode line
   let i = startIndex;
-  while (i >= 0 && !ibmi.isStartBooleanOpcode(allLines[i])) {
+  while (i >= 0 && !rpgiv.isStartBooleanOpcode(allLines[i])) {
     i--;
   }
   if (i < 0) return { lines: [], indexes: [], comments: null };
@@ -24,9 +24,9 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number): st
   const startLine = allLines[i];
   indexes.push(i);
 
-  const factor1 = ibmi.getCol(startLine, 12, 25).trim();
-  const opcode = ibmi.getOpcode(startLine); // IFEQ, WHENNE, etc.
-  const factor2 = ibmi.getCol(startLine, 36, 49).trim();
+  const factor1 = rpgiv.getCol(startLine, 12, 25).trim();
+  const opcode = rpgiv.getOpcode(startLine); // IFEQ, WHENNE, etc.
+  const factor2 = rpgiv.getCol(startLine, 36, 49).trim();
 
   let ffOpcode = '';
   let isIf = false;
@@ -42,7 +42,7 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number): st
   }
 
   if (isSelect) {
-    ffOpcode = 'select;' + ibmi.getEOL();
+    ffOpcode = 'select;' + rpgiv.getEOL();
     booleanExpr = ffOpcode;
   }
   else {
@@ -64,9 +64,9 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number): st
   i++;
 
   // Continue collecting ANDxx / ORxx lines
-  while (i < allLines.length && ((isSelect && ibmi.isOpcodeWHENxx(allLines[i])) || ibmi.isOpcodeANDxxORxx(allLines[i]))) {
+  while (i < allLines.length && ((isSelect && rpgiv.isOpcodeWHENxx(allLines[i])) || rpgiv.isOpcodeANDxxORxx(allLines[i]))) {
     const line = allLines[i];
-    if (ibmi.isComment(line)) {
+    if (rpgiv.isComment(line)) {
       comments.push(line);
       indexes.push(i);
       i++;
@@ -75,9 +75,9 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number): st
 
     indexes.push(i);
 
-    const contFactor1 = ibmi.getCol(line, 12, 25).trim();
-    const contOpcode = ibmi.getOpcode(line); // ANDGT, ORLE, etc.
-    const contFactor2 = ibmi.getCol(line, 36, 49).trim();
+    const contFactor1 = rpgiv.getCol(line, 12, 25).trim();
+    const contOpcode = rpgiv.getOpcode(line); // ANDGT, ORLE, etc.
+    const contFactor2 = rpgiv.getCol(line, 36, 49).trim();
 
     const logicOp = contOpcode.startsWith('OR') ? 'or' :
       contOpcode.startsWith('AND') ? 'and' :

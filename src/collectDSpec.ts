@@ -1,5 +1,5 @@
 
-import * as ibmi from './IBMi';
+import * as rpgiv from './rpgedit';
 import { collectedStmt } from './types';
 
 export function collectDSpecs(
@@ -14,7 +14,7 @@ export function collectDSpecs(
 } {
 
   function isDefnSpecLine(line: string): boolean {
-    return ibmi.getSpecType(line) === 'd' && ibmi.isNotComment(line);
+    return rpgiv.getSpecType(line) === 'd' && rpgiv.isNotComment(line);
   }
 
   if (!isDefnSpecLine(allLines[startIndex])) {
@@ -38,16 +38,16 @@ export function collectDSpecs(
     if (i > 0) {
       prevLine = allLines[i - 1];
     }
-    if (ibmi.isComment(line)) continue;
-    if (ibmi.isSpecEmpty(line)) continue;
+    if (rpgiv.isComment(line)) continue;
+    if (rpgiv.isSpecEmpty(line)) continue;
     if (!isDefnSpecLine(line)) break;
 
     // once a continued name is detected (reading backwards) and
     // this line is not also a continued name, then we are done reading backwards.
 
-    const isKwdOnly = ibmi.isJustKwds(line);
-    const isNameCont = ibmi.dNameContinues(prevLine);
-    const isKwdCont = ibmi.dKwdContinues(prevLine);
+    const isKwdOnly = rpgiv.isJustKwds(line);
+    const isNameCont = rpgiv.dNameContinues(prevLine);
+    const isKwdCont = rpgiv.dKwdContinues(prevLine);
 
     if (bContName && !isNameCont) {
       firstIndex = i;
@@ -56,7 +56,7 @@ export function collectDSpecs(
 
     bContName = isNameCont;
 
-    if (ibmi.isValidFixedDefnLine(line)) {
+    if (rpgiv.isValidFixedDefnLine(line)) {
       if (bDefn) {
         break;
       }
@@ -86,8 +86,8 @@ export function collectDSpecs(
   for (let i = firstIndex; i < allLines.length; i++) {
     const line = allLines[i];
 
-    if (ibmi.isComment(line)) {
-      comments.push(ibmi.convertCmt(line));
+    if (rpgiv.isComment(line)) {
+      comments.push(rpgiv.convertCmt(line));
       indexes.push(i);
       continue;
     }
@@ -95,39 +95,42 @@ export function collectDSpecs(
       break;
     }
 
-    if (bValidDefnLine && ibmi.isValidFixedDefnLine(line)) {
+    if (bValidDefnLine && rpgiv.isValidFixedDefnLine(line)) {
       break;  // If we already had a declare and this is also a declare, then we're done
     }
 
     indexes.push(i);
 
     if (!bValidDefnLine) {
-      bValidDefnLine = ibmi.isValidFixedDefnLine(line);
+      bValidDefnLine = rpgiv.isValidFixedDefnLine(line);
     }
-    const dclType = ibmi.getDclType(line);
+    const dclType = rpgiv.getDclType(line);
 
     // Entity name: characters from col 7 to 80, stopping before col 44
 
-    if (ibmi.dNameContinues(line)) {
-      const namePart = ibmi.getCol(line, 7, 80).trim();
+    if (rpgiv.dNameContinues(line)) {
+      const namePart = rpgiv.getCol(line, 7, 80).trim();
       entityNameParts.push(namePart.replace(/\.\.\.$/, '').trim());
     }
     else  // if not a contnuined name line, then save the line itself (but always save the line index)
     {
-      const namePart = ibmi.getCol(line, 7, 21).trim();
-      entityNameParts.push(namePart.replace(/\.\.\.$/, '').trim());
-      lines.push(line);
+      if (!rpgiv.isEmptyStmt(line)) { // If not an empty Spec (e.g., "D <allblanks...>") add it
+        const namePart = rpgiv.getCol(line, 7, 21).trim();
+        entityNameParts.push(namePart.replace(/\.\.\.$/, '').trim());
+        lines.push(line);
+      }
     }
     let isKwdOnly = false;
     let isCommentNext = false;
-    if (bValidDefnLine && i < allLines.length) { // Peak at next line
-      isKwdOnly = ibmi.isJustKwds(allLines[i + 1]);
+    // Changed to i+1 since we're getting the next line and array elements can't be exceeded
+    if (bValidDefnLine && i+1 < allLines.length) { // Peak at next line
+      isKwdOnly = rpgiv.isJustKwds(allLines[i + 1]);
       if (!isKwdOnly) {
-        isCommentNext = ibmi.isComment(allLines[i + 1]);
+        isCommentNext = rpgiv.isComment(allLines[i + 1]);
       }
     }
     // going forward through the lines, if we hit a Defn spec (DS, PI, C, PR, S) we're done
-    if (!ibmi.dNameContinues(line) && !ibmi.dKwdContinues(line) && (bValidDefnLine && !isKwdOnly && !isCommentNext)) {
+    if (!rpgiv.dNameContinues(line) && !rpgiv.dKwdContinues(line) && (bValidDefnLine && !isKwdOnly && !isCommentNext)) {
       break;
     }
   }

@@ -1,7 +1,7 @@
 
 
 import { formatSQL } from './SQLFormatter';
-import * as ibmi from './IBMi';
+import * as rpgiv from './rpgedit';
 import * as vscode from 'vscode';
 
 
@@ -128,7 +128,7 @@ export function wrapSQLBody(sql: string): string[] {
 
   const formattedSQL = formatSQL(sql);
 
-  const rawLines = ibmi.splitLines(formattedSQL).map(line => line.trim()).filter(Boolean);
+  const rawLines = rpgiv.splitLines(formattedSQL).map(line => line.trim()).filter(Boolean);
   const wrapped: string[] = [];
 
   for (let i = 0; i < rawLines.length; i++) {
