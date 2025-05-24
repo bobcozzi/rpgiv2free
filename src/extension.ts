@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { formatRPGIV } from './formatRPGIV';
-import { collectStmt } from './collectSpecs';
+import { collectStmt } from './collectStmts';
 import {
   handleSmartTab, highlightCurrentTabZone, drawTabStopLines,
   applyColumnarDecorations
@@ -249,7 +249,7 @@ export function activate(context: vscode.ExtensionContext) {
     const selectedLineList = [...expandedLineIndexes].sort((a, b) => a - b);
     rpgiv.log('CMD Handler checking selections');
     for (const i of selectedLineList) {
-      if (processedLines.has(i) || i >= allLines.length) continue;
+      if (i >= allLines.length) continue;
       const collectedStmts = collectStmt(allLines, i);
       rpgiv.log(`Collected ${collectedStmts?.indexes.length} statements for line: ` + i+1);
 

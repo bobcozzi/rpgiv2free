@@ -39,12 +39,13 @@ export function expandCompoundRange(lines: string[], selectedIndex: number): num
     }
   } else {
     // Boolean expression handling (IFxx, WHENxx, etc.)
+    // read backwards to find the IFxx or WHENxx (select) block starting statement
     while (start > 0) {
       const prevLine = lines[start - 1];
       if (rpgiv.isOpcodeANDxxORxx(prevLine)) { // boolean continuator/conjunction opcode?
         start--;
       } else if (rpgiv.isOpcodeIFxx(prevLine)) {
-        start--;  // IFxx or WHENxx opcode?
+        // start--;  // IFxx opcode?
         break;
       }
       else if (rpgiv.isOpcodeWHENxx(prevLine)) {

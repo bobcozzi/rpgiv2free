@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.17] - 2025-05-24
+- When an IFxx statement is immediately followed by another IFxx statement, and both are selected simultaneously, the inner IFxx would not convert and in some cases caused the extension to loop indefinitely. 0.6.18 or later will be the public release.
 ## [0.6.16] - 2025-05-23
 - Added support for column 81+ "comments" to be converted to `// <comments>` in free format (D specs only). Support for C spec column 81 comments may be comming soon.
 - Corrected an issue with File spec conversion that was omitted from the earlier release.
