@@ -45,6 +45,7 @@ export function convertDSpec(lines: string[],
   kwdArea = combineKwdAreaLines(lines);
 
   let fieldType = '';
+  let length = 0;
   let fmt = '*ISO'; // Default format
 
   const lenMatch = kwdArea.match(/LEN\(([^)]+)\)/i);
@@ -55,15 +56,15 @@ export function convertDSpec(lines: string[],
 
   if (fromPos.charAt(0) === '*') {
     const specPos = fromPos + toPosOrLen;
-    fieldType = `pos(${specPos.trim()})`;
+    // fieldType = `pos(${specPos.trim()})`;
+    fieldType = specPos.trim();
   }
   else {
-    fieldStartPos = isDigits(fromPos) ? `POS(${fromPos}) ` : '';
     ({ fieldType, kwds: kwdArea } = convertTypeToKwd(dclType.trim(), dataType.trim(), fromPos.trim(), toPosOrLen.trim(), decPos.trim(), fmt.trim(), kwdArea.trim()));
   }
 
   if (fieldType === '') {
-    if (fromPos.charAt(0) === '*') {
+    if (fromPos.charAt(0) === '*') { // Things like *ROUTINE or *STATUS or *PARMS etc
       const specPos = fromPos + toPosOrLen;
       fieldType = `pos(${specPos.trim()})`;
     }
@@ -273,17 +274,20 @@ function convertTypeToKwd(
   toPos: string,
   dec: string,
   fmt: string,
-  kwds: string
+  inKwds: string
 ): { fieldType: string; kwds: string } {
   let fieldType = '';
-  const datfmtMatch = kwds.match(/DATFMT\(([^)]+)\)/i);
-  const timfmtMatch = kwds.match(/TIMFMT\(([^)]+)\)/i);
+  const datfmtMatch = inKwds.match(/DATFMT\(([^)]+)\)/i);
+  const timfmtMatch = inKwds.match(/TIMFMT\(([^)]+)\)/i);
   const settings = rpgiv.getRPGIVFreeSettings(); //
   if (settings.convertBINTOINT === 2) {
     // Do conditional conversion
   }
-
-  let length = 0;
+  let kwds = '';
+  let length = calcLength(dataType, fromPos, toPos);
+  if (isDigits(fromPos)) {
+    kwds += `POS(${length})`;
+  }
 
   if (["B", "I", "U", "P", "S"].includes(dataType) || dec !== '') {
     // Data Structure Subfields that are numeric default to Zoned,
@@ -329,6 +333,8 @@ function convertTypeToKwd(
       kwds += ` OCCURS(${fromPos})`
     }
   }
+
+  kwds += ` ${inKwds}`;
 
   switch (dataType) {
     case 'A':

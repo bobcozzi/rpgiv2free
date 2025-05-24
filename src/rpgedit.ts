@@ -275,46 +275,85 @@ export function insertExtraDCLLinesBatch(
 function findLocationForEndStmt(startIndex: number, allLines: string[]): number {
   let insertPoint = startIndex;
   for (let i = startIndex + 1; i < allLines.length; i++) {
-    const line = allLines[i];
+    const line = allLines[i].toUpperCase();
     if (!line || line.trim() === '') continue;
     if (isComment(line)) continue;
-    const directive = getColUpper(line, 7, 32).trim();
+    const directive = getCol(line, 7, 32).trim();
 
-    if ( // Check for control directives such as /title, /space, /ejext, etc.
-      line.length >= 9 &&
+    if (
+      // Check for compiler directives starting at column 7 or later (relative position 6)
+      line.length > 6 &&
       line[6] === '/' &&
-      /[A-Za-z]{2}/.test(line.substring(7, 9))
+      /^[A-Za-z0-9]/.test(line.substring(7, 8))
     ) {
-      if (!directive.startsWith("/ENDIF")) {
+      // Allow whitespace after the directive name
+      // e.g. /COPY, /INCLUDE, /TITLE, /SPACE, /EJECT, /FREE, /END-FREE, etc.
+      // Only break for /FREE, otherwise continue unless /ENDIF
+      if (/^\/FREE\b/i.test(directive)) {
+        break;
+      }
+      if (/^\/END-FREE\b/i.test(directive)) {
+        insertPoint = i;
         continue;
       }
-    }
-
-    const specType = line[5]?.toLowerCase?.() || '';
-    const legacyDSpec = (specType === 'd');
-    const bValidDefn = isValidFixedDefnLine(line);
-    const freeForm = getColUpper(line, 8, 25);
-    const freeForm2 = getColUpper(line, 1, 80);
-    const extType = getColUpper(line, 22);  // Get column 22 Ext Type
-    const PSDS = getColUpper(line, 23);  // Get column 23 PSDS Flag
-    const dclType = getColUpper(line, 24, 25).trim();  // Get column 24-25 DCL Type
-    const col2627 = getColUpper(line, 26, 27);  // Get column 36-27 should be empty
-
-    if (legacyDSpec && bValidDefn &&
-      dclType?.trim() && ["DS", "S", "C", "PI", "PR"].includes(dclType)) {
-      // stop here and return this line number.
+      // For other directives, just continue scanning (classic coding style not a rule)
       break;
     }
-    if (!isSpecEmpty(line) && !isValidOpcode(line)) {
-      const dclTypes = ["DS", "S", "C", "PR", "PI", "PARM", "SUBF"];
-      const isDCLorSubItem = isFreeFormDclType(freeForm, dclTypes) || isFreeFormDclType(freeForm2, dclTypes);
-      const dclParmSubf = ["PARM", "SUBF"];
-      const isParmOrSubfield = isFreeFormDclType(freeForm, dclParmSubf)
-      if ((isDCLorSubItem && !isParmOrSubfield) || isFreeFormCalcStmt(line)) {
-        break; // Insert just before this line
+
+    // Check for DCL-xxx (not SUBF or PARM)
+    const dclMatch = line.trimStart().toUpperCase().match(/^DCL-([A-Z0-9_]+)/);
+    if (dclMatch) {
+      const dclType = dclMatch[1];
+      // continuing if it isn't dcl-parm or dcl-subf
+      if (dclType !== 'SUBF' && dclType !== 'PARM') {
+        break;
+      }
+    }
+    const bFixedFormat = isValidFixedFormat(line);
+    const specType = line[5]?.toLowerCase?.() || '';
+    if (bFixedFormat && specType !== 'd') {
+      break;  // If fixed-format but not a D spec, we're done
+    }
+
+    // Free-format opcode, procedure call, or built-in function check
+    const trimmed = line.trim();
+    if (trimmed && !bFixedFormat) {
+      const tokens = trimmed.split(/\s+|\(/);
+      const firstToken = tokens[0].toUpperCase();
+
+      // is a free format opcode?
+      if (isValidOpcode(firstToken)) {
+        break;
+      }
+      // Procedure call: myFoo('Hello') or myFoo ('Hello')
+      if (/^[A-Z0-9_#$@]+\s*\(/i.test(trimmed)) {
+        break;
+      }
+      // RPG built-in function: %SUBST(...)
+      if (/^%[A-Z0-9_]+\s*\(/i.test(trimmed)) {
+        break;
       }
       insertPoint = i;
+      continue;
     }
+
+    // By now we should be in only fixed format arena
+    const bValidDefn = isValidFixedDefnLine(line);
+
+
+    if (!bValidDefn) {
+      break;
+    }
+    else {
+      const dclType = getColUpper(line, 24, 25).trim();  // Get column 24-25 DCL Type
+      if (dclType?.trim() && ["DS", "S", "C", "PI", "PR"].includes(dclType)) {
+        // stop here and return this line number.
+        break;
+      }
+    }
+
+    insertPoint = i;
+
   }
 
   return insertPoint;
@@ -373,7 +412,7 @@ export function isOpcodeIFxx(line: string): boolean {
 export function isOpcodeDOUxx(line: string): boolean {
   const opcode = getOpcode(line);
   // Only matches IF followed by a valid boolean operator
-  return  /^DOU(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
+  return /^DOU(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
 }
 export function isOpcodeDOWxx(line: string): boolean {
   const opcode = getOpcode(line);
