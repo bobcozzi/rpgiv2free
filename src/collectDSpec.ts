@@ -56,8 +56,8 @@ export function collectDSpecs(
 
     bContName = isNameCont;
 
-    if (rpgiv.isValidFixedDefnLine(line)) {
-      if (bDefn) {
+    if (bDefn || rpgiv.isValidFixedDefnLine(line)) {
+      if (bDefn && !rpgiv.dNameContinues(line)) {
         break;
       }
       else {

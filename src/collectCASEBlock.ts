@@ -45,7 +45,7 @@ export function collectCaseOpcode(allLines: string[], startIndex: number):
       if (!selector) { selector = f1 };
 
       if (comparisons.length === 0) {
-        comparisons.push(`SELECT${eol}`);
+        comparisons.push(`SELECT;`);
       }
       comparisons.push(`WHEN (${selector} ${compSymbol} ${f2});${eol}${indent}exsr ${result};`);
     }

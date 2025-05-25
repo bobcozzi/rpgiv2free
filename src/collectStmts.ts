@@ -1,5 +1,5 @@
 
-import { collectSQLBlock } from './SQLSpec';
+import { collectSQLBlock } from './collectSQLSpec';
 import { collectBooleanOpcode } from './collectBoolean';
 import { collectHSpecs } from './collectHSpec';
 import { collectFSpecs } from './collectFSpec';
@@ -42,6 +42,8 @@ export function collectStmt(
   const isSQLStart = EXEC_SQL_RX.test(startLine);
   const isSQLCont = SQL_CONT_RX.test(startLine);
   const isSQLEnd = END_EXEC_RX.test(startLine);
+
+
 
   if (isSQLStart || isSQLCont || isSQLEnd) {
     // Handle SQL block separately and return its result

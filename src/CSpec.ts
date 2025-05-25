@@ -409,7 +409,7 @@ function convertOpcodeToFreeFormat(
       }
       break;
     default:
-      freeFormat = `${opCode} ${factor1} ${factor2} ${result};`;
+      freeFormat = `${fullOpcode} ${factor1} ${factor2} ${result};`;
       newLines.push(freeFormat);
       break;
       // handle unrecognized opcode

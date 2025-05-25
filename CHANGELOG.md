@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.19] - 2025-05-2
+- Corrected issues with converting the OTHER opcode.
+- Corrected the issue where the Operation Extender was being lost in some rare cases.
+- Resolved an issue with most extra-space added after the opcode and the inserted semi-colon (but not all).
+- General bug fixes and improvements.
+## [0.6.18] - 2025-05-25
+- Corrected the issue when inserting END-xx statements and several DS, PI, or PR, etc are selected at once.
+- Greatly improved our "look ahead" logic to accommodate compound statements.
+- Fixed an issue with field length calculations for D specs with from/to column notation (vs length only). Also removed the POS() keyword from pre-reserved PSDS positional symbols (i.e., *PROC, *PARMS *STATUS, *ROUTINE) I would swear POS(*PROC) was required, oh well, fixed now.
 ## [0.6.17] - 2025-05-24
 - When an IFxx statement is immediately followed by another IFxx statement, and both are selected simultaneously, the inner IFxx would not convert and in some cases caused the extension to loop indefinitely. 0.6.18 or later will be the public release.
 ## [0.6.16] - 2025-05-23

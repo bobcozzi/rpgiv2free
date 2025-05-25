@@ -58,6 +58,9 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number): st
     } else if (opcode.startsWith('DOU')) {
       ffOpcode = 'DOU';
     }
+    else {
+      ffOpcode = opcode;
+    }
     booleanExpr = `${ffOpcode} ${factor1} ${comparison} ${factor2}`;
   }
 

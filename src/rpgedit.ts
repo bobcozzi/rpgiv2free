@@ -71,7 +71,7 @@ export function getRPGIVFreeSettings(): configSettings {
  * Handles \n (Unix), \r\n (Windows), and \r (legacy Mac) just in case.
  */
 export function splitLines(text: string): string[] {
-  return text.split(/\r\n|\r|\n/);
+  return text.split(getEOL());
 }
 
 // Log function with condition for Debug
@@ -423,13 +423,12 @@ export function isOpcodeDOWxx(line: string): boolean {
 export function isOpcodeWHENxx(line: string): boolean {
   const opcode = getOpcode(line);
   if (isComment(line)) return false;
-  return /^WHEN(EQ|NE|GT|LT|GE|LE)$/.test(opcode) || opcode === 'OTHER';
+  // removed  || opcode === 'OTHER' from return conditional logic
+  return /^WHEN(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
 }
 
 export function isOpcodeSELECT(line: string): boolean {
-  const opcode = getOpcode(line);
-  // Only matches WHEN followed by a valid boolean operator
-  return (opcode.toUpperCase() === 'SELECT');
+  return isOpcodeWHENStart(line);
 }
 export function isOpcodeWHENStart(line: string): boolean {
   const opcode = getOpcode(line);
@@ -468,6 +467,40 @@ export function isBooleanOpcode(line: string): boolean {
       isOpcodeANDxxORxx(line))
   );
 }
+/**
+ * Checks if a line is an End Of Program marker (e.g., '**', '**CTDATA').
+ * Optimized for high-frequency calls.
+ */
+export function isEOP(line: string): boolean {
+  if (!line) return false;
+  // Fast path: check first two chars
+  if (line.length < 2 || line[0] !== '*' || line[1] !== '*') return false;
+
+  // Skip leading '**'
+  let i = 2;
+  const len = line.trimEnd().length;
+
+  if (len === i) return true;
+  if (len < 6) return false;
+
+  // Check for 'ctdata' (case-insensitive), possibly followed by whitespace and optional '('
+  // Compare char-by-char for speed
+  const ctd = 'ctdata';
+  let j = 0;
+
+  while (i < len && j < 6 && (line[i].toLowerCase() === ctd[j])) {
+    i++; j++;
+  }
+  if (j === 6) {
+    // Skip whitespace after 'ctdata'
+    while (i < len && (line[i] === ' ' || line[i] === '\t')) i++;
+    // Accept if end of line or next char is '('
+    if (i === len || line[i] === '(') return true;
+  }
+
+  return false;
+}
+
 
 export function getSmartEnterMode(): SmartEnterMode {
   const config = vscode.workspace.getConfiguration('rpgiv2free');
@@ -540,7 +573,7 @@ export function isValidOpcode(id: string): boolean {
 export function isUnsuppotedOpcode(id: string): boolean {
   // List of valid opcodes (operation extenders not included)
   const oldRPGOpcodes = new Set([
-    "CALL", "CALLB", "PARM", "KLIST", "KFLD", "FREE", "DEBUG"
+    "CALL", "CALLB", "PLIST", "PARM", "KLIST", "KFLD", "FREE", "DEBUG"
   ]);
   // Strip off operation extenders like "(EHMR)" from the ID
   const baseOpcode = id.replace(/\([A-Z]+\)$/i, "").toUpperCase();

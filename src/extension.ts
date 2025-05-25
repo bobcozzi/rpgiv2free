@@ -12,7 +12,7 @@ import { convertFSpec } from './FSpec';
 import { convertDSpec } from './DSpec';
 import { convertPSpec } from './PSpec';
 import { convertCSpec } from './CSpec';
-import { convertToFreeFormSQL } from './SQLSpec';
+import { convertToFreeFormSQL } from './collectSQLSpec';
 import * as types from './types';
 import * as rpgiv from './rpgedit';
 
@@ -205,6 +205,8 @@ export function activate(context: vscode.ExtensionContext) {
     // Use getText to get all lines at once, splitting by the document's EOL into an array of all lines
     const doc = editor.document;
     const allLines = doc.getText().split(rpgiv.getEOL());
+    let specType = '';
+    let index_Offset = 0;
 
     const processedLines = new Set<number>();
     rpgiv.log('Total lines: ' + allLines.length);
@@ -251,14 +253,14 @@ export function activate(context: vscode.ExtensionContext) {
     for (const i of selectedLineList) {
       if (i >= allLines.length) continue;
       const collectedStmts = collectStmt(allLines, i);
-      rpgiv.log(`Collected ${collectedStmts?.indexes.length} statements for line: ` + i+1);
+      rpgiv.log(`Collected ${collectedStmts?.indexes.length} statements for line: ` + i + 1);
 
       // ...and so on for each major step
       if (!collectedStmts) continue;
 
       const { lines: specLines, indexes, comments, isSQL, isBOOL, entityName } = collectedStmts;
 
-     // if (i !== indexes[0]) continue;
+      // if (i !== indexes[0]) continue;
 
       if (!specLines.length) {
         continue;
@@ -267,8 +269,8 @@ export function activate(context: vscode.ExtensionContext) {
         continue;
       }
 
-      let convertedText = '';
       let extraDCL: string[] = [];
+      let convertedText = '';
 
       if (isSQL) {
         convertedText = convertToFreeFormSQL(specLines).join(rpgiv.getEOL());
@@ -276,7 +278,7 @@ export function activate(context: vscode.ExtensionContext) {
         convertedText = specLines.flatMap(line => formatRPGIV(line)).join(rpgiv.getEOL());
       } else {
         const line = specLines[0] ?? '';
-        const specType = line.length > 5 ? line.charAt(5).toLowerCase().trim() : '';
+        specType = line.length > 5 ? line.charAt(5).toLowerCase().trim() : '';
         const converted =
           specType === 'h' ? convertHSpec(specLines)
             : specType === 'f' ? convertFSpec(specLines)
@@ -335,13 +337,22 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showErrorMessage('Error applying edits: ' + (error as Error).message);
       }
     }
-
     if (convertedExtraDCL.length > 0) {
       const lines = rpgiv.splitLines(editor.document.getText());
       await rpgiv.insertExtraDCLLinesBatch(editor, lines, convertedExtraDCL.map(dcl => ({
-        currentLineIndex: dcl.insertAt,
+        currentLineIndex: dcl.insertAt + index_Offset,
         extraDCL: dcl.lines
       })));
+      // If a D spec, then the only extra DCL-xx statements that are produced are end-dS, end-pr, end-pi and end-proc statements.
+      // So since each iteration will offset by the prior insertExtraDCl, we keep a count of said inserts
+      // and offset the starting line number where those inserts sould appear.
+      if (specType === 'd') {
+        index_Offset += convertedExtraDCL.length;
+      }
+      else {
+        index_Offset = 0;
+      }
+
     }
     rpgiv.log('CMD Handler ending');
   });
