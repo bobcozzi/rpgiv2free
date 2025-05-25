@@ -21,7 +21,7 @@ export interface collectSpecs {
   indexes: number[];
   comments: string[] | null; // Comments parm is optional
   isSQL: boolean | false;
-  isBOOL: boolean | false;
+  isCollected: boolean | false;
 }
 
 // Add your actual regex patterns here
@@ -56,7 +56,7 @@ export function collectStmt(
       indexes: sqlBlockResult.indexes,
       comments: comments.length > 0 ? comments : null,
       isSQL: true,
-      isBOOL: false,
+      isCollected: false,
     };
   }
   if (rpgiv.isComment(startLine)) { // Converting a block of comments?
@@ -67,10 +67,10 @@ export function collectStmt(
       indexes: cmtBlock.indexes,
       comments: comments.length > 0 ? comments : null,
       isSQL: false,
-      isBOOL: false,
+      isCollected: false,
     };
   }
-  if (rpgiv.isDirective(startLine)) { // Converting a block of comments?
+  if (rpgiv.isDirective(startLine)) { // Converting a block of directives?
     const dirBlock = collectDirectives(allLines, startIndex);
     return {
       entityName: null,  // No entity name for SQL blocks
@@ -78,7 +78,7 @@ export function collectStmt(
       indexes: dirBlock.indexes,
       comments: comments.length > 0 ? comments : null,
       isSQL: false,
-      isBOOL: false,
+      isCollected: true,
     };
   }
 
@@ -107,7 +107,7 @@ export function collectStmt(
         indexes: commentIndex,
         comments: comments.length > 0 ? comments : null,
         isSQL: false,
-        isBOOL: false,
+        isCollected: false,
       };
     }
   }
@@ -122,7 +122,7 @@ export function collectStmt(
         indexes: booleanOpcodeResult.indexes,
         comments: comments.length > 0 ? comments : null,
         isSQL: false,
-        isBOOL: true,
+        isCollected: true,
       };
     } else if (rpgiv.isCASEOpcode(startLine)) {
       // Handle CASE/CASxx blocks
@@ -133,7 +133,7 @@ export function collectStmt(
         indexes: caseOpcodeResult.indexes,
         comments: comments.length > 0 ? comments : null,
         isSQL: false,
-        isBOOL: false,
+        isCollected: false,
       };
     } else if (rpgiv.isExtOpcode(rpgiv.getOpcode(startLine)) ||
       rpgiv.getCol(startLine, 8, 35).trim() == '') {
@@ -148,7 +148,7 @@ export function collectStmt(
         indexes: extF2.indexes,
         comments: extF2.comments.length > 0 ? extF2.comments : null,
         isSQL: false,
-        isBOOL: true,
+        isCollected: true,
       };
     }
   }
@@ -160,7 +160,7 @@ export function collectStmt(
       indexes: headerSpecs.indexes,
       comments: comments.length > 0 ? comments : null,
       isSQL: false,
-      isBOOL: true,
+      isCollected: true,
     };
   }
   else if (curSpec === 'd') {
@@ -171,7 +171,7 @@ export function collectStmt(
       indexes: defnSpecs.indexes,
       comments: defnSpecs.comments.length > 0 ? defnSpecs.comments : null,
       isSQL: false,
-      isBOOL: false,
+      isCollected: false,
     };
   }
   else if (curSpec === 'p') {
@@ -182,7 +182,7 @@ export function collectStmt(
       indexes: procSpec.indexes,
       comments: procSpec.comments.length > 0 ? procSpec.comments : null,
       isSQL: false,
-      isBOOL: false,
+      isCollected: false,
     };
   }
     else if (curSpec === 'f') {
@@ -193,7 +193,7 @@ export function collectStmt(
       indexes: defnSpecs.indexes,
       comments: defnSpecs.comments.length > 0 ? defnSpecs.comments : null,
       isSQL: false,
-      isBOOL: false,
+      isCollected: false,
     };
   }
 
@@ -413,7 +413,7 @@ export function collectStmt(
     indexes: [...collectedIndexes], // Convert Set<number> to an array
     comments: comments.length > 0 ? comments : null,
     isSQL: false, // Ensure `isSQL` is false for non-SQL blocks
-    isBOOL: false, // Ensure `isBOOL` is false for non-boolean blocks
+    isCollected: false, // Ensure `isCollected` is false for non-boolean blocks
   };
 }
 

@@ -253,12 +253,12 @@ export function activate(context: vscode.ExtensionContext) {
     for (const i of selectedLineList) {
       if (i >= allLines.length) continue;
       const collectedStmts = collectStmt(allLines, i);
-      rpgiv.log(`Collected ${collectedStmts?.indexes.length} statements for line: ` + i + 1);
+      rpgiv.log(`Collected ${collectedStmts?.indexes.length} statements for line: ${i+1}`);
 
       // ...and so on for each major step
       if (!collectedStmts) continue;
 
-      const { lines: specLines, indexes, comments, isSQL, isBOOL, entityName } = collectedStmts;
+      const { lines: specLines, indexes, comments, isSQL, isCollected, entityName } = collectedStmts;
 
       // if (i !== indexes[0]) continue;
 
@@ -274,7 +274,7 @@ export function activate(context: vscode.ExtensionContext) {
 
       if (isSQL) {
         convertedText = convertToFreeFormSQL(specLines).join(rpgiv.getEOL());
-      } else if (isBOOL) {
+      } else if (isCollected) {
         convertedText = specLines.flatMap(line => formatRPGIV(line)).join(rpgiv.getEOL());
       } else {
         const line = specLines[0] ?? '';
@@ -286,7 +286,13 @@ export function activate(context: vscode.ExtensionContext) {
                 : specType === 'p' ? convertPSpec(specLines, entityName)
                   : specType === 'c' ? convertCSpec(specLines, extraDCL)
                     : specLines;
-        convertedText = converted.flatMap(line => formatRPGIV(line)).join(rpgiv.getEOL());
+        if (specType) {
+          convertedText = converted.flatMap(line => formatRPGIV(line)).join(rpgiv.getEOL());
+        } else {
+          convertedText = Array.isArray(converted)
+            ? converted.join(rpgiv.getEOL())
+            : String(converted);
+        }
       }
 
       const eol = rpgiv.getEOL();

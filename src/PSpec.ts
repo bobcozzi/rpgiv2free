@@ -39,7 +39,9 @@ export function convertPSpec(lines: string[], entityName: string | null): string
   }
   // Add the variable name as a comment
   if (procDefn.startsWith('end-proc') && varName) {
-    procDefn += ` ${varName}`;
+    if (varName.toLowerCase() !== '*n') {
+      procDefn += ` ${varName}`;
+    }
   }
   return [procDefn];
 }

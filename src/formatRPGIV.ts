@@ -26,7 +26,9 @@ export const formatRPGIV = (input: string, splitOffComments: boolean = false): s
   const config = rpgiv.getRPGIVFreeSettings();
   const firstIndentLen = config.indentFirstLine - 1;
   const contIndentLen = config.indentContLines - 1;
-  const maxLength = config.maxWidth;
+  const rightMargin = config.rightMargin;
+  const srcRcdLen = config.srcRcdLen;
+  const dirIndent = config.indentDir;
 
   const indent = (n: number) => ' '.repeat(n);
   const result: string[] = [];
@@ -58,8 +60,12 @@ export const formatRPGIV = (input: string, splitOffComments: boolean = false): s
 
   const addToken = (token: string, tokenSpacer: string = '', addIndent = true) => {
     const tokenLen = token.length + tokenSpacer?.length;
+    let margin = rightMargin;
+    if (currentLength + token.length > margin && currentLength + token.length < srcRcdLen) {
+      margin = srcRcdLen;
+    }
     if (
-      currentLength + token.length + 1 > maxLength &&
+      currentLength + token.length + 1 > margin &&
       !isSpecialPrefixToken(token)
     ) {
       flushLine(true, addIndent);
@@ -70,7 +76,7 @@ export const formatRPGIV = (input: string, splitOffComments: boolean = false): s
   };
 
   const breakLongName = (name: string) => {
-    const maxChunk = maxLength - contIndentLen - 3;
+    const maxChunk = rightMargin - contIndentLen - 3;
 
     let pos = 0;
     while (pos < name.length) {
@@ -142,61 +148,67 @@ export const formatRPGIV = (input: string, splitOffComments: boolean = false): s
     return parts;
   };
 
-  // Separate comment from code
   const { code, comment } = extractComment(input);
-  // const tokens = code.match(/'([^']|'')*'|[^\s]+/g) || [];
-  const { tokens, spacers } = tokenizeWithSpacing(code);
-  if (comment && splitOffComments) {
-    result.push(indent(contIndentLen) + comment);
+  const bIsDir = rpgiv.isDirective(input);
+  if (bIsDir) {
+    result.push(indent(dirIndent) + input.trim());
   }
-  for (let i = 0; i < tokens.length; i++) {
-    const token = tokens[i];
+  else {
+    // Separate comment from code
+    // const tokens = code.match(/'([^']|'')*'|[^\s]+/g) || [];
+    const { tokens, spacers } = tokenizeWithSpacing(code);
+    if (comment && splitOffComments) {
+      result.push(indent(contIndentLen) + comment);
+    }
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i];
 
-    // Handle quoted string literals
-    if (token.startsWith("'") && token.endsWith("'")) {
+      // Handle quoted string literals
+      if (token.startsWith("'") && token.endsWith("'")) {
 
-      // Determine if the full quoted string fits on the current line
-      if (currentLength + token.length <= maxLength) {
-        addToken(token, spacers[i]); // Add it as-is
+        // Determine if the full quoted string fits on the current line
+        if (currentLength + token.length <= rightMargin) {
+          addToken(token, spacers[i]); // Add it as-is
+          continue;
+        }
+
+        const pieces = breakQuotedString(token, rightMargin, contIndentLen);
+
+        // const spaceBetween = (pieces.length == 1) ? spacers[i] : '';
+        // pieces.forEach(part => addToken(part, spaceBetween, false));
+
+        pieces.forEach((part, index) => {
+          const isLast = index === pieces.length - 1;
+          const spacer = isLast ? spacers[i] : '';
+          addToken(part, spacer, false);
+        });
+
         continue;
       }
 
-      const pieces = breakQuotedString(token, maxLength, contIndentLen);
+      // Handle long names
+      else if (isValidRPGName(token) && token.length > (rightMargin - currentLength)) {
+        breakLongName(token);
+        continue;
+      }
 
-      // const spaceBetween = (pieces.length == 1) ? spacers[i] : '';
-      // pieces.forEach(part => addToken(part, spaceBetween, false));
-
-      pieces.forEach((part, index) => {
-        const isLast = index === pieces.length - 1;
-        const spacer = isLast ? spacers[i] : '';
-        addToken(part, spacer, false);
-      });
-
-      continue;
+      // Everything else
+      else {
+        addToken(token, spacers[i]);
+      }
+    }
+    flushLine();
+  }
+    // Ensure semicolon terminates final statement
+    if (!bIsDir && result.length > 0 && !result[result.length - 1].trimEnd().endsWith(';')) {
+      result[result.length - 1] = result[result.length - 1].trimEnd() + ';';
+    }
+    if (comment && !splitOffComments) {
+      result.push(indent(contIndentLen) + comment);
     }
 
-    // Handle long names
-    else if (isValidRPGName(token) && token.length > (maxLength - currentLength)) {
-      breakLongName(token);
-      continue;
-    }
+    return result;
 
-    // Everything else
-    else {
-      addToken(token, spacers[i]);
-    }
-  }
-  flushLine();
-
-  // Ensure semicolon terminates final statement
-  if (result.length > 0 && !result[result.length - 1].trimEnd().endsWith(';')) {
-    result[result.length - 1] = result[result.length - 1].trimEnd() + ';';
-  }
-  if (comment && !splitOffComments) {
-    result.push(indent(contIndentLen) + comment);
-  }
-
-  return result;
 }
 
 function tokenizeWithSpacing(line: string): { tokens: string[], spacers: string[] } {

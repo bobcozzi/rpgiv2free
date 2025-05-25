@@ -39,7 +39,9 @@ export interface configSettings {
   addINZ: boolean;
   indentFirstLine: number;
   indentContLines: number;
-  maxWidth: number;
+  rightMargin: number;
+  srcRcdLen: number;
+  indentDir: number;
   addEXTDEVFLAG: boolean;
   removeFREEdir: boolean;
   replaceCOPYinRPG: boolean;
@@ -55,13 +57,16 @@ export function getRPGIVFreeSettings(): configSettings {
     addINZ: config.get<boolean>('addINZ', true),
     indentFirstLine: config.get<number>('indentFirstLine', 10),
     indentContLines: config.get<number>('indentContinuedLines', 12),
-    maxWidth: config.get<number>('maxFreeFormatLineLength', 76),
+    indentDir: config.get<number>('indentDirectives', 8),
+    rightMargin: config.get<number>('maxFreeFormatLineLength', 76),
+    srcRcdLen: config.get<number>('maxRPGSourceLength', 80),
     addEXTDEVFLAG: config.get<boolean>('AddEXTDeviceFlag', true),
     removeFREEdir: config.get<boolean>('RemoveFREEDirective', true),
     replaceCOPYinRPG: config.get<boolean>('ReplaceCOPYwithINCLUDE_RPG', true),
     replaceCOPYinSQLRPG: config.get<boolean>('ReplaceCOPYwithINCLUDE_SQLRPG', false),
     tempVar1STG: config.get<string>('tempVarName1', 'rpg2ff_tempSTG'),
     tempVar2DO: config.get<string>('tempVarName2', 'rpg2ff_tempDO')
+
   };
 }
 
@@ -103,9 +108,15 @@ export function getColLower(line: string | null | undefined, from: number, to?: 
   return line.substring(from - 1, end).toLowerCase();
 }
 
+  // Return the RPG IV Fixed Format Specification Code (H F D I C O P)
+   // or blank/empty when it is not one of those or when position 7 is * or /
 export function getSpecType(line: string): string {
-  return line.length >= 6 ? line[5].toLowerCase() : '';
+  if (line.length < 7) return '';
+  const col7 = line[6];
+  if (col7 === '*' || col7 === '/') return '';
+  return line[5].toLowerCase();
 }
+
 export function getDclType(line: string): string {
   return getColUpper(line, 24, 25).trim();
 }
@@ -144,12 +155,32 @@ export function isEmptyStmt(line: string): boolean {
 }
 
 export function isDirective(line: string): boolean {
+  // Classic RPG directive: column 7 is '/' and column 8 is not '/'
   const bDirective = (
     line.length > 7 &&
     line[6] === '/' &&
     line[7] !== '/'
   );
-  return bDirective;
+  if (bDirective) return true;
+
+  // Free-form or modern: line starts with '/' followed by A-Za-z0-9 and nothing or whitespace
+  const trimmed = line.trimStart();
+  if (!trimmed.startsWith('//') &&
+    trimmed.startsWith('/') &&
+    trimmed.length > 1 &&
+    /^[A-Za-z0-9]/.test(trimmed[1])
+  ) {
+    // Accept if only /X or /X... or /X[whitespace...]
+    if (trimmed.length === 2 || /\s/.test(trimmed[2])) {
+      return true;
+    }
+    // Accept if /COPY, /INCLUDE, etc.
+    if (/^\/[A-Za-z0-9]+(\s|$)/.test(trimmed)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 export function isValidFixedFormat(line: string): boolean {
@@ -300,8 +331,14 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
       break;
     }
 
+    // Check for END-xxx (xxx must be alpha only, case-insensitive)
+    const endMatch = line.trimStart().toUpperCase().match(/^END-([A-Z]+)/);
+    if (endMatch) {
+      break;
+    }
+
     // Check for DCL-xxx (not SUBF or PARM)
-    const dclMatch = line.trimStart().toUpperCase().match(/^DCL-([A-Z0-9_]+)/);
+    const dclMatch = line.trimStart().toUpperCase().match(/^DCL-([A-Z]+)/);
     if (dclMatch) {
       const dclType = dclMatch[1];
       // continuing if it isn't dcl-parm or dcl-subf

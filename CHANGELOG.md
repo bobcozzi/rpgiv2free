@@ -2,10 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.6.19] - 2025-05-2
+## [0.6.20] - 2025-05-25
+- Corrected an issue with reformatting SQL when a host variable is also an SQL keyword (like FROM, TO, JOIN, SELECT, etc.)
+- Added a new "Indent for compiler directives" setting that defaults to `8`
+- Improved reformat of free format statements when the remainder of the line is fewer than the max source record length, it was avoid wrapping those few extra characters. That whould reduce the issue where things like ; or ); are being wrapped to aline of their own.
+- Corrected an issue with H specs and embedded compiler directives
+- Generalized the routine to check if the line is a compiler directive.
+## [0.6.19] - 2025-05-25
 - Corrected issues with converting the OTHER opcode.
 - Corrected the issue where the Operation Extender was being lost in some rare cases.
-- Resolved an issue with most extra-space added after the opcode and the inserted semi-colon (but not all).
+- Resolved an issue with extra-space added before the semi-colon.
 - General bug fixes and improvements.
 ## [0.6.18] - 2025-05-25
 - Corrected the issue when inserting END-xx statements and several DS, PI, or PR, etc are selected at once.

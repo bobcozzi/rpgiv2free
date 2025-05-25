@@ -6,7 +6,7 @@
   "preview": true,
   "private": false,
   "publisher": "CozziResearch",
-  "version": "0.6.19",
+  "version": "0.6.20",
   "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0",
@@ -119,6 +119,14 @@
           "minimum": 0,
           "maximum": 64,
           "description": "Secondary free format lines indent/spaces (in bytes)."
+        },
+        "rpgiv2free.indentDirectives": {
+          "type": "number",
+          "title": "Indent Compiler Directives",
+          "default": 8,
+          "minimum": 7,
+          "maximum": 32,
+          "description": "Number of columns to indent /include, /copy etc."
         },
         "rpgiv2free.maxRPGSourceLength": {
           "type": "number",

@@ -129,24 +129,24 @@ export function convertDSpec(lines: string[],
 
   kwdArea = fixKeywordArgs(kwdArea);
   fieldType = (fieldType?.length >= 2) ? fieldType : '';
-  const isOpCode = rpgiv.isValidOpcode(varName);
+  const isNameOfOpcode = rpgiv.isValidOpcode(varName);
 
   switch (dclType.toLowerCase()) {
+    case 's': decl = `dcl-s ${varName} ${fieldType} ${kwdArea ? ' ' + kwdArea : ''}`.trim(); break;
     case 'ds': decl = `dcl-ds ${varName} ${kwdArea}`.trim();
       if (!(/\b(LIKEDS)\b/i.test(kwdArea))) {
-        extraDCL?.push(`end-ds;  // ${varName}`);
+        extraDCL?.push(`end-ds ${varName};`);
       }
       break;
-    case 's': decl = `dcl-s ${varName} ${fieldType} ${kwdArea ? ' ' + kwdArea : ''}`.trim(); break;
     case 'pr': decl = `dcl-pr ${varName} ${fieldType} ${kwdArea}`.trim();
-      extraDCL?.push(`end-pr;  // ${varName}`);
+      extraDCL?.push(`end-pr ${varName};`);
       break;
     case 'pi': decl = `dcl-pi ${varName} ${fieldType} ${kwdArea}`.trim();
-      extraDCL?.push(`end-pi;  // ${varName}`);
+      extraDCL?.push(`end-pi ${varName};`);
       break;
     case 'c': decl = `dcl-c ${varName} ${kwdArea}`.trim(); break;
     default:
-      if (isOpCode) {
+      if (isNameOfOpcode) {
         varName = 'dcl-subf ' + varName;
       }
       decl = `${varName} ${fieldType}${kwdArea ? ' ' + kwdArea : ''}`.trim();

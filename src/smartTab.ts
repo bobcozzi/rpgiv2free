@@ -64,8 +64,8 @@ const verticalLineDecoration = vscode.window.createTextEditorDecorationType({
 
 function getTabStops(line: string): number[] {
   const specChar = getStmtRule(line);
+  if (!specChar) return [];
   const stops = RPG_TAB_STOPS[specChar] || [];
-
   return stops.map(stop => Math.max(0, stop - 1));
 }
 
@@ -93,28 +93,9 @@ function getCurrentTabRange(col: number, stops: number[]): [number, number] {
 function getStmtRule(line: string): string {
   let specType = '';
   const lineType = rpgiv.getSpecType(line);
-  switch (lineType) {
-    case 'h':
-      specType = 'H';
-      break
-    case 'f':
-      specType = 'F';
-      break;
-    case 'd':
-      specType = 'D';
-      break
-    case 'I':
-      specType = 'I';
-      break;
-    case 'c':
-      specType = getCType(line);
-      break;
-    case 'o':
-      specType = 'O';
-      break;
-    case 'p':
-      specType = 'P';  // only 1 type of P spec
-      break;
+  if (lineType)
+  {
+    specType = lineType.toUpperCase();
   }
   return specType;
 }

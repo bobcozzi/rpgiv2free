@@ -12,18 +12,18 @@ export function collectHSpecs(allLines: string[], startIndex: number): CollectRe
   // Move backward to find the first H-spec in the block
   let start = startIndex;
   while (start > 0) {
-    const line = allLines[start - 1];
-    if (line.length >= 6 && line[5].toUpperCase() === 'H') {
+    const prevLine = allLines[start-1];
+    if (rpgiv.getSpecType(prevLine) === 'h') {
       start--;
     } else {
       break;
     }
   }
   const {
-        lines: lines,
-        indexes: indexes,
-        comments: comments
-    } = collectHKeywords(allLines, start);
+    lines: lines,
+    indexes: indexes,
+    comments: comments
+  } = collectHKeywords(allLines, start);
   return { lines, indexes, comments };
 }
 
@@ -38,6 +38,8 @@ export function collectHKeywords(
   let inQuote = false;
   let wasQuoted = false;
 
+  let startLine = allLines[firstIndex];
+
   for (let i = firstIndex; i < allLines.length; i++) {
     const line = allLines[i];
     if (rpgiv.isComment(line)) {
@@ -46,7 +48,11 @@ export function collectHKeywords(
       continue;
     }
     if (rpgiv.isSpecEmpty(line)) continue;
-    if (rpgiv.getSpecType(line) !== 'h') break;
+    if (rpgiv.getSpecType(line) !== 'h') break;  // NOT H spec?
+    if (rpgiv.isDirective(line)) {
+      continue
+    };
+
 
     const ctlopt = rpgiv.getCol(line, 7, 80).trimEnd();
 
