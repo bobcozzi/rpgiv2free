@@ -6,7 +6,7 @@
   "preview": true,
   "private": false,
   "publisher": "CozziResearch",
-  "version": "0.6.21",
+  "version": "0.6.22",
   "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0",
@@ -131,7 +131,7 @@
         "rpgiv2free.maxRPGSourceLength": {
           "type": "number",
           "title": "Est maximum line length for RPG source",
-          "default": 100,
+          "default": 80,
           "minimum": 80,
           "maximum": 240,
           "description": "Maximum record length for RPG source files."

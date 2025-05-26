@@ -27,7 +27,7 @@ export function convertFSpec(lines: string[]): string[] {
   const fileOrg = rpgiv.getColUpper(joined,35);                 // Position 35
   const deviceType = rpgiv.getColUpper(joined,36, 42).trim();           // Positions 36–42
   const reserved = rpgiv.getColUpper(joined,43);                 // Position 43
-  const kwd = rpgiv.getColUpper(joined,44, 80).trim();           // Positions 44–80
+  let kwdArea = '';
 
   // Usage based on file type
   let usage = '';
@@ -43,7 +43,7 @@ export function convertFSpec(lines: string[]): string[] {
 
   const isExternallyDescribed = fileDesc === 'E';
 
-  let kwdArea = '';
+
   for (const line of lines) {
     kwdArea += ' ' + line.substring(43, 80).trim(); // 44 to 80
   }

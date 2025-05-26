@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file.
 
 ## [0.6.21] - 2025-05-26
+- Corrected an issue with the ending ; being added with a blank in some converted lines (just tightens up the line a bit).
+- Corrected an issue with the RPGIV free formatter routine that was truncated spaces between symbols.
+- Added support for the SCAN opcode.
+- Corrected a word wrap issue on File specs when a keyword (such as USROPN) was followed by a length keyword with parameters (such as RENAME(rcdfmt:newName)) that was removing the space beween the first keyword and the second when the first was on the end of the line and the next keyword is on the next line.
+## [0.6.21] - 2025-05-26
 - Implemented the intial *LDA data structure conversion logic. Need more test cases for edge syntax issue. Please user the Issue link in the marketplace extesnion to report any issues.
 - Resolved an issue with the UDS (*LDS) recognition routine.
 - Corrected and issue with the value inserted into the POS keyword when from/to columns were being converted. It finally converts to the correct POS syntaz.

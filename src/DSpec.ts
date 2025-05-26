@@ -136,19 +136,20 @@ export function convertDSpec(lines: string[],
   kwdArea = fixKeywordArgs(kwdArea);
   fieldType = (fieldType?.length >= 2) ? fieldType : '';
   const isNameOfOpcode = rpgiv.isValidOpcode(varName);
+  const dclName = (!varName || varName.trim().toLowerCase() === '*n') ? '' : varName;
 
   switch (dclType.toLowerCase()) {
     case 's': decl = `dcl-s ${varName} ${fieldType} ${kwdArea ? ' ' + kwdArea : ''}`.trim(); break;
     case 'ds': decl = `dcl-ds ${varName} ${kwdArea}`.trim();
       if (!(/\b(LIKEDS)\b/i.test(kwdArea))) {
-        extraDCL?.push(`end-ds ${varName};`);
+        extraDCL?.push(`end-ds ${dclName}`);
       }
       break;
     case 'pr': decl = `dcl-pr ${varName} ${fieldType} ${kwdArea}`.trim();
-      extraDCL?.push(`end-pr ${varName};`);
+      extraDCL?.push(`end-pr ${dclName}`);
       break;
     case 'pi': decl = `dcl-pi ${varName} ${fieldType} ${kwdArea}`.trim();
-      extraDCL?.push(`end-pi ${varName};`);
+      extraDCL?.push(`end-pi ${dclName}`);
       break;
     case 'c': decl = `dcl-c ${varName} ${kwdArea}`.trim(); break;
     default:
@@ -418,7 +419,7 @@ export function combineKwdAreaLines(lines: string[]): string {
   let continuation: '' | '+' | '-' | '...' = '';
 
   for (const line of lines) {
-    const kwdField = line.length >= 44 ? rpgiv.getCol(line, 44, 80).trim() : '';
+    const kwdField = line.length >= 44 ? rpgiv.getCol(line, 44, 80).trimEnd() : '';
 
     // Determine if this line ends with a continuation character (for next line)
     let nextContinuation: '' | '+' | '-' | '...' = '';

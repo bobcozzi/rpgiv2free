@@ -232,6 +232,10 @@ function convertOpcodeToFreeFormat(
       newLines.push(...op.convertSUBST(fullOpcode, factor1, factor2, result, extraDCL));
       newOpcode = '';
       break;
+    case 'SCAN':
+      newLines.push(...op.convertSCAN(fullOpcode, factor1, factor2, result, extraDCL));
+      newOpcode = '';
+      break;
     case 'CHECK':
       newLines.push(...op.convertCHECK(fullOpcode, factor1, factor2, result, extraDCL));
       newOpcode = '';
@@ -328,7 +332,7 @@ function convertOpcodeToFreeFormat(
     case 'XLATE':
       const [from1, to1] = factor1.split(':').map(s => s.trim());
       const [src2, start2] = factor2.split(':').map(s => s.trim());
-      freeFormat = `${result} = %XLATE(${from1}:${to1} : ${src2} : ${start2});`;
+      freeFormat = `${result} = %XLATE(${from1}:${to1} : ${src2} : ${start2})`;
       newLines.push(freeFormat);
       break;
 
@@ -392,10 +396,10 @@ function convertOpcodeToFreeFormat(
           }
         }
         if (!factor2) {
-          newDEFN += ` DTAARA;`;
+          newDEFN += ` DTAARA`;
         }
         else {
-          newDEFN += ` DTAARA('${factor2.toUpperCase()}');`;
+          newDEFN += ` DTAARA('${factor2.toUpperCase()}')`;
         }
       }
       newDEFN +=
@@ -419,17 +423,17 @@ function convertOpcodeToFreeFormat(
       break;
     case "COMP":
       if (resInd1) {
-        newLines.push(`*IN${resInd1} = (${factor1} > ${factor2});`);
+        newLines.push(`*IN${resInd1} = (${factor1} > ${factor2})`);
       }
       if (resInd2) {
-        newLines.push(`*IN${resInd2} = (${factor1} < ${factor2});`);
+        newLines.push(`*IN${resInd2} = (${factor1} < ${factor2})`);
       }
       if (resInd3) {
-        newLines.push(`*IN${resInd3} = (${factor1} = ${factor2});`);
+        newLines.push(`*IN${resInd3} = (${factor1} = ${factor2})`);
       }
       break;
     default:
-      freeFormat = `${fullOpcode} ${factor1} ${factor2} ${result};`;
+      freeFormat = `${fullOpcode} ${factor1} ${factor2} ${result}`;
       newLines.push(freeFormat);
       break;
       // handle unrecognized opcode
