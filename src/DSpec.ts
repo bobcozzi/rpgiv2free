@@ -36,7 +36,7 @@ export function convertDSpec(lines: string[],
   const specType = rpgiv.getSpecType(joined).trim();   // Get column 6 Spec Type
   const dclType = rpgiv.getColUpper(joined, 24, 25).trim();  // Get column 24-25 DCL Type
   const extType = rpgiv.getColUpper(joined, 22).trim();  // Get column 22 Ext Type
-  const PSDS = rpgiv.getColUpper(joined, 23).trim();  // Get column 23 PSDS Flag
+  const dsType = rpgiv.getColUpper(joined, 23).trim();  // Get column 23 dsType Flag
   const fromPos = rpgiv.getColUpper(joined, 26, 32).trim();
   let toPosOrLen = rpgiv.getColUpper(joined, 33, 39).trim();
   const dataType = rpgiv.getColUpper(joined, 40).trim(); // Get column 40 Data Type
@@ -56,7 +56,6 @@ export function convertDSpec(lines: string[],
 
   if (fromPos.charAt(0) === '*') {
     const specPos = fromPos + toPosOrLen;
-    // fieldType = `pos(${specPos.trim()})`;
     fieldType = specPos.trim();
   }
   else {
@@ -105,10 +104,17 @@ export function convertDSpec(lines: string[],
   }
 
   let decl = '';
-  if (PSDS === 'S') {
-    // For PSDS, we need to add the PSDS keyword
-    kwdArea = `${kwdArea} PSDS`;
+  if (dclType === 'DS') {
+    if (dsType === 'S') {
+      // For the PSDS (program status data structure) we need the PSDS kwd in free format
+      kwdArea = `${kwdArea} PSDS`;
+    }
+    else if (dsType === 'U' || hasDTAARA(kwdArea)) {
+      // For data area data structures, ensure DTAARA(*AUTO) is present and formatted
+      kwdArea = buildDtaaraKeyword(kwdArea, dsType, varName);
+    }
   }
+
   if (dclType !== 'DS' && dclType !== 'S' && dclType !== 'C') {
     // For DS, we need to add the DS keyword
     if (extType === 'E' && !/\b(EXTFLD)\b/i.test(kwdArea)) {
@@ -120,7 +126,7 @@ export function convertDSpec(lines: string[],
     if (extType === 'E' && !/\b(EXTNAME|EXTFILE|EXT)\b/i.test(kwdArea)) {
       kwdArea = kwdArea ? `EXT ${kwdArea.trim()}` : 'EXT';
     }
-    if (settings.addINZ && !/\b(INZ)\b/i.test(kwdArea)) {
+    if (dsType === '' && !hasLDA(kwdArea) && settings.addINZ && !/\b(INZ)\b/i.test(kwdArea)) {
       if (!/\bPSDS\b/i.test(kwdArea)) {
         kwdArea = kwdArea ? `INZ ${kwdArea.trim()}` : 'INZ';
       }
@@ -286,7 +292,7 @@ function convertTypeToKwd(
   let kwds = '';
   let length = calcLength(dataType, fromPos, toPos);
   if (isDigits(fromPos)) {
-    kwds += `POS(${length})`;
+    kwds += `POS(${fromPos})`;
   }
 
   if (["B", "I", "U", "P", "S"].includes(dataType) || dec !== '') {
@@ -412,16 +418,15 @@ export function combineKwdAreaLines(lines: string[]): string {
   let continuation: '' | '+' | '-' | '...' = '';
 
   for (const line of lines) {
-    const kwdField = line.length >= 44 ? line.substring(43, 80).trimEnd() : '';
-    const trimmedEnd = kwdField.trimEnd();
+    const kwdField = line.length >= 44 ? rpgiv.getCol(line, 44, 80).trim() : '';
 
     // Determine if this line ends with a continuation character (for next line)
     let nextContinuation: '' | '+' | '-' | '...' = '';
-    if (trimmedEnd.endsWith('...')) {
+    if (kwdField.endsWith('...')) {
       nextContinuation = '...';
-    } else if (trimmedEnd.endsWith('+')) {
+    } else if (kwdField.endsWith('+')) {
       nextContinuation = '+';
-    } else if (trimmedEnd.endsWith('-')) {
+    } else if (kwdField.endsWith('-')) {
       nextContinuation = '-';
     }
 
@@ -447,3 +452,64 @@ export function combineKwdAreaLines(lines: string[]): string {
   return kwdArea.trimEnd();
 }
 
+function hasDTAARA(kwdArea: string): boolean {
+  const dtaaraRegex = /\bDTAARA\s*\(([^)]*)\)/i;
+  const match = kwdArea.match(dtaaraRegex);
+  if (match) return true;
+  return false
+}
+
+function hasLDA(kwdArea: string): boolean {
+  const dtaaraRegex = /\bDTAARA\s*\(([^)]*)\)/i;
+  const match = kwdArea.match(dtaaraRegex);
+  if (!match) return false;
+  // Split parameters by colon, trim spaces, ignore case
+  const params = match[1].split(':').map(p => p.trim().toUpperCase());
+  return params.includes('*LDA');
+}
+function buildDtaaraKeyword(kwdArea: string, dsType: string, dsName: string): string {
+
+  let kwd = kwdArea;
+  const dtaaraRegex = /\bDTAARA\s*\(([^)]*)\)/i;
+  const match = kwd.match(dtaaraRegex);
+  const bDTAARAKwd = hasDTAARA(kwdArea);
+  const bLDAKwd = hasLDA(kwdArea);
+  const bUDS = (dsType.trim().toLowerCase() === 'u');
+  // If DTAARA contains *LDA and bUDS is true, force parameters to (*LDA : *AUTO : *USRCTL)
+  if (bLDAKwd && bUDS) {
+    kwd = kwd.replace(dtaaraRegex, 'DTAARA(*LDA:*AUTO:*USRCTL)');
+    return kwd.trim();
+  }
+  if (!bUDS) {
+    return kwd.trim();
+  }
+  if (match) {
+    // Split parameters by colon, trim spaces
+    let params = match[1].split(':').map(p => p.trim()).filter(p => p.length > 0);
+
+    // Ensure *AUTO is the first parameter
+    if (!params[0] || params[0].toUpperCase() !== '*AUTO') {
+      params = ['*AUTO', ...params.filter(p => p.toUpperCase() !== '*AUTO')];
+    }
+
+    // If the (now) second parameter matches dsName, quote and uppercase it
+    if (!(!dsName || dsName.trim() === '' || dsName.toUpperCase() === '*n')) {
+      if (params[1] && params[1].replace(/['"]/g, '').toLowerCase() === dsName.toLowerCase()) {
+        params[1] = `'${dsName.toUpperCase()}'`;
+      }
+    }
+
+    // If only one parameter and it matches dsName, quote and uppercase it, unless it is *LDA
+    if (params.length === 2 && params[1] === '*AUTO' && params[0].replace(/['"]/g, '').toLowerCase() === dsName.toLowerCase()) {
+      params[0] = `'${dsName.toUpperCase()}'`;
+    }
+
+    // Replace the original DTAARA keyword with the new one
+    kwd = kwd.replace(dtaaraRegex, `DTAARA(${params.join(':')})`);
+  } else {
+    // Add DTAARA(*AUTO)
+    kwd = kwd ? `DTAARA(*AUTO) ${kwd}` : 'DTAARA(*AUTO)';
+  }
+
+  return kwd.trim();
+}

@@ -2,10 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.21] - 2025-05-26
+- Implemented the intial *LDA data structure conversion logic. Need more test cases for edge syntax issue. Please user the Issue link in the marketplace extesnion to report any issues.
+- Resolved an issue with the UDS (*LDS) recognition routine.
+- Corrected and issue with the value inserted into the POS keyword when from/to columns were being converted. It finally converts to the correct POS syntaz.
 ## [0.6.20] - 2025-05-25
 - Corrected an issue with reformatting SQL when a host variable is also an SQL keyword (like FROM, TO, JOIN, SELECT, etc.)
 - Added a new "Indent for compiler directives" setting that defaults to `8`
-- Improved reformat of free format statements when the remainder of the line is fewer than the max source record length, it was avoid wrapping those few extra characters. That whould reduce the issue where things like ; or ); are being wrapped to aline of their own.
+- Improved reformat of free format statements when the remainder of the line is fewer than the max source record length.
+- The reformatting now avoids wrapping those few extra characters.
+- This change reduces issues where symbols like `;` or `);` were being wrapped to their own line.
 - Corrected an issue with H specs and embedded compiler directives
 - Generalized the routine to check if the line is a compiler directive.
 ## [0.6.19] - 2025-05-25
@@ -20,7 +26,7 @@ All notable changes to this project will be documented in this file.
 ## [0.6.17] - 2025-05-24
 - When an IFxx statement is immediately followed by another IFxx statement, and both are selected simultaneously, the inner IFxx would not convert and in some cases caused the extension to loop indefinitely. 0.6.18 or later will be the public release.
 ## [0.6.16] - 2025-05-23
-- Added support for column 81+ "comments" to be converted to `// <comments>` in free format (D specs only). Support for C spec column 81 comments may be comming soon.
+- Added support for column 81+ "comments" to be converted to `// <comments>` in free format (D specs only). Support for C spec column 81 comments may be integrated in a future release.
 - Corrected an issue with File spec conversion that was omitted from the earlier release.
 - Know issue with WHENEQ/ANDEQ and possibly IFEQ/ANDEQ style conditional logic. This was working, but we broke it. It'll be resolved in the next build. The work around right now is to selected those lines independently of others and they should convert.
 - Correct issues related to stand-alone WHENxx statements (i.e., the secondary WHENxx in a SELECT block). Fixed several issues related to **select all** behaving badly.

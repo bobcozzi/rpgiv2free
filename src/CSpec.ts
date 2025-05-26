@@ -31,6 +31,7 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
   const resInd1 = rpgiv.getCol(line, 71, 72).trim();
   const resInd2 = rpgiv.getCol(line, 73, 74).trim();
   const resInd3 = rpgiv.getCol(line, 75, 76).trim();
+  const comments = rpgiv.getCol(line, 81, 100).trim();
   let extFactor2 = rpgiv.getCol(line, 36, 80).trim();
 
   let freeFormLine: string[] = [];
@@ -66,6 +67,7 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
         resInd1,
         resInd2,
         resInd3,
+        comments,
         extraDCL
       ));
 
@@ -173,6 +175,7 @@ function convertOpcodeToFreeFormat(
   resInd1: string,
   resInd2: string,
   resInd3: string,
+  comments: string,
   extraDCL: string[]
 ): { newLines: string[], newOpcode: string } {
 
@@ -207,7 +210,9 @@ function convertOpcodeToFreeFormat(
 
   let lValue = '';
   let kwd = '';
-  let bif = '';
+  if (comments && comments.trim() !== '') {
+    newLines.push(`// ${comments}`);
+  }
   switch (opCode.toUpperCase()) {
     case 'COMP':   // Skippable non-opcode in free format (indy manipulations only)
     case 'SETON':
@@ -263,7 +268,7 @@ function convertOpcodeToFreeFormat(
     case 'EXTRCT':
     case 'EXTRACT':
       [lValue, kwd] = factor2.split(':').map(s => s.trim());
-      freeFormat = `${result} = %SUBDT(${lValue} : ${ kwd });`;
+      freeFormat = `${result} = %SUBDT(${lValue} : ${kwd});`;
       newLines.push(freeFormat);
       break;
 
@@ -331,9 +336,24 @@ function convertOpcodeToFreeFormat(
       newLines.push(`${result} = ${factor2}`);
       break;
     case "MOVE":
-      newLines.push(`EVALR ${result} = ${factor2}`);
+      // If result or factor2 is an indicator or boolean literal, do not use EVALR
+      const isResultIndicator = result.trim().toUpperCase().startsWith('*IN');
+      const factor2Upper = factor2.trim().toUpperCase();
+      const isFactor2Indicator =
+        factor2Upper.startsWith('*IN') ||
+        factor2Upper === '*ON' ||
+        factor2Upper === '*OFF' ||
+        factor2Upper === 'ON' ||
+        factor2Upper === 'OFF' ||
+        factor2Upper === "'1'" ||
+        factor2Upper === "'0'";
+      if (isResultIndicator || isFactor2Indicator) {
+        newLines.push(`${result} = ${factor2}`);
+      } else {
+        newLines.push(`EVALR ${result} = ${factor2}`);
+      }
       break;
-    case 'DO':
+    case 'DO':  // Do is converted to a FOR loop
       newLines.push(...op.convertDO(fullOpcode, factor1, factor2, result, extraDCL));
       newOpcode = '';
       break;
@@ -441,7 +461,7 @@ function handleResultingIndicators(
       }
       break;
     case 'SETON':
-          if (resInd1) {
+      if (resInd1) {
         newLines.push(`*IN${resInd1} = *ON;`);
       }
       if (resInd2) {
