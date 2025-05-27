@@ -108,10 +108,10 @@ export function getColLower(line: string | null | undefined, from: number, to?: 
   return line.substring(from - 1, end).toLowerCase();
 }
 
-  // Return the RPG IV Fixed Format Specification Code (H F D I C O P)
-   // or blank/empty when it is not one of those or when position 7 is * or /
+// Return the RPG IV Fixed Format Specification Code (H F D I C O P) in lowercase
+// or blank/empty when it is not one of those or when position 7 is * or /
 export function getSpecType(line: string): string {
-  if (line.length < 7) return '';
+  if (line.length < 6) return '';
   const col7 = line[6];
   if (col7 === '*' || col7 === '/') return '';
   return line[5].toLowerCase();
@@ -394,6 +394,30 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
   }
 
   return insertPoint;
+}
+
+export function isExtFactor2(line: string): boolean {
+  if (typeof line !== 'string' || !line) return false;
+
+  // Defensive: Ensure line is long enough for specType and column access
+  if (line.length < 7) return false;
+
+  const specType = getSpecType(line);
+  if (specType !== 'c') return false;
+  if (isSkipStmt(line)) return false;
+
+  // Defensive: getCol will pad as needed, but ensure line is string
+  const factor1 = getCol(line, 12, 25)?.trim?.() ?? '';
+  const opcode = getOpcode(line) ?? '';
+  const extFactor2 = getCol(line, 36, 80)?.trim?.() ?? '';
+  // const factor2 = getCol(line, 36, 49)?.trim?.() ?? ''; // not used
+
+  if ((!factor1 || factor1.trim() === '') && extFactor2 && extFactor2 !== '') {
+    if (isExtOpcode(opcode) || !opcode || opcode==='') {
+      return true;
+    }
+  }
+  return false;
 }
 
 function isFreeFormCalcStmt(line: string): boolean {

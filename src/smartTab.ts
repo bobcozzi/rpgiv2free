@@ -3,11 +3,12 @@ import * as rpgiv from "./rpgedit";  // Using your existing functions
 import * as types from './types';
 
 
+
 // Tab stops by spec type — update or expand as needed
-//  *. 1 ...+... 2 ...+... 3 ...+... 4 ...+... 5 .. v
-// FFilename++IPEASF.....L.....A.Device+.Keywords++
-// FCUSTMAST  IF   E             DISK    USROPN
-// DName+++++++++++ETDsFrom+++To/L+++IDc.Keywords++
+//    *. 1 ...+... 2 ...+... 3 ...+... 4 ...+... 5 ...+... 6 ...+... 7 ...+... 8 .. v
+//   FFilename++IPEASF.....L.....A.Device+.Keywords+++++++++++++++++++++++++++++Comments++++++++++++++
+//   FCUSTMAST  IF   E             DISK    USROPN
+// .....D*ame+++++++++++ETDsFrom+++To/L+++IDc.Keywords+++++++++++++++++++++++++++++Comments++++++++++++++
 //  *. 1 ...+... 2 ...+... 3 ...+... 4 ...+... 5 ...+... 6 ...+... 7 ...+... 8
 // CL0N01Factor1+++++++Opcode&ExtFactor2+++++++Result++++++++Len++D+HiLoEq.
 // C     baseText      CAT       A:1           X
@@ -15,7 +16,7 @@ import * as types from './types';
 // C                   IF        A = B
 const RPG_TAB_STOPS: Record<string, number[]> = {
   H: [1, 6, 7, 81],
-  F: [1, 6, 7, 18, 19, 20, 21, 22, 23, 28, 29,33, 34, 36, 43, 44, 81],
+  F: [1, 6, 7, 17, 18, 19, 20, 21, 22, 23, 28, 29, 33, 34, 36, 43, 44, 81],
   D: [1, 6, 7, 22, 23, 24, 26, 33, 40, 41, 43, 44, 81],
   C: [1, 6, 7, 9, 12, 26, 36, 50, 64, 69, 71, 73, 75, 77, 81],
   CX: [1, 6, 7, 9, 26, 36, 81],
@@ -23,6 +24,9 @@ const RPG_TAB_STOPS: Record<string, number[]> = {
   O: [1, 6, 7, 8, 10, 12, 17, 24, 39],
   P: [1, 6, 7, 24, 44, 81]
 };
+
+// Map from editor.document.uri.toString() to an array of ranges per line
+const tabStopRangesPerEditor: Map<string, vscode.Range[][]> = new Map();
 
 const tabBoxDecoration = vscode.window.createTextEditorDecorationType({
   borderWidth: '1px',
@@ -70,20 +74,36 @@ function getTabStops(line: string): number[] {
 }
 
 function getNextStop(current: number, stops: number[], reverse: boolean): number | undefined {
-  const sorted = reverse ? [...stops].reverse() : stops;
+  if (!stops.length) return undefined;
 
-  for (const stop of sorted) {
-    if ((reverse && stop < current) || (!reverse && stop > current)) {
-      return Math.max(0, stop);
+  if (!reverse) {
+    // If current is at or beyond the last stop, return undefined
+    if (current >= stops[stops.length - 1]-1) {
+      return undefined;
     }
+    for (const stop of stops) {
+      if (stop > current) {
+        return Math.max(0, stop);
+      }
+    }
+    return undefined;
+  } else {
+    // If current is at or before the first stop, return undefined
+    if (current <= stops[0]) {
+      return undefined;
+    }
+    for (let i = stops.length - 1; i >= 0; i--) {
+      if (stops[i] < current) {
+        return Math.max(0, stops[i]);
+      }
+    }
+    return undefined;
   }
-
-  return undefined; // No valid stop found
 }
 
 function getCurrentTabRange(col: number, stops: number[]): [number, number] {
   for (let i = 0; i < stops.length - 1; i++) {
-    if (col >= stops[i] && ((i+1) < stops.length && col < stops[i + 1])) {
+    if (col >= stops[i] && ((i + 1) < stops.length && col < stops[i + 1])) {
       return [stops[i], stops[i + 1]];
     }
   }
@@ -93,10 +113,13 @@ function getCurrentTabRange(col: number, stops: number[]): [number, number] {
 function getStmtRule(line: string): string {
   let specType = '';
   const lineType = rpgiv.getSpecType(line);
-  if (lineType)
-  {
+  if (lineType && lineType.trim() !== '') {
     specType = lineType.toUpperCase();
+    if (specType === 'C' && rpgiv.isExtFactor2(line)) {
+      specType = 'CX';  // Extended Factor 2 opcode
+    }
   }
+  console.log('[rpgiv2free]','Spec:', specType, 'Line:', line);
   return specType;
 }
 
@@ -138,64 +161,52 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
     return;
   }
 
-  const newCol = getNextStop(cursor.character, stops, reverse);
-  if (newCol === undefined || newCol === cursor.character) {
-    const nextLine = cursor.line + 1;
+  const lastTabStop = stops[stops.length - 1];
+  let newCol = getNextStop(cursor.character, stops, reverse);
+  console.log('Current/New columns:', cursor.character + 1, newCol, 'stops:', stops);
 
-    if (nextLine >= doc.lineCount) {
-      // Create a new line if we're at EOF
+  // 1. If there is a next tab stop, move to it (including the last one)
+  if (typeof newCol === "number" && newCol > cursor.character) {
+    // Pad if needed
+    if (
+      newCol > cursor.character &&
+      newCol >= lineText.length
+      //   && newCol <= maxRPGLen
+    ) {
+      const padding = " ".repeat(newCol - lineText.length);
       await editor.edit(editBuilder => {
-        editBuilder.insert(new vscode.Position(cursor.line, lineText.length), '\n');
-      });
-    }
-
-    const nextLineText = doc.lineAt(Math.min(nextLine, doc.lineCount - 1)).text;
-    const nextStops = getTabStops(nextLineText);
-    const firstTab = nextStops.length > 0 ? nextStops[0] : 6;
-
-    // Pad next line if needed
-    if (nextLineText.length < firstTab) {
-      const padAmount = firstTab - nextLineText.length;
-      await editor.edit(editBuilder => {
-        editBuilder.insert(new vscode.Position(nextLine, nextLineText.length), ' '.repeat(padAmount));
+        editBuilder.insert(
+          new vscode.Position(cursor.line, lineText.length),
+          padding
+        );
       }, { undoStopBefore: false, undoStopAfter: false });
     }
 
-    const wrappedPos = new vscode.Position(nextLine, firstTab);
-    editor.selection = new vscode.Selection(wrappedPos, wrappedPos);
-    editor.revealRange(new vscode.Range(wrappedPos, wrappedPos));
+    // Highlight tab zone if desired
+    const [startCol, endCol] = getCurrentTabRange(cursor.character, stops);
+    let range: vscode.Range | undefined = undefined;
+    if (
+      startCol >= 0 &&
+      endCol >= 0 &&
+      !(startCol === endCol && startCol === 0)
+    ) {
+      range = new vscode.Range(cursor.line, startCol, cursor.line, endCol);
+    }
+
+    // Move cursor
+    const safeColumn = Math.min(newCol, maxRPGLen);
+    const newPos = new vscode.Position(cursor.line, safeColumn);
+    editor.selection = new vscode.Selection(newPos, newPos);
+    editor.revealRange(new vscode.Range(newPos, newPos));
+    if (range) {
+      editor.setDecorations(tabBoxDecoration, [range]);
+    }
     return;
   }
-  const [startCol, endCol] = getCurrentTabRange(cursor.character, stops);
 
-// Only skip decoration, not logic
-let range: vscode.Range | undefined = undefined;
-if (startCol >= 0 && endCol >= 0 && !(startCol === endCol && startCol === 0) &&
-    cursor.character < stops[stops.length - 1]) {
-  range = new vscode.Range(cursor.line, startCol, cursor.line, endCol);
-  }
-
-// ...existing code...
-
-// If Shift+Tab and cursor is at or beyond the last tab stop, trim trailing spaces
-if (
-  reverse &&
-  cursor.character >= stops[stops.length - 1] &&
-  /\s+$/.test(lineText)
-) {
-  const trimmed = lineText.replace(/\s+$/, "");
-  await editor.edit(editBuilder => {
-  editBuilder.replace(
-    new vscode.Range(cursor.line, 0, cursor.line, lineText.length),
-    trimmed
-  );
-}, { undoStopBefore: false, undoStopAfter: false });
-}
-
-// ...existing code...
-
-  // Pad only if we're moving forward AND it's within a sane range
-  if (newCol > cursor.character && newCol > lineText.length && newCol <= maxRPGLen - 1) {
+  if (typeof newCol === "number") {
+  // Pad if needed (for forward tab only)
+  if (!reverse && newCol > cursor.character && newCol >= lineText.length) {
     const padding = " ".repeat(newCol - lineText.length);
     await editor.edit(editBuilder => {
       editBuilder.insert(
@@ -205,18 +216,56 @@ if (
     }, { undoStopBefore: false, undoStopAfter: false });
   }
 
+  // Move cursor
   const safeColumn = Math.min(newCol, maxRPGLen - 1);
   const newPos = new vscode.Position(cursor.line, safeColumn);
   editor.selection = new vscode.Selection(newPos, newPos);
   editor.revealRange(new vscode.Range(newPos, newPos));
-  if (range) {
-    editor.setDecorations(tabBoxDecoration, [range]);
+  return;
+  }
+
+  // 2. If there is no next tab stop, move to the next line (only for Tab, not Shift+Tab)
+if (!reverse) {
+  const nextLine = cursor.line + 1;
+  if (nextLine >= doc.lineCount) {
+    // Create a new line if we're at EOF
+    await editor.edit(editBuilder => {
+      editBuilder.insert(new vscode.Position(cursor.line, lineText.length), '\n');
+    });
+  }
+  const nextLineText = doc.lineAt(Math.min(nextLine, doc.lineCount - 1)).text;
+  const nextStops = getTabStops(nextLineText);
+  const firstTab = nextStops.length > 1 ? nextStops[1] : 5;  // get 2nd tab (first is alway column 1)
+
+  // Pad next line if needed
+  if (nextLineText.length < firstTab) {
+    const padAmount = firstTab - nextLineText.length;
+    await editor.edit(editBuilder => {
+      editBuilder.insert(new vscode.Position(nextLine, nextLineText.length), ' '.repeat(padAmount));
+    }, { undoStopBefore: false, undoStopAfter: false });
+  }
+
+  const wrappedPos = new vscode.Position(nextLine, firstTab);
+  editor.selection = new vscode.Selection(wrappedPos, wrappedPos);
+  editor.revealRange(new vscode.Range(wrappedPos, wrappedPos));
+}
+
+  // --- Optional: Shift+Tab trailing space trim ---
+  if (
+    reverse &&
+    cursor.character >= stops[stops.length - 1] &&
+    /\s+$/.test(lineText)
+  ) {
+    const trimmed = lineText.replace(/\s+$/, "");
+    await editor.edit(editBuilder => {
+      editBuilder.replace(
+        new vscode.Range(cursor.line, 0, cursor.line, lineText.length),
+        trimmed
+      );
+    }, { undoStopBefore: false, undoStopAfter: false });
   }
 }
 
-function getCType(line: string): string {
-  return 'C';
-}
 
 export async function highlightCurrentTabZone(editor: vscode.TextEditor): Promise<void> {
   const cursor = editor.selection.active;
@@ -269,29 +318,72 @@ export async function highlightCurrentTabZone(editor: vscode.TextEditor): Promis
   editor.setDecorations(tabBoxDecoration, [range]);
 }
 
-export function drawTabStopLines(editor: vscode.TextEditor): void {
+export function drawTabStopLines(editor: vscode.TextEditor, lineNbr: number): void {
   const doc = editor.document;
-  const decorations: vscode.DecorationOptions[] = [];
+  const uriKey = doc.uri.toString();
 
-  for (let lineNum = 0; lineNum < doc.lineCount; lineNum++) {
-    const line = doc.lineAt(lineNum);
+  // Get or initialize the per-line ranges array for this editor
+  let perLineRanges = tabStopRangesPerEditor.get(uriKey);
+  if (!perLineRanges) {
+    perLineRanges = Array(doc.lineCount).fill(null).map(() => []);
+    tabStopRangesPerEditor.set(uriKey, perLineRanges);
+  }
+
+  // Recompute tab stops for this line
+  const decorations: vscode.Range[] = [];
+  if (lineNbr < doc.lineCount) {
+    const line = doc.lineAt(lineNbr);
     const specChar = getStmtRule(line.text);
     const stops = getTabStops(line.text);
 
     for (const stop of stops) {
       if (stop > 0 && stop < line.text.length) {
-        const pos = new vscode.Position(lineNum, stop);
-        decorations.push({
-          range: new vscode.Range(pos, pos),
-        });
+        const pos = new vscode.Position(lineNbr, stop);
+        decorations.push(new vscode.Range(pos, pos));
       }
     }
   }
 
-  editor.setDecorations(verticalLineDecoration, decorations);
-}
+  // Update only this line's ranges
+  perLineRanges[lineNbr] = decorations;
 
+  // Flatten all ranges for this editor and apply
+  const allRanges = perLineRanges.flat();
+  editor.setDecorations(verticalLineDecoration, allRanges);
+}
 export function applyColumnarDecorations(editor: vscode.TextEditor, smartTabEnabled: boolean) {
+  if (!editor) return;
+
+  const doc = editor.document;
+  const uriKey = doc.uri.toString();
+
+  if (smartTabEnabled) {
+    const perLineRanges: vscode.Range[][] = [];
+    for (let i = 0; i < doc.lineCount; i++) {
+      const line = doc.lineAt(i);
+      if (rpgiv.isSkipStmt(line.text)) continue;
+      if (rpgiv.isComment(line.text)) continue;
+      const stops = getTabStops(line.text);
+      if (!stops || stops.length === 0) continue;
+      const ranges: vscode.Range[] = [];
+      stops.forEach(col => {
+        if (line.text.length > col) {
+          const pos = new vscode.Position(i, col);
+          ranges.push(new vscode.Range(pos, pos));
+        }
+      });
+      perLineRanges[i] = ranges;
+    }
+    tabStopRangesPerEditor.set(uriKey, perLineRanges);
+    const allRanges = perLineRanges.flat();
+    editor.setDecorations(verticalLineDecoration, allRanges);
+  } else {
+    // Clear decorations and remove from map
+    editor.setDecorations(verticalLineDecoration, []);
+    tabStopRangesPerEditor.delete(uriKey);
+  }
+}
+export function XapplyColumnarDecorations(editor: vscode.TextEditor, smartTabEnabled: boolean) {
   if (!editor) return;
 
   const doc = editor.document;
@@ -315,7 +407,7 @@ export function applyColumnarDecorations(editor: vscode.TextEditor, smartTabEnab
         }
       });
 
-      }
+    }
 
     editor.setDecorations(verticalLineDecoration, ranges);
   } else {

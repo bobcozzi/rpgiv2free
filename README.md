@@ -10,7 +10,7 @@ convert to free format, right-click and select "Convert RPG IV to free format".
 It is **NOT a refactoring tool** or code modernization tool. Its only purpose is to convert an RPG IV fixed-format statement into free format RPG IV syntax.
 ## Warnings
 - **Conditioning Indicators on Calc Specs are not Supported**:
-  Presently we swallow conditioning indicators in Calc Specs. The extension does nothing with them and therefore the indicators dissapear if you convert a line that is conditioned by indicators, it may convert but the conditioned Calc spec normally, but conditioning indicators will be lost. So use your UNDO function to get the line and the Conditioning indicators back. Note that Resulting Indicators are fully supported, however.
+  Presently we swallow conditioning indicators in Calc Specs. The extension does nothing with them and therefore the indicators dissapear durring conversion. The opcode may be converted, but the conditioning indicators are lost. Use your UNDO key; Ctrl+Z (PC/Windows) Cmd+Z (macOS) to get the line back. Note that **Resulting Indicators** are fully supported.
 
 ## Features
 
@@ -21,7 +21,7 @@ It is **NOT a refactoring tool** or code modernization tool. Its only purpose is
   If a statement spans multiple lines, such as when a File or Definition spec has additional keywords, or you have a legacy IFEQ/OREQ/ANDEQ/CASxx style Calc specs, you can position the cursor on any line within the statement, and the extension converts the entire statement; no need to select the entire thing.
 
 - **Batch Conversion of Multiple Statements**:
-  You can select multiple statements within the same file and convert them all in a single operation. The tool processes them efficiently. however, is it NOT recommended to select *ALL lines and convert them. I have not tested it on things like program-described arrays, conditioning indicators. These are ignored or potentially incorrectly converted in some edge cases.
+  You can select multiple statements within the same file and convert them all in a single operation. The tool processes them efficiently. however, is it NOT recommended to select *ALL lines and convert (although we do it all the time for testing). I have not tested the extension on all legacy RPG IV styles such as program-described arrays, conditioning indicators. These are ignored or potentially incorrectly converted in some edge cases.
 
 - **Supported Specifications**:
   - Header (H) Specs

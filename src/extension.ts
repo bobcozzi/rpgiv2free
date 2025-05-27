@@ -42,10 +42,7 @@ export function activate(context: vscode.ExtensionContext) {
     smartTabStatusBarItem.text = `RPG Smart Tab: ${rpgSmartTabEnabled ? 'On' : 'Off'}`;
     smartTabStatusBarItem.show();
   }
-  // Check already open documents (e.g., on reload)
-  vscode.workspace.textDocuments.forEach((document) => {
-    evaluateAndApplyFeatures(document);
-  });
+
 
   // Listen for newly opened documents
   context.subscriptions.push(
@@ -122,26 +119,45 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   let tabStopDebounceTimer: NodeJS.Timeout | undefined;
-  context.subscriptions.push(tabCmd, shiftTabCmd);
+  // context.subscriptions.push(tabCmd, shiftTabCmd);
+
+
+// For all visible editors (covers cases where editor is visible but not in textDocuments yet)
+vscode.window.visibleTextEditors.forEach((editor) => {
+  evaluateAndApplyFeatures(editor.document);
+});
+
+  context.subscriptions.push(
+  vscode.window.onDidChangeVisibleTextEditors((editors) => {
+    editors.forEach(editor => {
+      evaluateAndApplyFeatures(editor.document);
+    });
+  })
+  );
 
   // add listener for character/non-tab cursor movement
   context.subscriptions.push(
-    vscode.window.onDidChangeTextEditorSelection((e) => {
-      if (!e.textEditor || !rpgSmartTabEnabled) return;
-      if (rpgiv.isNOTFixedFormatRPG(e.textEditor.document)) return;
+  vscode.window.onDidChangeTextEditorSelection((e) => {
+    if (!e.textEditor || !rpgSmartTabEnabled) return;
+    if (rpgiv.isNOTFixedFormatRPG(e.textEditor.document)) return;
 
-      if (tabStopDebounceTimer) clearTimeout(tabStopDebounceTimer);
+    if (tabStopDebounceTimer) clearTimeout(tabStopDebounceTimer);
 
-      tabStopDebounceTimer = setTimeout(async () => {
-        try {
-          await highlightCurrentTabZone(e.textEditor);
-          drawTabStopLines(e.textEditor);
-        } catch (err) {
-          console.error("Tab zone debounce error:", err);
+    tabStopDebounceTimer = setTimeout(async () => {
+      try {
+        await highlightCurrentTabZone(e.textEditor);
+
+        // Only update the current line's tab boundaries
+        const activeLine = e.selections[0]?.active.line;
+        if (typeof activeLine === 'number') {
+          drawTabStopLines(e.textEditor, activeLine);
         }
-      }, 100);
-    })
-  );
+      } catch (err) {
+        console.error("Tab zone debounce error:", err);
+      }
+    }, 100);
+  })
+);
 
 
   context.subscriptions.push(
@@ -372,7 +388,10 @@ export function deactivate() {
 }
 
 function evaluateAndApplyFeatures(document: vscode.TextDocument) {
+  if (!['rpgle', 'sqlrpgle'].includes(document.languageId)) return;
+
   const editor = vscode.window.visibleTextEditors.find(e => e.document === document);
+  console.log('evaluateAndApplyFeatures:', document.fileName, !!editor);
 
   if (!editor) return;
 
@@ -384,5 +403,10 @@ function evaluateAndApplyFeatures(document: vscode.TextDocument) {
 
   if (rpgSmartTabEnabled) {
     applyColumnarDecorations(editor, true);
+
+    // Draw tab stop lines for all lines in the document
+    for (let line = 0; line < document.lineCount; line++) {
+      drawTabStopLines(editor, line);
+    }
   }
 }

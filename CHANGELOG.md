@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.23] - 2025-05-26
+- Refactored the RPG Smart Tab columnar ruler boundary decorations to better support tabbing past end of line.
+- The visual Columnar ruler boundary guidelines now redraw using a more optimized logic flow that is a VS CODE standard.
 ## [0.6.22] - 2025-05-26
 - Corrected an issue with the ending ` ;` being added with a blank in some converted lines (just tightens up the line a bit).
 - Corrected an issue with the RPGIV free formatter routine that was truncated spaces between symbols.
