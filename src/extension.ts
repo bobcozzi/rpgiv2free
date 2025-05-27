@@ -122,42 +122,42 @@ export function activate(context: vscode.ExtensionContext) {
   // context.subscriptions.push(tabCmd, shiftTabCmd);
 
 
-// For all visible editors (covers cases where editor is visible but not in textDocuments yet)
-vscode.window.visibleTextEditors.forEach((editor) => {
-  evaluateAndApplyFeatures(editor.document);
-});
+  // For all visible editors (covers cases where editor is visible but not in textDocuments yet)
+  vscode.window.visibleTextEditors.forEach((editor) => {
+    evaluateAndApplyFeatures(editor.document);
+  });
 
   context.subscriptions.push(
-  vscode.window.onDidChangeVisibleTextEditors((editors) => {
-    editors.forEach(editor => {
-      evaluateAndApplyFeatures(editor.document);
-    });
-  })
+    vscode.window.onDidChangeVisibleTextEditors((editors) => {
+      editors.forEach(editor => {
+        evaluateAndApplyFeatures(editor.document);
+      });
+    })
   );
 
   // add listener for character/non-tab cursor movement
   context.subscriptions.push(
-  vscode.window.onDidChangeTextEditorSelection((e) => {
-    if (!e.textEditor || !rpgSmartTabEnabled) return;
-    if (rpgiv.isNOTFixedFormatRPG(e.textEditor.document)) return;
+    vscode.window.onDidChangeTextEditorSelection((e) => {
+      if (!e.textEditor || !rpgSmartTabEnabled) return;
+      if (rpgiv.isNOTFixedFormatRPG(e.textEditor.document)) return;
 
-    if (tabStopDebounceTimer) clearTimeout(tabStopDebounceTimer);
+      if (tabStopDebounceTimer) clearTimeout(tabStopDebounceTimer);
 
-    tabStopDebounceTimer = setTimeout(async () => {
-      try {
-        await highlightCurrentTabZone(e.textEditor);
+      tabStopDebounceTimer = setTimeout(async () => {
+        try {
+          await highlightCurrentTabZone(e.textEditor);
 
-        // Only update the current line's tab boundaries
-        const activeLine = e.selections[0]?.active.line;
-        if (typeof activeLine === 'number') {
-          drawTabStopLines(e.textEditor, activeLine);
+          // Only update the current line's tab boundaries
+          const activeLine = e.selections[0]?.active.line;
+          if (typeof activeLine === 'number') {
+            drawTabStopLines(e.textEditor, activeLine);
+          }
+        } catch (err) {
+          console.error("Tab zone debounce error:", err);
         }
-      } catch (err) {
-        console.error("Tab zone debounce error:", err);
-      }
-    }, 100);
-  })
-);
+      }, 100);
+    })
+  );
 
 
   context.subscriptions.push(
@@ -269,7 +269,7 @@ vscode.window.visibleTextEditors.forEach((editor) => {
     for (const i of selectedLineList) {
       if (i >= allLines.length) continue;
       const collectedStmts = collectStmt(allLines, i);
-      rpgiv.log(`Collected ${collectedStmts?.indexes.length} statements for line: ${i+1}`);
+      rpgiv.log(`Collected ${collectedStmts?.indexes.length} statements for line: ${i + 1}`);
 
       // ...and so on for each major step
       if (!collectedStmts) continue;
@@ -323,7 +323,14 @@ vscode.window.visibleTextEditors.forEach((editor) => {
       const lastLineText = doc.lineAt(indexes[indexes.length - 1]).text;
       const rangeEnd = new vscode.Position(indexes[indexes.length - 1], lastLineText.length);
       const rangeToReplace = new vscode.Range(rangeStart, rangeEnd);
-      if (convertedText) {
+
+      // Always push the edit, even if convertedText is an empty string
+      const currentText = doc.getText(rangeToReplace);
+      if (
+        convertedText !== undefined &&
+        convertedText !== null &&
+        currentText !== convertedText
+      ) {
         edits.push({ range: rangeToReplace, text: convertedText });
       }
 
@@ -346,6 +353,8 @@ vscode.window.visibleTextEditors.forEach((editor) => {
     if (edits.length > 0) {
       try {
         rpgiv.log('CMD Handler Applying edits');
+
+        // const uniqueEdits = Array.from(new Map(edits.map(e => [e.range.toString(), e])).values());
         const success = await editor.edit(editBuilder => {
           for (const edit of edits) {
             editBuilder.replace(edit.range, edit.text);
@@ -353,12 +362,15 @@ vscode.window.visibleTextEditors.forEach((editor) => {
         });
 
         if (!success) {
+          console.log('Failed to apply edits. Edits:', JSON.stringify(edits, null, 2));
           vscode.window.showErrorMessage('Failed to apply edits. Please try again.');
         }
       } catch (error) {
+        console.log('Error applying edits:', (error as Error).message, 'Edits:', JSON.stringify(edits, null, 2));
         vscode.window.showErrorMessage('Error applying edits: ' + (error as Error).message);
       }
     }
+
     if (convertedExtraDCL.length > 0) {
       const lines = rpgiv.splitLines(editor.document.getText());
       await rpgiv.insertExtraDCLLinesBatch(editor, lines, convertedExtraDCL.map(dcl => ({

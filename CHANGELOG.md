@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.24] - 2025-05-26
+- We now convert "empty" or blank spec lines such as `     C` with nothing else on it o a blank line.
+- Opcode conditioned by **1 conditioning indicator** are now converted.
+- If the Level Break indicator area (columns 7 and 8) is `Lx` or is `OR` or `AN` unpredictable results will occur.
+- It is a future objective to support AN/OR lines (multiple conditioning indicators) for a single opcode.
 ## [0.6.23] - 2025-05-26
 - Refactored the RPG Smart Tab columnar ruler boundary decorations to better support tabbing past end of line.
 - The visual Columnar ruler boundary guidelines now redraw using a more optimized logic flow that is a VS CODE standard.

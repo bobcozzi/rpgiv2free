@@ -631,7 +631,7 @@ export function isValidOpcode(id: string): boolean {
   return rpgOpcodes.has(baseOpcode);
 }
 
-export function isUnsuppotedOpcode(id: string): boolean {
+export function isUnSupportedOpcode(id: string): boolean {
   // List of valid opcodes (operation extenders not included)
   const oldRPGOpcodes = new Set([
     "CALL", "CALLB", "PLIST", "PARM", "KLIST", "KFLD", "FREE", "DEBUG"

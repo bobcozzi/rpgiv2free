@@ -60,7 +60,7 @@ export const formatRPGIV = (input: string, splitOffComments: boolean = false): s
 
 
   const addToken = (token: string, tokenSpacer: string = '', addIndent = true) => {
-   console.log(`addToken: [${token}] [${JSON.stringify(tokenSpacer)}]`);
+
   const tokenLen = token.length + tokenSpacer.length;
   let margin = rightMargin;
   if (currentLength + tokenLen > margin && currentLength + tokenLen < srcRcdLen) {
@@ -166,8 +166,6 @@ export const formatRPGIV = (input: string, splitOffComments: boolean = false): s
     // Separate comment from code
     // const tokens = code.match(/'([^']|'')*'|[^\s]+/g) || [];
     const { tokens, spacers } = tokenizeWithSpacing(code);
-    console.log('TOKENS:', tokens);
-    console.log('SPACERS:', spacers);
 
     if (comment && splitOffComments) {
       result.push(indent(contIndentLen) + comment);
@@ -210,7 +208,7 @@ export const formatRPGIV = (input: string, splitOffComments: boolean = false): s
       }
     }
     flushLine();
-    console.log('RESULT:', result);
+
   }
   // Ensure semicolon terminates final statement
   if (!bIsDir && result.length > 0 && !result[result.length - 1].trimEnd().endsWith(';')) {

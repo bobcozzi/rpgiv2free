@@ -20,7 +20,7 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
   if (specType !== 'c') return [];
 
   const levelBreak = rpgiv.getCol(line, 7, 8).trim();
-  const indicators = rpgiv.getCol(line, 9, 11).trim();
+  const condIndy = rpgiv.getCol(line, 9, 11).trim();
   const factor1 = rpgiv.getCol(line, 12, 25).trim();
   let opcode = rpgiv.getOpcode(line);
   const factor2 = rpgiv.getCol(line, 36, 49).trim();
@@ -35,6 +35,16 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
   let extFactor2 = rpgiv.getCol(line, 36, 80).trim();
 
   let freeFormLine: string[] = [];
+  let afterOpcode = '';
+  if (condIndy && condIndy.trim() !== '' && (levelBreak.trim() === '' || levelBreak.toLowerCase().trim() === 'sr')) {
+    const condStmt = handleCondIndy(condIndy);
+    if (condStmt.length > 0) {
+      freeFormLine.push(condStmt[0]);
+      if (condStmt.length > 1) {
+        afterOpcode = condStmt[1];
+      }
+    }
+  }
 
   if (rpgiv.isExtOpcode(opcode)) {
     if (lines.length > 1) {
@@ -50,7 +60,7 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
       opcode = "";  // EVAL/callp is not needed in free-form
     }
     freeFormLine.push(`${opcode.toLowerCase()} ${extFactor2}`);
-  } else if (!rpgiv.isUnsuppotedOpcode(opcode)) {
+  } else if (!rpgiv.isUnSupportedOpcode(opcode)) {
     // Common 3-operand statement: result = factor1 opcode factor2;
     const enhValues: OpcodeEnhancement = enhanceOpcode(opcode, factor1, factor2, result, length, decimals, resInd1, resInd2, resInd3);
 
@@ -101,6 +111,10 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
     if (addlLines.length > 0) {
       freeFormLine.push(...addlLines);
     }
+
+  }
+  if (afterOpcode && afterOpcode.trim() !== '') {
+    freeFormLine.push(afterOpcode);
   }
 
   return freeFormLine;
@@ -442,6 +456,19 @@ function convertOpcodeToFreeFormat(
   return { newLines: newLines, newOpcode: newOpcode };;
 }
 
+function handleCondIndy(condIndy: string): string[] {
+  const newCond: string[] = [];
+  let status = "*ON";
+  let indy = condIndy.trim();
+  if (indy.length > 0 && indy[0].toLowerCase() === 'n') {
+    status = "*OFF";
+    indy = indy.slice(1).trim();
+  }
+  const stmt = `IF (*IN${indy} = ${status})`;
+  newCond.push(stmt);
+  newCond.push("endif");
+  return newCond;
+}
 function handleResultingIndicators(
   opcode: string,
   factor1: string,

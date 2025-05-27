@@ -81,9 +81,42 @@ export function collectStmt(
       isCollected: true,
     };
   }
-
   const curSpec = rpgiv.getSpecType(startLine);
-  if ((!curSpec && rpgiv.isNotComment(startLine)) || isLineEmpty(startLine)) return null;
+  if (!curSpec && rpgiv.isNotComment(startLine)) return null;
+  if (curSpec === 'c' && rpgiv.isUnSupportedOpcode(rpgiv.getOpcode(startLine))) return null;
+  if (!startLine || startLine.trim() === '') return null;
+
+  // if empty statements, then convert them to blank lines in resultset
+  if (rpgiv.isEmptyStmt(startLine) || isLineEmpty(startLine)) {
+    let emptyBlock: string[] = [];
+    let emptyIndex: number[] = [];
+    let idx = startIndex;
+    while (idx < allLines.length && (rpgiv.isEmptyStmt(allLines[idx]) || isLineEmpty(allLines[idx]))) {
+      if (allLines[idx].trim() !== '') { // Only collect if not already empty
+        emptyBlock.push('');
+        emptyIndex.push(idx);
+      }
+      idx++;
+    }
+    idx = startIndex - 1;
+    while (idx >= 0 && (rpgiv.isEmptyStmt(allLines[idx]) || isLineEmpty(allLines[idx]))) {
+      if (allLines[idx].trim() !== '') { // Only collect if not already empty
+        emptyBlock.push('');
+        emptyIndex.push(idx);
+      }
+      idx--;
+    }
+    if (emptyBlock.length > 0) {
+      return {
+        entityName: null,
+        lines: emptyBlock,
+        indexes: emptyIndex,
+        comments: null,
+        isSQL: false,
+        isCollected: true,
+      };
+    }
+  }
 
   if (rpgiv.isComment(startLine)) {
     let commentBlock: string[] = [];
@@ -112,7 +145,7 @@ export function collectStmt(
     }
   }
 
-  if (curSpec === 'c' && !rpgiv.isUnsuppotedOpcode(rpgiv.getOpcode(startLine))) {
+  if (curSpec === 'c' && !rpgiv.isUnSupportedOpcode(rpgiv.getOpcode(startLine))) {
     if (rpgiv.isBooleanOpcode(startLine) || rpgiv.isOpcodeSELECT(startLine)) {
       // Handle boolean opcode lines separately
       const booleanOpcodeResult = collectBooleanOpcode(allLines, startIndex);
@@ -185,7 +218,7 @@ export function collectStmt(
       isCollected: false,
     };
   }
-    else if (curSpec === 'f') {
+  else if (curSpec === 'f') {
     const defnSpecs = collectFSpecs(allLines, startIndex); // Collect H specs if needed
     return {
       entityName: defnSpecs.entityName,
@@ -345,8 +378,10 @@ export function collectStmt(
         }
       }
       else {
-        collectedIndexes.add(index);
-        collectedLines.push(line);
+        if (!rpgiv.isUnSupportedOpcode(rpgiv.getOpcode(line))) {
+          collectedIndexes.add(index);
+          collectedLines.push(line);
+        }
       }
     }
 
