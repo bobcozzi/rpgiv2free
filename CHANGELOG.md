@@ -2,15 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.6.21] - 2025-05-26
-- Corrected an issue with the ending ; being added with a blank in some converted lines (just tightens up the line a bit).
+## [0.6.22] - 2025-05-26
+- Corrected an issue with the ending ` ;` being added with a blank in some converted lines (just tightens up the line a bit).
 - Corrected an issue with the RPGIV free formatter routine that was truncated spaces between symbols.
 - Added support for the SCAN opcode.
-- Corrected a word wrap issue on File specs when a keyword (such as USROPN) was followed by a length keyword with parameters (such as RENAME(rcdfmt:newName)) that was removing the space beween the first keyword and the second when the first was on the end of the line and the next keyword is on the next line.
+- Corrected a word wrap issue on File specs when a keyword (such as USROPN) is followed by a keyword with parameters (such as RENAME(rcdfmt:newName)) that was removing the space beween the first keyword and the second when the first was on the end of the line and the next keyword should be moved to the next line.
+- Add C spec comments in column 81 to 100 to the conversion effort. These comments are converted to // <comments> and inserted above the the converted opcode.
 ## [0.6.21] - 2025-05-26
-- Implemented the intial *LDA data structure conversion logic. Need more test cases for edge syntax issue. Please user the Issue link in the marketplace extesnion to report any issues.
+- Implemented the intial *LDA data structure conversion logic. Need more test cases for edge syntax issue. Please use the Issue link in the marketplace extension to report any issues.
 - Resolved an issue with the UDS (*LDS) recognition routine.
-- Corrected and issue with the value inserted into the POS keyword when from/to columns were being converted. It finally converts to the correct POS syntaz.
+- Corrected an issue with the value inserted into the POS keyword when from/to columns were being converted. It finally converts to the correct POS syntax.
 ## [0.6.20] - 2025-05-25
 - Corrected an issue with reformatting SQL when a host variable is also an SQL keyword (like FROM, TO, JOIN, SELECT, etc.)
 - Added a new "Indent for compiler directives" setting that defaults to `8`
@@ -21,15 +22,15 @@ All notable changes to this project will be documented in this file.
 - Generalized the routine to check if the line is a compiler directive.
 ## [0.6.19] - 2025-05-25
 - Corrected issues with converting the OTHER opcode.
-- Corrected the issue where the Operation Extender was being lost in some rare cases.
+- Corrected an issue where the Operation Extender was being lost in some rare cases.
 - Resolved an issue with extra-space added before the semi-colon.
 - General bug fixes and improvements.
 ## [0.6.18] - 2025-05-25
 - Corrected the issue when inserting END-xx statements and several DS, PI, or PR, etc are selected at once.
 - Greatly improved our "look ahead" logic to accommodate compound statements.
-- Fixed an issue with field length calculations for D specs with from/to column notation (vs length only). Also removed the POS() keyword from pre-reserved PSDS positional symbols (i.e., *PROC, *PARMS *STATUS, *ROUTINE) I would swear POS(*PROC) was required, oh well, fixed now.
+- Fixed an issue with field length calculations for D specs with from/to column notation (vs length only). Also removed the POS() keyword from pre-reserved PSDS positional symbols (i.e., *PROC, *PARMS *STATUS, *ROUTINE) I could swear POS(*PROC) was required, oh well, fixed now.
 ## [0.6.17] - 2025-05-24
-- When an IFxx statement is immediately followed by another IFxx statement, and both are selected simultaneously, the inner IFxx would not convert and in some cases caused the extension to loop indefinitely. 0.6.18 or later will be the public release.
+- When an IFxx statement is immediately followed by another IFxx statement, and both are selected simultaneously, the inner IFxx would not convert and in some cases caused the extension to loop indefinitely.
 ## [0.6.16] - 2025-05-23
 - Added support for column 81+ "comments" to be converted to `// <comments>` in free format (D specs only). Support for C spec column 81 comments may be integrated in a future release.
 - Corrected an issue with File spec conversion that was omitted from the earlier release.
