@@ -3,6 +3,8 @@ import * as vscode from 'vscode';
 import * as rpgiv from './rpgedit';
 import * as op from './opcodes';
 
+import { keyListCache, getKLISTSize, collectKLIST, getKeyList } from './collectKList';
+
 
 type OpcodeEnhancement = {
   opcode: string;
@@ -45,7 +47,7 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
       }
     }
   }
-  let { rawOpcode: rawOpcode, extenders: opExt }  = rpgiv.splitOpCodeExt(opcode);
+  let { rawOpcode: rawOpcode, extenders: opExt } = rpgiv.splitOpCodeExt(opcode);
 
   if (rpgiv.isExtOpcode(rawOpcode)) {
     if (lines.length > 1) {
@@ -57,7 +59,7 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
     }
 
     // e.g., IF extFactor2
-    if ((!opExt && opExt==='') && rawOpcode.toLowerCase() === "eval" || rawOpcode.toLowerCase() === 'callp') {
+    if ((!opExt && opExt === '') && rawOpcode.toLowerCase() === "eval" || rawOpcode.toLowerCase() === 'callp') {
       rawOpcode = "";  // EVAL/callp is not needed in free-form
     }
     freeFormLine.push(`${opcode.toLowerCase()} ${extFactor2}`);
@@ -148,6 +150,7 @@ export function enhanceOpcode(
     baseOpcode = opcode.toUpperCase();
   }
 
+
   // Add required extenders based on opcode and resIndx
   switch (baseOpcode) {
     case "CHAIN":
@@ -228,6 +231,24 @@ function convertOpcodeToFreeFormat(
   if (comments && comments.trim() !== '') {
     newLines.push(`// ${comments}`);
   }
+
+  // If database I/O, see if it uses a Key List
+  // If it does, change Factor2 to the keylist before conversion
+  switch (opCode.toUpperCase()) {
+    case "READ":
+    case "CHAIN":
+    case "READE":
+    case "READP":
+    case "READPE":
+    case "SETLL":
+    case "SETGT":
+      if (getKLISTSize() === 0) {
+        collectKLIST();
+      }
+      factor1 = getKeyList(factor1);
+      break;
+  }
+
   switch (opCode.toUpperCase()) {
     case 'COMP':   // Skippable non-opcode in free format (indy manipulations only)
     case 'SETON':
