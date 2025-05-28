@@ -3,6 +3,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.27] - 2025-05-28
+- New altMOVEL setting to enable insert of an alternative to the generated implied eval opcode when converting MOVEL opcodes.
+- A comment is now inserted `// %SUBST(result : 1 : %min(%Len(F2):%LEN(result))) = result` when a MOVEL is converted. The uncommented code that is generated is `result = f2;`. Users may keep the generated eval or use the comment version by uncommenting it.
 ## [0.6.26] - 2025-05-28
 - Redesigned now EVAL and similar opcodes are converted (retaining their operation extenders).
 - Corrected an issue with XLATE opcode conversion.

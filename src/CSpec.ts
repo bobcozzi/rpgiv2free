@@ -194,7 +194,7 @@ function convertOpcodeToFreeFormat(
   extraDCL: string[]
 ): { newLines: string[], newOpcode: string } {
 
-
+  const config = rpgiv.getRPGIVFreeSettings();
   // First try the conditional opcode logic
   const condLines = convertConditionalOpcode(opcode, factor1, factor2);
   if (condLines.length > 0) return { newLines: condLines, newOpcode: opcode };
@@ -357,6 +357,10 @@ function convertOpcodeToFreeFormat(
       break;
 
     case "MOVEL":
+      if (config.altMOVEL && !factor2.startsWith('*')) {
+        const altMove = `// %SUBST(${result} : 1 : %MIN(%LEN(${result}:%LEN(${factor2}))) = ${factor2};`;
+        newLines.push(altMove);
+      }
       newLines.push(`${result} = ${factor2}`);
       break;
     case "MOVE":

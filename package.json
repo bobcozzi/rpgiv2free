@@ -6,7 +6,7 @@
   "preview": true,
   "private": false,
   "publisher": "CozziResearch",
-  "version": "0.6.26",
+  "version": "0.6.27",
   "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0",
@@ -89,6 +89,12 @@
             "2 - Convert to Integer only when decimal positions = 0"
           ],
           "description": "Controls how RPG IV B ('binary') fields are converted to integers."
+        },
+        "rpgiv2free.altMOVEL": {
+          "type": "boolean",
+          "title": "Include comment for alternate MOVEL",
+          "default": true,
+          "description": "Insert %SUBST(...) as comment for alternate MOVEL conversion"
         },
         "rpgiv2free.addINZ": {
           "type": "boolean",

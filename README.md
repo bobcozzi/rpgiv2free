@@ -79,6 +79,14 @@ Automatically adds the `INZ` keyword to non-PSDS data structures that do not alr
 
 Default: `true`
 
+### `rpgiv2free.altMOVEL`
+Include a comment with a `%SUBST(...)` assignment as an optional alternative for MOVEL. Note: if Factor 2 starts with an asterisk (e.g., *ALL, *BLANK, *ON, etc.) this option is ignored.
+
+- `true` — Insert a comments for `%SUBST()` for the MOVEL opcode.
+- `false` — Do not add a comment with `%SUBST()`.
+
+Default: `true`
+
 ### `rpgiv2free.maxFreeFormatLineLength`
 Max length for converted free format lines (right margin).
 Since this extension is converting to free format RPG IV, it is limited to 80 characters line width/margins. However, if you are intending to move to fully free format (i.e., add the **FREE directive to line 1, column 1) then you may set this margin to more than 80.

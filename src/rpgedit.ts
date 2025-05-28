@@ -42,6 +42,7 @@ export interface configSettings {
   rightMargin: number;
   srcRcdLen: number;
   indentDir: number;
+  altMOVEL: boolean;
   addEXTDEVFLAG: boolean;
   removeFREEdir: boolean;
   replaceCOPYinRPG: boolean;
@@ -60,6 +61,7 @@ export function getRPGIVFreeSettings(): configSettings {
     indentDir: config.get<number>('indentDirectives', 8),
     rightMargin: config.get<number>('maxFreeFormatLineLength', 76),
     srcRcdLen: config.get<number>('maxRPGSourceLength', 80),
+    altMOVEL: config.get<boolean>('ALTMOVEL', true),
     addEXTDEVFLAG: config.get<boolean>('AddEXTDeviceFlag', true),
     removeFREEdir: config.get<boolean>('RemoveFREEDirective', true),
     replaceCOPYinRPG: config.get<boolean>('ReplaceCOPYwithINCLUDE_RPG', true),
