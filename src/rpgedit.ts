@@ -227,7 +227,7 @@ export function insertExtraDCLLinesBatch(
 
   // if first entry in DCLInsert is "end-xx" then look forward from starting line
   // to find the first non-subfield, non-parm (i.e., non-XX) line and insert just before it.
-
+  log(`extraDCL ${inserts.length}`)
 
   // Find all insertion positions and prepare insertions
   const insertData: { position: vscode.Position; text: string }[] = [];
@@ -296,10 +296,14 @@ export function insertExtraDCLLinesBatch(
     seen.add(item.text);
     return true;
   });
+
   return editor.edit(editBuilder => {
-    for (const { position, text } of uniqueData) {
-      editBuilder.insert(position, text);
-    }
+    // Sort by position.line descending so inserts don't shift subsequent positions
+    uniqueData
+      .sort((a, b) => b.position.line - a.position.line)
+      .forEach(({ position, text }) => {
+        editBuilder.insert(position, text);
+      });
   });
 }
 
@@ -413,7 +417,7 @@ export function isExtFactor2(line: string): boolean {
   // const factor2 = getCol(line, 36, 49)?.trim?.() ?? ''; // not used
 
   if ((!factor1 || factor1.trim() === '') && extFactor2 && extFactor2 !== '') {
-    if (isExtOpcode(opcode) || !opcode || opcode==='') {
+    if (isExtOpcode(opcode) || !opcode || opcode === '') {
       return true;
     }
   }

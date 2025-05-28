@@ -229,8 +229,8 @@ export function activate(context: vscode.ExtensionContext) {
 
     const selectedLineIndexes = new Set<number>();
     const edits: { range: vscode.Range, text: string }[] = [];
-    const extraDCLs: { insertAt: number, lines: string[] }[] = [];
-
+    //    const extraDCLs: { insertAt: number, lines: string[] }[] = [];
+    const extraDCLs: { insertAt: number, lines: string[], netLineChangeAtInsert: number }[] = [];
     try {
       for (const sel of editor.selections) {
         if (sel.isEmpty) {
@@ -266,6 +266,8 @@ export function activate(context: vscode.ExtensionContext) {
 
     const selectedLineList = [...expandedLineIndexes].sort((a, b) => a - b);
     rpgiv.log('CMD Handler checking selections');
+    let netLineChange = 0;
+
     for (const i of selectedLineList) {
       if (i >= allLines.length) continue;
       const collectedStmts = collectStmt(allLines, i);
@@ -336,17 +338,23 @@ export function activate(context: vscode.ExtensionContext) {
 
       indexes.forEach(idx => processedLines.add(idx));
       if (extraDCL.length > 0) {
-        extraDCLs.push({ insertAt: indexes[0], lines: extraDCL });
+        // Store the net line change *before* this main edit is applied
+        extraDCLs.push({ insertAt: indexes[0], lines: extraDCL, netLineChangeAtInsert: netLineChange });
       }
+
+      const linesReplaced = indexes.length;
+      const linesInserted = convertedText.split(rpgiv.getEOL()).length;
+      netLineChange += (linesInserted - linesReplaced);
+      extraDCL = [];
     }
 
     function formatBlockLines(lines: string[]): string[] {
       return lines.flatMap(line => formatRPGIV(line, false));
     }
 
-    // Usage: Format and flatten RPG IV source lines for each extra (generated) DCL stmt
+    // When formatting for insert:
     const convertedExtraDCL = extraDCLs.map(block => ({
-      insertAt: block.insertAt,
+      insertAt: block.insertAt + block.netLineChangeAtInsert,
       lines: formatBlockLines(block.lines)
     }));
 
@@ -371,22 +379,15 @@ export function activate(context: vscode.ExtensionContext) {
       }
     }
 
+    // Sort in descending order so later inserts don't shift earlier ones
+    convertedExtraDCL.sort((a, b) => b.insertAt - a.insertAt);
+
     if (convertedExtraDCL.length > 0) {
       const lines = rpgiv.splitLines(editor.document.getText());
       await rpgiv.insertExtraDCLLinesBatch(editor, lines, convertedExtraDCL.map(dcl => ({
-        currentLineIndex: dcl.insertAt + index_Offset,
+        currentLineIndex: dcl.insertAt,
         extraDCL: dcl.lines
       })));
-      // If a D spec, then the only extra DCL-xx statements that are produced are end-dS, end-pr, end-pi and end-proc statements.
-      // So since each iteration will offset by the prior insertExtraDCl, we keep a count of said inserts
-      // and offset the starting line number where those inserts sould appear.
-      if (specType === 'd') {
-        index_Offset += convertedExtraDCL.length;
-      }
-      else {
-        index_Offset = 0;
-      }
-
     }
     rpgiv.log('CMD Handler ending');
   });

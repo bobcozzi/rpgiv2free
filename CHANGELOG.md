@@ -1,8 +1,12 @@
 # Changelog
 
+
 All notable changes to this project will be documented in this file.
 
-## [0.6.24] - 2025-05-26
+## [0.6.25] - 2025-05-27
+- Corrected an issue with where the generated end-ds statement is inserted. It now correctly locates where to insert it even when bulk (e.g., select-All) conversions are performed at once.
+- Fixed an issue where during bulk conversion if an unnamed data structure was converted immediately after a named data structure (in the same bulk conversion action) the unnamed data structure's end-ds would contain the prior named data structure's name.
+## [0.6.24] - 2025-05-27
 - We now convert "empty" or blank spec lines such as `     C` with nothing else on it o a blank line.
 - Opcode conditioned by **1 conditioning indicator** are now converted.
 - If the Level Break indicator area (columns 7 and 8) is `Lx` or is `OR` or `AN` unpredictable results will occur.
