@@ -270,6 +270,9 @@ export function activate(context: vscode.ExtensionContext) {
 
     for (const i of selectedLineList) {
       if (i >= allLines.length) continue;
+
+      if (processedLines.has(i)) continue; // <-- Skip if already processed
+
       const collectedStmts = collectStmt(allLines, i);
       rpgiv.log(`Collected ${collectedStmts?.indexes.length} statements for line: ${i + 1}`);
 

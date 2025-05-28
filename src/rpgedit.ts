@@ -45,6 +45,7 @@ export interface configSettings {
   altMOVEL: boolean;
   addEXTDEVFLAG: boolean;
   removeFREEdir: boolean;
+  removeOLDdir: boolean;
   replaceCOPYinRPG: boolean;
   replaceCOPYinSQLRPG: boolean;
   tempVar1STG: string;
@@ -64,6 +65,7 @@ export function getRPGIVFreeSettings(): configSettings {
     altMOVEL: config.get<boolean>('ALTMOVEL', true),
     addEXTDEVFLAG: config.get<boolean>('AddEXTDeviceFlag', true),
     removeFREEdir: config.get<boolean>('RemoveFREEDirective', true),
+    removeOLDdir: config.get<boolean>('RemoveOLDDirectives', true),
     replaceCOPYinRPG: config.get<boolean>('ReplaceCOPYwithINCLUDE_RPG', true),
     replaceCOPYinSQLRPG: config.get<boolean>('ReplaceCOPYwithINCLUDE_SQLRPG', false),
     tempVar1STG: config.get<string>('tempVarName1', 'rpg2ff_tempSTG'),
@@ -658,10 +660,15 @@ export function isValidOpcode(id: string): boolean {
 export function isUnSupportedOpcode(id: string): boolean {
   // List of valid opcodes (operation extenders not included)
   const oldRPGOpcodes = new Set([
-    "CALL", "CALLB", "PLIST", "PARM", "KLIST", "KFLD", "FREE", "DEBUG","GOTO","FREE","TAG"
+    "CALL", "CALLB", "PLIST", "PARM", "KLIST", "KFLD", "FREE", "DEBUG", "GOTO", "TAG"
   ]);
   // Strip off operation extenders like "(EHMR)" from the ID
   const baseOpcode = id.replace(/\([A-Z]+\)$/i, "").toUpperCase();
+
+  // Check for CAB* pattern
+  if (baseOpcode.startsWith("CAB")) {
+    return true;
+  }
 
   return oldRPGOpcodes.has(baseOpcode);
 }

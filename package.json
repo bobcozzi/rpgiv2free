@@ -6,7 +6,7 @@
   "preview": true,
   "private": false,
   "publisher": "CozziResearch",
-  "version": "0.6.29",
+  "version": "0.6.30",
   "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0",
@@ -152,7 +152,7 @@
           "type": "boolean",
           "title": "Comment-out /FREE and /END-FREE directives",
           "default": true,
-          "markdownDescription": "**Remove old /free and /end-free directives**  \nThis will comment them out in RPG source."
+          "markdownDescription": "Remove old /free and /end-free directives**  \nThis will comment them out in RPG source."
         },
         "rpgiv2free.ReplaceCOPYwithINCLUDE_RPG": {
           "type": "boolean",
@@ -165,6 +165,12 @@
           "title": "Replace /COPY with /INCLUDE [SQLRPG]",
           "default": false,
           "description": "Replaces /copy statements in SQLRPG* source types with the more modern /include directive."
+        },
+        "rpgiv2free.RemoveOLDDirectives": {
+          "type": "boolean",
+          "title": "Remove old deprecated legacy compiler directives",
+          "default": true,
+          "markdownDescription": "Remove /SPACE, /SKIP, /EJECT and /TITLE directives."
         },
         "rpgiv2free.tempVarName1": {
           "type": "string",

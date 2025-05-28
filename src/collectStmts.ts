@@ -1,4 +1,6 @@
 
+import * as vscode from 'vscode';
+
 import { collectSQLBlock } from './collectSQLSpec';
 import { collectBooleanOpcode } from './collectBoolean';
 import { collectHSpecs } from './collectHSpec';
@@ -11,7 +13,6 @@ import { collectCaseOpcode } from './collectCASEBlock';
 import { collectExtOpcode } from './collectExtOpcode';
 
 import * as rpgiv from './rpgedit';
-import * as vscode from 'vscode';
 
 export { }; // forces module scope
 
@@ -76,7 +77,7 @@ export function collectStmt(
       entityName: null,  // No entity name for SQL blocks
       lines: dirBlock.lines,
       indexes: dirBlock.indexes,
-      comments: comments.length > 0 ? comments : null,
+      comments: null,
       isSQL: false,
       isCollected: true,
     };

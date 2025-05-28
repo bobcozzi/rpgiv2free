@@ -18,12 +18,11 @@ export function collectDirectives(allLines: string[], startIndex: number): stmtL
   let end = startIndex;
   for (let i = start; i < allLines.length; i++) {
     const line = allLines[i].trimEnd();
-     if (rpgiv.isDirective(line)) {
-      lines.push(convertDirective(allLines[i],ext, config));
-       indexes.push(i);
-       continue;
-    } else if (rpgiv.isSpecEmpty(line) || rpgiv.isComment(line)) {
-      continue
+    if (rpgiv.isDirective(line)) {
+      const newDir = convertDirective(allLines[i], ext, config);
+      lines.push(newDir);
+      indexes.push(i);
+      continue;
     }
     break;
   }
@@ -36,7 +35,7 @@ export function collectDirectives(allLines: string[], startIndex: number): stmtL
   };
 }
 
-function convertDirective(line: string, extension: string,  settings: rpgiv.configSettings): string {
+function convertDirective(line: string, extension: string, settings: rpgiv.configSettings): string {
 
   if (!rpgiv.isDirective(line)) {
     return line;
@@ -49,14 +48,21 @@ function convertDirective(line: string, extension: string,  settings: rpgiv.conf
   if (dir) {
     const dirLower = dir.trim().toLowerCase();
     if (settings.removeFREEdir &&
-       (dirLower === '/free' ||
+      (dirLower === '/free' ||
         dirLower === '/end-free')) {
       enhancedDir = ` // F2FF: Removed deprecated ${dir} statement`
     } else if (settings.replaceCOPYinRPG && dirLower.startsWith('/copy')) {
       if ((isSQLType && settings.replaceCOPYinSQLRPG) || !isSQLType)
-     // Replace only the directive, keep spacing after it intact
-      enhancedDir = line.replace(/\/copy/i, '/include');
+        // Replace only the directive, keep spacing after it intact
+        enhancedDir = line.replace(/\/copy/i, '/include');
+    } else if (settings.removeOLDdir && (
+      dirLower.startsWith('/title') ||
+      dirLower.startsWith('/space') ||
+      dirLower.startsWith('/skip') ||
+      dirLower.startsWith('/eject'))) {
+      enhancedDir = ' ';
     }
+
   }
   // Replace everything before the first '/' (including the '/') with exactly 7 spaces and a '/'
   enhancedDir = enhancedDir.replace(/^.{0,7}\/\s*/i, '       /');

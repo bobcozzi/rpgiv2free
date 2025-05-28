@@ -3,6 +3,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.30] - 2025-05-28
+- Fixed a bug when legacy compiler directives, such as `/EJECT` or `/SKIP` were encounted and were surrounded above and below by comments.
+- A new setting is introduced to remove /EJECT, /SKIP, /SPACE /TITLE legacy compiler directives. The default: `true`.
 ## [0.6.29] - 2025-05-28
 - New altMOVEL setting to enable insert of an alternative to the generated implied eval opcode when converting MOVEL opcodes.
 - A comment is now inserted `// %SUBST(result : 1 : %min(%Len(F2):%LEN(result))) = result` when a MOVEL is converted. The code that is generated is `result = f2;` but this new commented-out suggestion or alternative option provides the user with choice and guidance for MOVE conversions.
