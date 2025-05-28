@@ -135,7 +135,7 @@ export function convertDSpec(lines: string[],
 
   kwdArea = fixKeywordArgs(kwdArea);
   fieldType = (fieldType?.length >= 2) ? fieldType : '';
-  const isNameOfOpcode = rpgiv.isValidOpcode(varName);
+  const isNameOfOpcode = rpgiv.isValidOpcode(varName) || rpgiv.isReservedWord(varName);
   const dclName = (!varName || varName.trim().toLowerCase() === '*n') ? '' : varName;
 
   switch (dclType.toLowerCase()) {
@@ -152,8 +152,8 @@ export function convertDSpec(lines: string[],
       extraDCL?.push(`end-pi ${dclName}`);
       break;
     case 'c': decl = `dcl-c ${varName} ${kwdArea}`.trim(); break;
-    default:
-      if (isNameOfOpcode) {
+    default:  // Data structure Subfield?
+      if (isNameOfOpcode) {  // If subfield name matches an opcode or "exec", then use dcl-subf to protect it.
         varName = 'dcl-subf ' + varName;
       }
       decl = `${varName} ${fieldType}${kwdArea ? ' ' + kwdArea : ''}`.trim();

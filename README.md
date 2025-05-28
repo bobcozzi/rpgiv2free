@@ -5,13 +5,12 @@ Download from the Visual Studio CODE Marketplace: [![VS Code Marketplace](https:
 
 For a list of changes and release notes, see the [Changelog](https://github.com/bobcozzi/rpgiv2free/blob/main/CHANGELOG.md).
 
-This extension is an RPG IV to Free Format statement converter. You select the RPG IV fixed format statements you want to
-convert to free format, right-click and select "Convert RPG IV to free format".
-It is **NOT a refactoring tool** or code modernization tool. Its only purpose is to convert an RPG IV fixed-format statement into free format RPG IV syntax.
+This extension is an RPG IV to Free Format statement converter. Select the RPG IV fixed format statements you want to convert to free format, right-click and select **Convert RPG IV to free format**.
+This extension s **NOT a refactoring or modernization tool**. Its only purpose is to convert an RPG IV fixed-format statement into free format RPG IV syntax.
 
 ## Warnings
 - **Conditioning Indicators on Calc Specs Support is Limited**:
-  Presently we convert opcode that are conditioned by one and only 1 conditioning indicator (if specified). When more than one is used, they are left on the line and those lines are not converted. The single conditionin indicator is converted to an `IF (*INxx = *ON/*OFF)` statement. Use UNDO Ctrl+Z (PC/Windows) Cmd+Z (macOS) to get the line back or complete the conversion for multiple indicators manually. Note that **Resulting Indicators** are fully supported.
+  Presently we convert opcode that are conditioned by 0 or 1 conditioning indicator, but when more than one is used, they are left on their line and are not converted. A single conditioning indicator is converted to an `IF (*INxx = *ON|*OFF)` statement. Use UNDO Ctrl+Z (PC/Windows) Cmd+Z (macOS) to get the line back when you have an issue with multiple indicators, and convert them manually. Note that **Resulting Indicators** are fully supported.
 -**Level Break Indicators are not Converted**:
 We do nothing with RPG Cycle code including Level Break Indicators in columns 7 and 8.
 
@@ -33,6 +32,12 @@ We do nothing with RPG Cycle code including Level Break Indicators in columns 7 
   - Calculation (C) Specs (in progress)
   - "fixed format" style Embedded SQL Statements
   - Procedure (P) Specs
+
+- **Bonus Editing Features**
+- **Smart RPG Tab key** When enabled (default: `true`) then on fixed-foramt RPG IV statements, when the TAB key is pressed, it moves to the next available "tab" location for the specification. For example: On a C (calc) spec, it'll tab from factor 1 to the opcode then to factor 2 and so on. The tab is non-distructive so you can tab over existing code now quickly and safely. To turn these feature off, press the "RPG Smart Tab" option on the bottonm status bar of the editor winodow.
+- **Smart RPG Enter key** When enabled (default: `true`) then on fixed-format RPG IV statments, when you press ENTER, the current line is **not** broken and a new line with the same source spec type is inserted. The cursor is moved under the first non-blank position (after the spec) of the previous line. To turn this off, go to the settings for the `rpgiv2free` extension.
+- **Colmnary Boundaries** When the Smart RPG Tab key is enabled (on) the extension highlights the boundaries of each fixed-format RPG IV statement to show where the various fields such as Factor 1, Opcode, Factor 2, Result Field, etc. are located. This gives you a visual cue to verify that you are editing in the correct location.  To use this feature, turn of the VS CODE for IBM i "Format Ruler" setting, using Shift+F4. On my personal VS CODE install, I turn this feature off by default in the settings.json file. To do that, Ctrl+, (or Cmd+, on macOS) then search for this setting:
+- `"vscode-rpgle.rulerEnabledByDefault": false,` if it is not false, set it to false as shown. Note to turn it back on during your edit session, use Shift+F4 this setting only changes the startup attribute but it is still available, although in my view it needs a bit of refinement before I would recommend using it.
 
 ## Extension Settings
 
@@ -161,13 +166,13 @@ Default: `f2f_tempDO`
 ## Known Issues
 
 - **Calc Specs (C Specs)**:
-  Currently under development. Some opcodes are translated fine while others are sketchy. Conditioning Indicators logic is not supported and there is currently no plan to support conditioning indicators.
+  Opcodes conditioned by Level-Break Indicators or **more than one conditioning indicator** are not supporter for converison. Converting multiple conditioning indicator opcodes is a future objective.
 
 ## Controlling Inline Suggestions in VS Code
 
-VS Code provides **inline suggestions** ("ghost text" "code completions") by default. You can control this feature globally or for specific languages such as RPGLE and SQLRPGLE.
+VS Code provides **inline suggestion** ("ghost text" "code completions") by default. You can control this feature globally or for specific languages such as RPGLE and SQLRPGLE.
 
-If you are primarily coding in fixed format RPG IV, I recommend you tune off this feature for RPGLE and possibly SQLRPGLE also.
+If you are primarily coding in fixed format RPG IV, I recommend you tune off this feature for Source Types: "RPGLE" and "SQLRPGLE". To disable it, follow these steps:
 
 ### Globally Enable/Disable Inline Suggestions
 
@@ -192,11 +197,11 @@ If you want to disable inline suggestions only for RPGLE and/or SQLRPGLE files, 
 ## Roadmap
 
 - **Implementation of Calc Specs**:
-  We are working on refining the handling of Calc Specs and expect on-going improved support with each release.
+  We are working on refining handling of Calc Specs and expect on-going improved support with each release.
 
 ## License
 
-This project is licensed. See the LICENSE file for details.
+This project is licensed. See the LICENSE.txt file for details.
 
 ## Support
 

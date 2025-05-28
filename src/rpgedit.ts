@@ -555,7 +555,7 @@ export function isBooleanOpcode(line: string): boolean {
   );
 }
 /**
- * Checks if a line is an End Of Program marker (e.g., '**', '**CTDATA').
+ * Checks if "this" line is the End Of Program marker (e.g., '**', '**CTDATA').
  * Optimized for high-frequency calls.
  */
 export function isEOP(line: string): boolean {
@@ -565,7 +565,7 @@ export function isEOP(line: string): boolean {
 
   // Skip leading '**'
   let i = 2;
-  const len = line.trimEnd().length;
+  const len = line.trimEnd().toLowerCase().length;
 
   if (len === i) return true;
   if (len < 6) return false;
@@ -575,7 +575,7 @@ export function isEOP(line: string): boolean {
   const ctd = 'ctdata';
   let j = 0;
 
-  while (i < len && j < 6 && (line[i].toLowerCase() === ctd[j])) {
+  while (i < len && j < 6 && (line[i] === ctd[j])) {
     i++; j++;
   }
   if (j === 6) {
@@ -656,6 +656,12 @@ export function isValidOpcode(id: string): boolean {
 
   return rpgOpcodes.has(baseOpcode);
 }
+export function isReservedWord(id: string): boolean {
+  // List of valid opcodes (operation extenders not included)
+  const reservedWords = new Set([
+    "EXEC"
+  ]);
+  return reservedWords.has(id.toUpperCase());
 
 export function isUnSupportedOpcode(id: string): boolean {
   // List of valid opcodes (operation extenders not included)
