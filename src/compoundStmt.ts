@@ -6,7 +6,7 @@ export function expandCompoundRange(lines: string[], selectedIndex: number): num
 
   const selectedLine = lines[selectedIndex];
   const lineCount = lines.length;
-  const opcode = rpgiv.getOpcode(selectedLine);
+  const opcode = rpgiv.getRawOpcode(selectedLine);
 
   if (!rpgiv.isBooleanOpcode(selectedLine) && !rpgiv.isCASEOpcode(selectedLine)) {
     expanded.push(selectedIndex);
@@ -27,7 +27,7 @@ export function expandCompoundRange(lines: string[], selectedIndex: number): num
     // Expand downward until ENDCS or non-CAS opcode
     while (end < lines.length) {
       const nextLine = lines[end];
-      const nextOpcode = rpgiv.getOpcode(nextLine);
+      const nextOpcode = rpgiv.getRawOpcode(nextLine);
       if (nextOpcode === 'ENDCS' || nextOpcode === 'END') {
         end++; // include ENDCS line
         break;

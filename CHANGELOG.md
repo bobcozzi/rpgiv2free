@@ -3,8 +3,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.26] - 2025-05-28
+- Redesigned now EVAL and similar opcodes are converted (retaining their operation extenders).
+- Corrected an issue with XLATE opcode conversion.
+- Generated `END-xx` statements are now inserted before any compiler directives, such as a /INCLUDE or /COPY or /IF DEFINED, etc.
 ## [0.6.25] - 2025-05-27
-- Corrected an issue with where the generated end-ds statement is inserted. It now correctly locates where to insert it even when bulk (e.g., select-All) conversions are performed at once.
+- Corrected an issue with where the generated end-ds statement is inserted. It now correctly locates the insert point even when bulk (e.g., select-All) conversions are performed.
 - Fixed an issue where during bulk conversion if an unnamed data structure was converted immediately after a named data structure (in the same bulk conversion action) the unnamed data structure's end-ds would contain the prior named data structure's name.
 ## [0.6.24] - 2025-05-27
 - We now convert "empty" or blank spec lines such as `     C` with nothing else on it o a blank line.

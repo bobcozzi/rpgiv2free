@@ -1,4 +1,4 @@
-# RPG IV to Free Format Conversion Tool
+# RPG IV to Free Format Conversion (rpgiv2free) Extension for VS CODE for i
 
 This Visual Studio Code extension helps developers convert RPG IV fixed-format statements into free-format RPG IV code effortlessly. Whether you’re working with File (F) specs, Definition (D) specs, or Embedded SQL statements, this tool streamlines the conversion to free format process by making a one-click option on your context menu. Just put the cursor on the line(s) you want to convert to free format and select "Convert RPG IV to free format" and bam! it is converted.
 Download from the Visual Studio CODE Marketplace: [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/CozziResearch.rpgiv2free.svg?label=VS%20Code%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=CozziResearch.rpgiv2free)).
@@ -8,9 +8,12 @@ For a list of changes and release notes, see the [Changelog](https://github.com/
 This extension is an RPG IV to Free Format statement converter. You select the RPG IV fixed format statements you want to
 convert to free format, right-click and select "Convert RPG IV to free format".
 It is **NOT a refactoring tool** or code modernization tool. Its only purpose is to convert an RPG IV fixed-format statement into free format RPG IV syntax.
+
 ## Warnings
-- **Conditioning Indicators on Calc Specs are not Supported**:
-  Presently we swallow conditioning indicators in Calc Specs. The extension does nothing with them and therefore the indicators dissapear durring conversion. The opcode may be converted, but the conditioning indicators are lost. Use your UNDO key; Ctrl+Z (PC/Windows) Cmd+Z (macOS) to get the line back. Note that **Resulting Indicators** are fully supported.
+- **Conditioning Indicators on Calc Specs Support is Limited**:
+  Presently we convert opcode that are conditioned by one and only 1 conditioning indicator (if specified). When more than one is used, they are left on the line and those lines are not converted. The single conditionin indicator is converted to an `IF (*INxx = *ON/*OFF)` statement. Use UNDO Ctrl+Z (PC/Windows) Cmd+Z (macOS) to get the line back or complete the conversion for multiple indicators manually. Note that **Resulting Indicators** are fully supported.
+-**Level Break Indicators are not Converted**:
+We do nothing with RPG Cycle code including Level Break Indicators in columns 7 and 8.
 
 ## Features
 
@@ -122,8 +125,9 @@ Default: `f2f_tempDO`
   The conversion of Calc Specs is in progress and is being updated in each release. Currently many calc specs convert fine, while others may or may not convert. Be ready with your Ctrl+Z (cmd+Z on Mac) to **undo** the conversion if it does not produce the desired results.
 
 ## Limitations
-- Conditioning and Level Break Indicators are NOT converted. The opcodes convert but the conditioning and Level-break Indicators are lost. So some manual conversion to RPG IV conditional logic is required before converting them to free format. We will be adding a configuration setting to avoid converting statements with a level break and/or conditioning indicator controlling them.
+- Level Break Indicators are NOT converted.
 - RPG Logical Cycle-based File Declarations (i.e. File specs with **Primary or Secondary files**) are not converted. RPG IV _hybrid_ Free format may include fixed-format code, so they can usually remain in your source code as is. However, if your intent is to migrate to fully free format RPG IV, then you must remove any RPG Cycle-related code from your source file member.
+- Input and Output Spec are ignored. While it is technically possible to convert Input (and output) specs to Defnition specifications, this act would be concidered refactoring and it not a part of this extension.
 
 ## Getting Started
 

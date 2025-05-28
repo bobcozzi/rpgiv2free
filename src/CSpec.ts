@@ -22,7 +22,7 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
   const levelBreak = rpgiv.getCol(line, 7, 8).trim();
   const condIndy = rpgiv.getCol(line, 9, 11).trim();
   const factor1 = rpgiv.getCol(line, 12, 25).trim();
-  let opcode = rpgiv.getOpcode(line);
+  let opcode = rpgiv.getFullOpcode(line);
   const factor2 = rpgiv.getCol(line, 36, 49).trim();
   const factor2Ext = rpgiv.getCol(line, 36, 80).trim();
   const result = rpgiv.getCol(line, 50, 63).trim();
@@ -45,8 +45,9 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
       }
     }
   }
+  let { rawOpcode: rawOpcode, extenders: opExt }  = rpgiv.splitOpCodeExt(opcode);
 
-  if (rpgiv.isExtOpcode(opcode)) {
+  if (rpgiv.isExtOpcode(rawOpcode)) {
     if (lines.length > 1) {
       // Extract cols 36–80 (1-based) from each line starting with index 1
       extFactor2 = lines
@@ -56,8 +57,8 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
     }
 
     // e.g., IF extFactor2
-    if (opcode.toLowerCase() === "eval" || opcode.toLowerCase() === 'callp') {
-      opcode = "";  // EVAL/callp is not needed in free-form
+    if ((!opExt && opExt==='') && rawOpcode.toLowerCase() === "eval" || rawOpcode.toLowerCase() === 'callp') {
+      rawOpcode = "";  // EVAL/callp is not needed in free-form
     }
     freeFormLine.push(`${opcode.toLowerCase()} ${extFactor2}`);
   } else if (!rpgiv.isUnSupportedOpcode(opcode)) {
@@ -346,7 +347,12 @@ function convertOpcodeToFreeFormat(
     case 'XLATE':
       const [from1, to1] = factor1.split(':').map(s => s.trim());
       const [src2, start2] = factor2.split(':').map(s => s.trim());
-      freeFormat = `${result} = %XLATE(${from1}:${to1} : ${src2} : ${start2})`;
+      if (start2 && start2 !== '') {
+        freeFormat = `${result} = %XLATE(${from1}:${to1} : ${src2} : ${start2})`;
+      }
+      else {
+        freeFormat = `${result} = %XLATE(${from1}:${to1} : ${src2})`;
+      }
       newLines.push(freeFormat);
       break;
 

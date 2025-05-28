@@ -311,29 +311,11 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
   let insertPoint = startIndex;
   for (let i = startIndex + 1; i < allLines.length; i++) {
     const line = allLines[i].toUpperCase();
+
     if (!line || line.trim() === '') continue;
     if (isComment(line)) continue;
-    const directive = getCol(line, 7, 32).trim();
+    if (isDirective(line)) break;
 
-    if (
-      // Check for compiler directives starting at column 7 or later (relative position 6)
-      line.length > 6 &&
-      line[6] === '/' &&
-      /^[A-Za-z0-9]/.test(line.substring(7, 8))
-    ) {
-      // Allow whitespace after the directive name
-      // e.g. /COPY, /INCLUDE, /TITLE, /SPACE, /EJECT, /FREE, /END-FREE, etc.
-      // Only break for /FREE, otherwise continue unless /ENDIF
-      if (/^\/FREE\b/i.test(directive)) {
-        break;
-      }
-      if (/^\/END-FREE\b/i.test(directive)) {
-        insertPoint = i;
-        continue;
-      }
-      // For other directives, just continue scanning (classic coding style not a rule)
-      break;
-    }
 
     // Check for END-xxx (xxx must be alpha only, case-insensitive)
     const endMatch = line.trimStart().toUpperCase().match(/^END-([A-Z]+)/);
@@ -412,7 +394,7 @@ export function isExtFactor2(line: string): boolean {
 
   // Defensive: getCol will pad as needed, but ensure line is string
   const factor1 = getCol(line, 12, 25)?.trim?.() ?? '';
-  const opcode = getOpcode(line) ?? '';
+  const opcode = getRawOpcode(line) ?? '';
   const extFactor2 = getCol(line, 36, 80)?.trim?.() ?? '';
   // const factor2 = getCol(line, 36, 49)?.trim?.() ?? ''; // not used
 
@@ -464,29 +446,65 @@ function isFreeFormCalcStmt(line: string): boolean {
  * Extracts the opcode from a C-spec line (columns 26-35, inclusive).
  * Returns '' if not a C-spec or is a comment.
  */
-export function getOpcode(line: string): string {
+export function splitOpCodeExt(opcode: string): { rawOpcode: string, extenders: string } {
+  // This function splits an opcode string into its base opcode and extenders.
+  // Example: "MOVEL(P)" => { rawOpcode: "MOVEL", extenders: "P" }
+  //          "EVAL-CORR(h r)" => { rawOpcode: "EVAL-CORR", extenders: "HR" } const opcodeMatch = opcode.match(/^([A-Z\-]+)(\(\s*([A-Z\s]+)\s*\))?$/i);
+
+  const opcodeMatch = opcode.match(/^([A-Z\-]+)(\(\s*([A-Z\s]+)\s*\))?$/i);
+  let rawOpcode = "";
+  let extenders = "";
+
+  if (opcodeMatch) {
+    rawOpcode = opcodeMatch[1].toUpperCase();
+    const existingExt = opcodeMatch[3];
+    if (existingExt) {
+      // Normalize: remove whitespace and convert to uppercase letters
+      extenders = existingExt.replace(/\s+/g, "").toUpperCase();
+    }
+  } else {
+    rawOpcode = opcode.toUpperCase();
+  }
+  return { rawOpcode, extenders };
+}
+
+
+export function getRawOpcode(line: string): string {
+  if (!line || getSpecType(line) !== 'c' || isComment(line)) return '';
+  const { rawOpcode: opcode, extenders: ext } = splitOpCodeExt(getColUpper(line, 26, 35).trim());
+  return opcode;
+}
+
+
+export function getOpcodeExt(line: string): string {
+  if (!line || getSpecType(line) !== 'c' || isComment(line)) return '';
+  const { rawOpcode: opcode, extenders: ext } = splitOpCodeExt(getColUpper(line, 26, 35).trim());
+  return ext;
+}
+
+export function getFullOpcode(line: string): string {
   if (!line || getSpecType(line) !== 'c' || isComment(line)) return '';
   return getColUpper(line, 26, 35).trim();
 }
 
 export function isOpcodeIFxx(line: string): boolean {
-  const opcode = getOpcode(line);
+  const opcode = getRawOpcode(line);
   // Only matches IF followed by a valid boolean operator
   return /^IF(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
 }
 export function isOpcodeDOUxx(line: string): boolean {
-  const opcode = getOpcode(line);
+  const opcode = getRawOpcode(line);
   // Only matches IF followed by a valid boolean operator
   return /^DOU(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
 }
 export function isOpcodeDOWxx(line: string): boolean {
-  const opcode = getOpcode(line);
+  const opcode = getRawOpcode(line);
   // Only matches IF followed by a valid boolean operator
   return /^DOW(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
 }
 
 export function isOpcodeWHENxx(line: string): boolean {
-  const opcode = getOpcode(line);
+  const opcode = getRawOpcode(line);
   if (isComment(line)) return false;
   // removed  || opcode === 'OTHER' from return conditional logic
   return /^WHEN(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
@@ -496,18 +514,18 @@ export function isOpcodeSELECT(line: string): boolean {
   return isOpcodeWHENStart(line);
 }
 export function isOpcodeWHENStart(line: string): boolean {
-  const opcode = getOpcode(line);
+  const opcode = getRawOpcode(line);
   // Only matches WHEN followed by a valid boolean operator
   return (opcode.toUpperCase() === 'SELECT');
 }
 export function isCASEOpcode(line: string): boolean {
-  const opcode = getOpcode(line);
+  const opcode = getRawOpcode(line);
   return /^CAS(EQ|NE|LT|LE|GT|GE)?$/.test(opcode);
 }
 
 
 export function isOpcodeANDxxORxx(line: string): boolean {
-  const opcode = getOpcode(line);
+  const opcode = getRawOpcode(line);
   return /^(AND|OR)(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
 }
 
@@ -610,7 +628,7 @@ export function isNOTFixedFormatRPG(document: vscode.TextDocument): boolean {
 }
 
 export function isOpcodeEnd(line: string): boolean {
-  const opcode = getOpcode(line);
+  const opcode = getRawOpcode(line);
   return /^END(?:IF|DO|FOR|MON|SL|CS|SR)?$/.test(opcode);
 }
 

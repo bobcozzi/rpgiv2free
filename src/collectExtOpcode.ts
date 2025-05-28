@@ -32,7 +32,7 @@ export function collectExtOpcode(allLines: string[], startIndex: number):
         }
         const factor2 = rpgiv.getCol(line, 36, 80).trimEnd();
         const opArea = rpgiv.getCol(line, 8, 35).trim();
-        const opCode = rpgiv.getOpcode(line);
+        const opCode = rpgiv.getRawOpcode(line);
         if (opArea === '') continue;
 
         if (rpgiv.isExtOpcode(opCode)) {
@@ -57,8 +57,12 @@ export function collectExtOpcode(allLines: string[], startIndex: number):
   if (namedOpcode) {
     const match = extF2.match(/^[A-Z0-9-]+/i);
     const firstToken = match ? match[0].toUpperCase() : null;
-    const isEvalOrCallP = (namedOpcode && ['eval', 'callp'].includes(namedOpcode.toLowerCase()));
-    const keepOpcode = (firstToken && isEvalOrCallP && (rpgiv.isValidOpcode(firstToken) || rpgiv.isExtOpcode(firstToken)));
+    const { rawOpcode, extenders: ext } = rpgiv.splitOpCodeExt(namedOpcode);
+    const isEvalOrCallP = (rawOpcode && ['eval', 'callp'].includes(rawOpcode.toLowerCase()));
+    const keepOpcode = (
+      (firstToken && isEvalOrCallP && (rpgiv.isValidOpcode(firstToken) || rpgiv.isExtOpcode(firstToken)))
+      || (ext && ext.trim() !== '')
+    );
     if (!isEvalOrCallP || (isEvalOrCallP && keepOpcode)) {
       lines.push(`${namedOpcode} ${extF2};`)
     }
@@ -95,7 +99,8 @@ export function collectExtF2(
     if (rpgiv.isSpecEmpty(line)) continue;
     if (rpgiv.getSpecType(line) !== 'c') break;
 
-    const opCode = rpgiv.getOpcode(line);
+    let opCode = rpgiv.getFullOpcode(line);
+
     const opArea = rpgiv.getCol(line, 8, 35).trim();
     const factor2 = rpgiv.getCol(line, 36, 80).trimEnd();
 

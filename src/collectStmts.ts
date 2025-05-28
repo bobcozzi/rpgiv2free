@@ -83,7 +83,7 @@ export function collectStmt(
   }
   const curSpec = rpgiv.getSpecType(startLine);
   if (!curSpec && rpgiv.isNotComment(startLine)) return null;
-  if (curSpec === 'c' && rpgiv.isUnSupportedOpcode(rpgiv.getOpcode(startLine))) return null;
+  if (curSpec === 'c' && rpgiv.isUnSupportedOpcode(rpgiv.getRawOpcode(startLine))) return null;
   if (!startLine || startLine.trim() === '') return null;
 
   // if empty statements, then convert them to blank lines in resultset
@@ -145,7 +145,7 @@ export function collectStmt(
     }
   }
 
-  if (curSpec === 'c' && !rpgiv.isUnSupportedOpcode(rpgiv.getOpcode(startLine))) {
+  if (curSpec === 'c' && !rpgiv.isUnSupportedOpcode(rpgiv.getRawOpcode(startLine))) {
     if (rpgiv.isBooleanOpcode(startLine) || rpgiv.isOpcodeSELECT(startLine)) {
       // Handle boolean opcode lines separately
       const booleanOpcodeResult = collectBooleanOpcode(allLines, startIndex);
@@ -168,7 +168,7 @@ export function collectStmt(
         isSQL: false,
         isCollected: false,
       };
-    } else if (rpgiv.isExtOpcode(rpgiv.getOpcode(startLine)) ||
+    } else if (rpgiv.isExtOpcode(rpgiv.getRawOpcode(startLine)) ||
       rpgiv.getCol(startLine, 8, 35).trim() == '') {
       // if Calc spec and Extended Factor 2 opcode or nothing in Factor 1 or Opcode, then
       // this is a continued Extended Factor 2 spec. So read backwards
@@ -378,7 +378,7 @@ export function collectStmt(
         }
       }
       else {
-        if (!rpgiv.isUnSupportedOpcode(rpgiv.getOpcode(line))) {
+        if (!rpgiv.isUnSupportedOpcode(rpgiv.getRawOpcode(line))) {
           collectedIndexes.add(index);
           collectedLines.push(line);
         }

@@ -25,7 +25,7 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number): st
   indexes.push(i);
 
   const factor1 = rpgiv.getCol(startLine, 12, 25).trim();
-  const opcode = rpgiv.getOpcode(startLine); // IFEQ, WHENNE, etc.
+  const opcode = rpgiv.getRawOpcode(startLine); // IFEQ, WHENNE, etc.
   const factor2 = rpgiv.getCol(startLine, 36, 49).trim();
 
   let ffOpcode = '';
@@ -79,7 +79,7 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number): st
     indexes.push(i);
 
     const contFactor1 = rpgiv.getCol(line, 12, 25).trim();
-    const contOpcode = rpgiv.getOpcode(line).toUpperCase().trimEnd(); // ANDGT, ORLE, etc.
+    const contOpcode = rpgiv.getRawOpcode(line).toUpperCase().trimEnd(); // ANDGT, ORLE, etc.
     const contFactor2 = rpgiv.getCol(line, 36, 49).trim();
 
     const logicOp = contOpcode.startsWith('OR') ? 'or' :

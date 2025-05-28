@@ -362,7 +362,9 @@ export function activate(context: vscode.ExtensionContext) {
       try {
         rpgiv.log('CMD Handler Applying edits');
 
-        // const uniqueEdits = Array.from(new Map(edits.map(e => [e.range.toString(), e])).values());
+        // Sort edits in descending order so later edits don't shift earlier ones
+        edits.sort((a, b) => b.range.start.line - a.range.start.line);
+
         const success = await editor.edit(editBuilder => {
           for (const edit of edits) {
             editBuilder.replace(edit.range, edit.text);
