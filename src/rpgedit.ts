@@ -658,7 +658,7 @@ export function isValidOpcode(id: string): boolean {
 export function isUnSupportedOpcode(id: string): boolean {
   // List of valid opcodes (operation extenders not included)
   const oldRPGOpcodes = new Set([
-    "CALL", "CALLB", "PLIST", "PARM", "KLIST", "KFLD", "FREE", "DEBUG"
+    "CALL", "CALLB", "PLIST", "PARM", "KLIST", "KFLD", "FREE", "DEBUG","GOTO","FREE","TAG"
   ]);
   // Strip off operation extenders like "(EHMR)" from the ID
   const baseOpcode = id.replace(/\([A-Z]+\)$/i, "").toUpperCase();
