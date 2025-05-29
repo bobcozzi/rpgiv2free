@@ -82,7 +82,11 @@ export function collectStmt(
   }
   const curSpec = rpgiv.getSpecType(startLine);
   if (!curSpec && rpgiv.isNotComment(startLine)) return null;
-  if (curSpec === 'c' && (rpgiv.isUnSupportedMOVEA(startLine) || rpgiv.isUnSupportedOpcode(rpgiv.getRawOpcode(startLine)))) return null;
+  if (curSpec === 'c') {
+    if (rpgiv.isUnSupportedOpcode(rpgiv.getRawOpcode(startLine))) return null;
+    const opcode = rpgiv.getRawOpcode(startLine);
+    if (opcode==='MOVEA' && !rpgiv.isSupportedMOVEA(startLine)) return null;
+  }
   if (!startLine || startLine.trim() === '') return null;
 
   // if empty statements, then convert them to blank lines in resultset
