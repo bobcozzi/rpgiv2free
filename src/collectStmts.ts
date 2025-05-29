@@ -44,8 +44,6 @@ export function collectStmt(
   const isSQLCont = SQL_CONT_RX.test(startLine);
   const isSQLEnd = END_EXEC_RX.test(startLine);
 
-
-
   if (isSQLStart || isSQLCont || isSQLEnd) {
     // Handle SQL block separately and return its result
     const sqlBlockResult = collectSQLBlock(allLines, startIndex);

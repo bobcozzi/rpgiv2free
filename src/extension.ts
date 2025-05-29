@@ -269,17 +269,19 @@ export function activate(context: vscode.ExtensionContext) {
     let netLineChange = 0;
 
     for (const i of selectedLineList) {
-      if (i >= allLines.length) continue;
 
+      if (i >= allLines.length) continue;
       if (processedLines.has(i)) continue; // <-- Skip if already processed
 
       const collectedStmts = collectStmt(allLines, i);
-      rpgiv.log(`Collected ${collectedStmts?.indexes.length} statements for line: ${i + 1}`);
-
-      // ...and so on for each major step
       if (!collectedStmts) continue;
+      const { indexes } = collectedStmts;
+      // If ANY index in this block is already processed, skip this block
+      if (indexes.some(idx => processedLines.has(idx))) {
+        continue;
+      }
 
-      const { lines: specLines, indexes, comments, isSQL, isCollected, entityName } = collectedStmts;
+      const { lines: specLines, comments, isSQL, isCollected, entityName } = collectedStmts;
 
       // if (i !== indexes[0]) continue;
 
@@ -364,6 +366,8 @@ export function activate(context: vscode.ExtensionContext) {
     if (edits.length > 0) {
       try {
         rpgiv.log('CMD Handler Applying edits');
+        rpgiv.logOverlappingEdits(edits);
+
 
         // Sort edits in descending order so later edits don't shift earlier ones
         edits.sort((a, b) => b.range.start.line - a.range.start.line);
@@ -375,11 +379,11 @@ export function activate(context: vscode.ExtensionContext) {
         });
 
         if (!success) {
-          console.log('Failed to apply edits. Edits:', JSON.stringify(edits, null, 2));
-          vscode.window.showErrorMessage('Failed to apply edits. Please try again.');
+          rpgiv.log('Failed to apply edits. Edits:', JSON.stringify(edits, null, 2));
+          vscode.window.showErrorMessage('Failed to apply conversion edits. Please try again.');
         }
       } catch (error) {
-        console.log('Error applying edits:', (error as Error).message, 'Edits:', JSON.stringify(edits, null, 2));
+      //  console.log('Error applying edits:', (error as Error).message, 'Edits:', JSON.stringify(edits, null, 2));
         vscode.window.showErrorMessage('Error applying edits: ' + (error as Error).message);
       }
     }
@@ -402,14 +406,13 @@ export function activate(context: vscode.ExtensionContext) {
 
 // This method is called when your extension is deactivated
 export function deactivate() {
-  console.log('[rpgiv2free] deactivated');
+  rpgiv.log('deactivated');
 }
 
 function evaluateAndApplyFeatures(document: vscode.TextDocument) {
   if (!['rpgle', 'sqlrpgle'].includes(document.languageId)) return;
 
   const editor = vscode.window.visibleTextEditors.find(e => e.document === document);
-  console.log('evaluateAndApplyFeatures:', document.fileName, !!editor);
 
   if (!editor) return;
 

@@ -119,7 +119,7 @@ function getStmtRule(line: string): string {
       specType = 'CX';  // Extended Factor 2 opcode
     }
   }
-  console.log('[rpgiv2free]','Spec:', specType, 'Line:', line);
+
   return specType;
 }
 

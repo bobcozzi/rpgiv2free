@@ -33,8 +33,9 @@ export function collectCaseOpcode(allLines: string[], startIndex: number):
     const f2 = rpgiv.getCol(line, 36, 49).trim();
     const result = rpgiv.getCol(line, 50, 63).trim();
 
-    if (opCode === 'ENDCS' || opCode === 'END') {
+    if (opCode.startsWith('END')) {
       indexes.push(i);
+      break;
     }
     if (/^CAS(EQ|NE|LT|LE|GT|GE)$/.test(opCode)) {
       indexes.push(i);
@@ -49,15 +50,10 @@ export function collectCaseOpcode(allLines: string[], startIndex: number):
       }
       comparisons.push(`WHEN (${selector} ${compSymbol} ${f2});${eol}${indent}exsr ${result};`);
     }
-    else if (opCode === 'CAS') {
+    else if (opCode === 'CAS') {  // PURE "CAS" is the "other/otherwise" clause for CASxx
       // This is the ELSE part
       indexes.push(i);
       elseLineIndex = i;
-    }
-    else if (opCode === 'ENDSL') {
-
-      indexes.push(i);
-      break;
     }
 
     i++;

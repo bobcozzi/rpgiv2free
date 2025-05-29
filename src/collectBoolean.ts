@@ -16,7 +16,7 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number): st
 
   // Backtrack to find the starting boolean opcode line
   let i = startIndex;
-  while (i >= 0 && !rpgiv.isStartBooleanOpcode(allLines[i]) && !rpgiv.isOpcodeANDxxORxx(allLines[i])) {
+  while (i >= 0 && !rpgiv.isStartBooleanOpcode(allLines[i])) {
     i--;
   }
   if (i < 0) return { lines: [], indexes: [], comments: null };
@@ -36,13 +36,14 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number): st
   let comparison = '';
   let booleanExpr = '';
 
-  if (!isSelect) {
+  if (!isSelect && opcode !== 'OTHER') {
     compOp = opcode.slice(-2); // Last 2 characters
     comparison = opMap[compOp] ?? '?';
   }
 
   if (isSelect) {
-    ffOpcode = 'select;';
+    rpgiv.log('Opcode:', opcode, 'Line:', i);
+    ffOpcode = 'select';
     lines.push(ffOpcode);
   }
   else {
@@ -59,27 +60,22 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number): st
       ffOpcode = 'DOU';
     }
     else {
-      ffOpcode = opcode;
+      ffOpcode = opcode;  // 'OTHER'?
     }
     booleanExpr = `${ffOpcode} ${factor1} ${comparison} ${factor2}`;
   }
 
   i++;
-
+  const nextLine = allLines[i];
   // Continue collecting ANDxx / ORxx lines
-  while (i < allLines.length && ((isSelect && rpgiv.isOpcodeWHENxx(allLines[i])) || rpgiv.isOpcodeANDxxORxx(allLines[i]))) {
+  while (i < allLines.length &&
+    ((isSelect && rpgiv.isOpcodeWHENxx(allLines[i])) || rpgiv.isOpcodeANDxxORxx(allLines[i]))) {
     const line = allLines[i];
-    if (rpgiv.isComment(line)) {
-      comments.push(line);
-      indexes.push(i);
-      i++;
-      continue;
-    }
 
     indexes.push(i);
 
     const contFactor1 = rpgiv.getCol(line, 12, 25).trim();
-    const contOpcode = rpgiv.getRawOpcode(line).toUpperCase().trimEnd(); // ANDGT, ORLE, etc.
+    const contOpcode = rpgiv.getRawOpcode(line); // ANDGT, ORLE, etc.
     const contFactor2 = rpgiv.getCol(line, 36, 49).trim();
 
     const logicOp = contOpcode.startsWith('OR') ? 'or' :
@@ -92,31 +88,14 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number): st
     i++;
   }
 
-  booleanExpr += ';';
-  lines.push(booleanExpr);
+  if (booleanExpr && booleanExpr !== '') {
+    lines.push(booleanExpr);
+  }
 
   return {
     lines,
     indexes,
     comments: comments.length > 0 ? comments : null
-  };
-}
-
-function parseBooleanOpcodeLine(line: string): {
-  factor1: string,
-  opcode: string,
-  operator: string,
-  factor2: string
-} {
-  const factor1 = line.substring(6, 16).trim();
-  const opcode = line.substring(16, 21).trim().toUpperCase();
-  const factor2 = line.substring(21, 35).trim();
-
-  return {
-    factor1,
-    opcode,
-    operator: getRelationalOperator(opcode),
-    factor2
   };
 }
 

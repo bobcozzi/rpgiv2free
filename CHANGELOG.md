@@ -3,6 +3,9 @@
 
 All notable changes to this project will be documented in this file.
 
+
+## [0.6.31] - 2025-05-29
+- Corrected an issue with CASxx blocks that would continue collecting statements past the ENDCS statement causing the "Duplicate Edits" error to appear in the editor window.
 ## [0.6.30] - 2025-05-28
 - Fixed a bug when legacy compiler directives, such as `/EJECT` or `/SKIP` were encounted and were surrounded above and below by comments.
 - A new setting is introduced to remove /EJECT, /SKIP, /SPACE /TITLE legacy compiler directives. The default: `true`.

@@ -14,7 +14,7 @@ export function collectDirectives(allLines: string[], startIndex: number): stmtL
   const config = rpgiv.getRPGIVFreeSettings();
 
   let start = startIndex;
-  // Find end of comment block by scanning forward
+  // Find last consecutive Directive by scanning forward
   let end = startIndex;
   for (let i = start; i < allLines.length; i++) {
     const line = allLines[i].trimEnd();

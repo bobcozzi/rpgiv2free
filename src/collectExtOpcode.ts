@@ -5,54 +5,55 @@ import { collectedStmt, stmtLines } from './types'
 
 
 type CollectResult = {
-    extF2: string;
-    indexes: number[];
-    comments: string[];
-    namedOpcode: string;
+  extF2: string;
+  indexes: number[];
+  comments: string[];
+  namedOpcode: string;
 };
 
-export function collectExtOpcode(allLines: string[], startIndex: number):
-  { lines: string[], indexes: number[], comments: string[] } {
-    const lines: string[] = [];
-    const indexes: number[] = [];
-    const comments: string[] = [];
-    const eol = rpgiv.getEOL();
+export function collectExtOpcode(allLines: string[], startIndex: number): { lines: string[], indexes: number[], comments: string[] } {
+  const lines: string[] = [];
+  const indexes: number[] = [];
+  const comments: string[] = [];
+  const eol = rpgiv.getEOL();
 
 
-    // Walk BACKWARD to find the starting line of the statement
-    let firstIndex = startIndex;
-    for (let i = firstIndex; i >= 0; i--) {
-        const line = allLines[i];
+  // Walk BACKWARD to find the starting line of the statement
+  let firstIndex = startIndex;
+  for (let i = firstIndex; i >= 0; i--) {
+    const line = allLines[i];
 
-        if (rpgiv.isComment(line)) continue;
-        if (rpgiv.isSpecEmpty(line)) continue;
-        if (rpgiv.getSpecType(line) !== 'c') {
-            firstIndex = i;
-            break;
-        }
-        const factor2 = rpgiv.getCol(line, 36, 80).trimEnd();
-        const opArea = rpgiv.getCol(line, 8, 35).trim();
-        const opCode = rpgiv.getRawOpcode(line);
-        if (opArea === '') continue;
+    if (rpgiv.isDirective(line)) break;  // Done
+    if (rpgiv.isEmptyStmt(line)) continue; // Skip it
+    if (rpgiv.isComment(line)) continue;  // Skip it
 
-        if (rpgiv.isExtOpcode(opCode)) {
-            firstIndex = i;
-            // We found the starting point of the Extended Factor 2 Opcode
-            break;
-        }
-        else {
-            lines.push(`// Unknown opcode ${opCode} detected.`);
-            break;
-        }
+    if (rpgiv.getSpecType(line) !== 'c') {
+      firstIndex = i;
+      break;
     }
+    const factor2 = rpgiv.getCol(line, 36, 80).trimEnd();
+    const opArea = rpgiv.getCol(line, 8, 35).trim();
+    const opCode = rpgiv.getRawOpcode(line);
+    if (opArea === '') continue;
 
-    // Walk FORWARD to collect the full statement
-    const {
-        extF2,
-        indexes: usedIndexes,
-        comments: collectedComments,
-        namedOpcode
-    } = collectExtF2(allLines, firstIndex);
+    if (rpgiv.isExtOpcode(opCode)) {
+      firstIndex = i;
+      // We found the starting point of the Extended Factor 2 Opcode
+      break;
+    }
+    else {
+      lines.push(`// Unknown opcode ${opCode} detected.`);
+      break;
+    }
+  }
+
+  // Walk FORWARD to collect the full statement
+  const {
+    extF2,
+    indexes: usedIndexes,
+    comments: collectedComments,
+    namedOpcode
+  } = collectExtF2(allLines, firstIndex);
 
   if (namedOpcode) {
     const match = extF2.match(/^[A-Z0-9-]+/i);
@@ -60,9 +61,10 @@ export function collectExtOpcode(allLines: string[], startIndex: number):
     const { rawOpcode, extenders: ext } = rpgiv.splitOpCodeExt(namedOpcode);
     const isEvalOrCallP = (rawOpcode && ['eval', 'callp'].includes(rawOpcode.toLowerCase()));
     const keepOpcode = (
-      (firstToken && isEvalOrCallP && (rpgiv.isValidOpcode(firstToken) || rpgiv.isExtOpcode(firstToken)))
+      (firstToken && isEvalOrCallP &&
+        (rpgiv.isValidOpcode(firstToken) || rpgiv.isExtOpcode(firstToken)))
       || (ext && ext.trim() !== '')
-    );
+    ) ? true : false;
     if (!isEvalOrCallP || (isEvalOrCallP && keepOpcode)) {
       lines.push(`${namedOpcode} ${extF2};`)
     }
@@ -70,17 +72,17 @@ export function collectExtOpcode(allLines: string[], startIndex: number):
       lines.push(`${extF2};`)
     }
   }
-    return {
-        lines,
-        indexes: usedIndexes,
-        comments: collectedComments
-    };
+  return {
+    lines,
+    indexes: usedIndexes,
+    comments: collectedComments
+  };
 }
 
 
 export function collectExtF2(
   allLines: string[],
-    firstIndex: number
+  firstIndex: number
 ): CollectResult {
   let extF2 = '';
   const indexes: number[] = [];
@@ -91,12 +93,9 @@ export function collectExtF2(
 
   for (let i = firstIndex; i < allLines.length; i++) {
     const line = allLines[i];
-    if (rpgiv.isComment(line)) {
-      comments.push(rpgiv.convertCmt(line));
-      indexes.push(i);
-      continue;
-    }
-    if (rpgiv.isSpecEmpty(line)) continue;
+    if (rpgiv.isDirective(line)) break;  // Done
+    if (rpgiv.isEmptyStmt(line)) continue; // Skip it
+    if (rpgiv.isComment(line)) continue;  // Skip it
     if (rpgiv.getSpecType(line) !== 'c') break;
 
     let opCode = rpgiv.getFullOpcode(line);
@@ -122,7 +121,7 @@ export function collectExtF2(
 
     const endsWith = extF2.trimEnd().slice(-1);
     const endsWithDots = extF2.trimEnd().endsWith('...');
-    if ( (endsWithDots && !wasQuoted) || ((endsWith === '+' || endsWith === '-') && wasQuoted)) {
+    if ((endsWithDots && !wasQuoted) || ((endsWith === '+' || endsWith === '-') && wasQuoted)) {
       if (endsWithDots) {
         extF2 = extF2.slice(0, -3).trimEnd();
         extF2 += buffer.trimStart();

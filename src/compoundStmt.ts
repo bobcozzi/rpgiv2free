@@ -39,13 +39,13 @@ export function expandCompoundRange(lines: string[], selectedIndex: number): num
     }
   } else {
     // Boolean expression handling (IFxx, WHENxx, etc.)
-    // read backwards to find the IFxx or WHENxx (select) block starting statement
+    // read backwards to find the IFxx or SELECT/WHENxx block starting statement
     while (start > 0) {
       const prevLine = lines[start - 1];
       if (rpgiv.isOpcodeANDxxORxx(prevLine)) { // boolean continuator/conjunction opcode?
         start--;
       } else if (rpgiv.isOpcodeIFxx(prevLine)) {
-        // start--;  // IFxx opcode?
+        start--;  // IFxx opcode?
         break;
       }
       else if (rpgiv.isOpcodeWHENxx(prevLine)) {
@@ -61,25 +61,11 @@ export function expandCompoundRange(lines: string[], selectedIndex: number): num
       break;
     }
     end = start + 1;
-  //  while (end < lines.length) {
-  //    const nextLine = lines[end];
-  //    if (bIsSelect && rpgiv.isOpcodeWHENxx(nextLine)) {
-  //      end++;
-  //      continue;
-  //    }
-  //    else if (!rpgiv.isOpcodeANDxxORxx(nextLine) && !rpgiv.isOpcodeEnd(nextLine)) {
-  //      break;
-  //    }
-  //    end++;
-  //  }
 
     while (end < lines.length) {
       const nextLine = lines[end];
-      if ((bIsSelect || bIsWhen) && rpgiv.isOpcodeWHENxx(nextLine)) {
-        end++;
-        continue;
-      }
-      else if (!rpgiv.isOpcodeANDxxORxx(nextLine) && !rpgiv.isOpcodeEnd(nextLine)) {
+      if (!(rpgiv.isOpcodeANDxxORxx(nextLine) ||
+        ((bIsSelect || bIsWhen) && rpgiv.isOpcodeWHENxx(nextLine)))) {
         break;
       }
       end++;
@@ -88,53 +74,10 @@ export function expandCompoundRange(lines: string[], selectedIndex: number): num
   }
 
   for (let i = start; i < end; i++) {
-    expanded.push(i);
-  }
-
-  return expanded;
-}
-
-export function expandRange(lines: string[], selectedIndex: number): number[] {
-  const expanded: number[] = [];
-
-  const selectedLine = lines[selectedIndex];
-  const opcode = rpgiv.getColUpper(selectedLine.padEnd(80, ' '), 26, 35);
-
-  if (!rpgiv.isBooleanOpcode(selectedLine)) {
-    expanded.push(selectedIndex);
-    return expanded;
-  }
-
-  // Expand upward
-  let start = selectedIndex;
-  while (start > 0) {
-    const prevLine = lines[start - 1];
-    if (rpgiv.isOpcodeANDxxORxx(prevLine)) {
-      start--;
-    } else if (rpgiv.isOpcodeIFxx(prevLine) || rpgiv.isOpcodeWHENxx(prevLine)) {
-      start--;
-      break;
-    } else {
-      break;
+    const line = lines[i];
+    if (rpgiv.isNotSkipStmt(line) && line.trim() !== '') {
+      expanded.push(i);
     }
-  }
-
-  // Expand downward
-  let end = selectedIndex + 1;
-  while (end < lines.length) {
-    const nextLine = lines[end];
-    if (rpgiv.isOpcodeANDxxORxx(nextLine)) {
-      end++;
-    } else if (rpgiv.isOpcodeEnd(nextLine)) {
-      end++;
-      break;
-    } else {
-      break;
-    }
-  }
-
-  for (let i = start; i < end; i++) {
-    expanded.push(i);
   }
 
   return expanded;

@@ -84,8 +84,8 @@ export function splitLines(text: string): string[] {
 }
 
 // Log function with condition for Debug
-export function log(message: any) {
-  console.log(`[rpgiv2free] ${message}`);
+export function log(...args: any[]) {
+  console.log('[rpgiv2free]', ...args);
 }
 
 export function getCol(line: string | null | undefined, from: number, to?: number): string {
@@ -145,6 +145,32 @@ export function convertCmt(line: string): string {
 }
 
 
+export function getDclVarName(line: string): string | null {
+  // Match optional spaces, case-insensitive dcl-s, then the variable name (identifier)
+  const match = line.match(/^\s*dcl-s\s+([A-Z0-9_#$@]+)\b/i);
+  return match ? match[1] : null;
+}
+
+export function isVarDcl(name: string): boolean {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) return false;
+
+  const doc = editor.document;
+  const fromLine = editor.selection.active.line;
+
+  for (let i = fromLine - 1; i >= 0; i--) {
+    const line = doc.lineAt(i).text;
+    if (
+      line.match(new RegExp(`\\b${name}\\b`, 'i')) &&
+      /^\s*dcl-s/i.test(line)
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 // for for not executable source lines, like comments, blanks line, or compiler directives
 export function isEmptyStmt(line: string): boolean {
   const bBlankLine = line.trim().length < 6;
@@ -168,7 +194,7 @@ export function isDirective(line: string): boolean {
   if (bDirective) return true;
 
   // Free-form or modern: line starts with '/' followed by A-Za-z0-9 and nothing or whitespace
-  const trimmed = line.trimStart();
+  const trimmed = getCol(line, 7, 80).trim().toUpperCase();
   if (!trimmed.startsWith('//') &&
     trimmed.startsWith('/') &&
     trimmed.length > 1 &&
@@ -400,7 +426,6 @@ export function isExtFactor2(line: string): boolean {
   const factor1 = getCol(line, 12, 25)?.trim?.() ?? '';
   const opcode = getRawOpcode(line) ?? '';
   const extFactor2 = getCol(line, 36, 80)?.trim?.() ?? '';
-  // const factor2 = getCol(line, 36, 49)?.trim?.() ?? ''; // not used
 
   if ((!factor1 || factor1.trim() === '') && extFactor2 && extFactor2 !== '') {
     if (isExtOpcode(opcode) || !opcode || opcode === '') {
@@ -520,7 +545,7 @@ export function isOpcodeSELECT(line: string): boolean {
 export function isOpcodeWHENStart(line: string): boolean {
   const opcode = getRawOpcode(line);
   // Only matches WHEN followed by a valid boolean operator
-  return (opcode.toUpperCase() === 'SELECT');
+  return (opcode === 'SELECT');
 }
 export function isCASEOpcode(line: string): boolean {
   const opcode = getRawOpcode(line);
@@ -553,6 +578,37 @@ export function isBooleanOpcode(line: string): boolean {
       isOpcodeWHENStart(line) ||
       isOpcodeANDxxORxx(line))
   );
+}
+
+export function logOverlappingEdits(edits: { range: { start: { line: number, character: number }, end: { line: number, character: number } }, text: string }[]) {
+  // Sort by start position
+  const sorted = edits.slice().sort((a, b) => {
+    if (a.range.start.line !== b.range.start.line) {
+      return a.range.start.line - b.range.start.line;
+    }
+    return a.range.start.character - b.range.start.character;
+  });
+
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = sorted[i - 1];
+    const curr = sorted[i];
+
+    // If the current edit starts before the previous edit ends, they overlap
+    const prevEndLine = prev.range.end.line;
+    const prevEndChar = prev.range.end.character;
+    const currStartLine = curr.range.start.line;
+    const currStartChar = curr.range.start.character;
+
+    const overlaps =
+      (currStartLine < prevEndLine) ||
+      (currStartLine === prevEndLine && currStartChar < prevEndChar);
+
+    if (overlaps) {
+      console.log('Overlapping edits detected:');
+      console.log('Edit 1:', JSON.stringify(prev, null, 2));
+      console.log('Edit 2:', JSON.stringify(curr, null, 2));
+    }
+  }
 }
 /**
  * Checks if "this" line is the End Of Program marker (e.g., '**', '**CTDATA').
@@ -639,16 +695,17 @@ export function isOpcodeEnd(line: string): boolean {
 export function isValidOpcode(id: string): boolean {
   // List of valid opcodes (operation extenders not included)
   const rpgOpcodes = new Set([
-    "ACQ", "BEGSR", "CALLP", "CHAIN", "CLEAR", "CLOSE", "COMMIT",
-    "DATA-GEN", "DATA-INTO", "DEALLOC", "DELETE", "DOU", "DOW",
-    "DSPLY", "DUMP", "ELSE", "ELSEIF", "ENDDO", "ENDFOR", "ENDIF",
-    "ENDMON", "ENDSL", "ENDSR", "EVAL", "EVALR", "EVAL-CORR", "EXCEPT",
-    "EXFMT", "EXSR", "FEOD", "FOR", "FOR-EACH", "FORCE", "IF", "IN",
-    "ITER", "LEAVE", "LEAVESR", "MONITOR", "NEXT", "ON-ERROR", "ON-EXIT",
-    "OPEN", "OTHER", "OUT", "POST", "READ", "READC", "READE", "READP",
-    "READPE", "REL", "RESET", "RETURN", "ROLBK", "SELECT", "SETGT",
-    "SETLL", "SORTA", "TEST", "UNLOCK", "UPDATE", "WHEN", "WRITE",
-    "XML-INTO", "XML-SAX"
+    "ACQ", "ADD", "ADDDUR", "ALLOC", "ANDXX", "BEGSR", "BITOFF", "BITON", "CABXX", "CALL", "CALLB", "CALLP",
+    "CASXX", "CAT", "CHAIN", "CHECK", "CHECKR", "CLEAR", "CLOSE", "COMMIT", "COMP1", "DATA-GEN", "DATA-INTO",
+    "DEALLOC", "DEFINE", "DELETE", "DIV", "DO", "DOU", "DOUXX", "DOW", "DOWXX", "DSPLY", "DUMP", "ELSE",
+    "ELSEIF", "END", "ENDCS", "ENDDO", "ENDFOR", "ENDIF", "ENDMON", "ENDSL", "ENDSR", "EVAL", "EVALR",
+    "EVAL-CORR", "EXCEPT", "EXFMT", "EXSR", "EXTRCT", "FEOD", "FOR", "FOR-EACH", "FORCE", "GOTO", "IF",
+    "IFXX", "IN", "ITER", "KFLD", "KLIST", "LEAVE", "LEAVESR", "LOOKUP", "MHHZO", "MHLZO", "MLHZO", "MLLZO",
+    "MONITOR", "MOVE", "MOVEA", "MOVEL", "MULT", "MVR", "NEXT", "OCCUR", "ON-ERROR", "ON-EXIT", "OPEN",
+    "ORXX", "OTHER", "OUT", "PARM", "PLIST", "POST", "READ", "READC", "READE", "READP", "READPE", "REALLOC",
+    "REL", "RESET", "RETURN", "ROLBK", "SCAN", "SELECT", "SETGT", "SETLL", "SETOFF", "SETON", "SHTDN",
+    "SORTA", "SQRT", "SUB", "SUBDUR", "SUBST", "TAG", "TEST", "TESTB", "TESTN", "TESTZ", "TIME", "UNLOCK",
+    "UPDATE", "WHEN", "WHENXX", "WRITE", "XFOOT", "XLATE", "XML-INTO", "XML-SAX", "Z-ADD", "Z-SUB"
   ]);
 
   // Strip off operation extenders like "(EHMR)" from the ID
@@ -656,12 +713,14 @@ export function isValidOpcode(id: string): boolean {
 
   return rpgOpcodes.has(baseOpcode);
 }
+
 export function isReservedWord(id: string): boolean {
   // List of valid opcodes (operation extenders not included)
   const reservedWords = new Set([
     "EXEC"
   ]);
   return reservedWords.has(id.toUpperCase());
+}
 
 export function isUnSupportedOpcode(id: string): boolean {
   // List of valid opcodes (operation extenders not included)
@@ -684,7 +743,6 @@ export function isUnSupportedOpcode(id: string): boolean {
 export function isExtOpcode(opcode: string): boolean {
   const extOpcodes = new Set([
     "CALLP",
-    "CLEAR",
     "DATA-INTO",
     "DOU",
     "DOW",
@@ -699,14 +757,15 @@ export function isExtOpcode(opcode: string): boolean {
     "MONITOR",
     "ON-ERROR",
     "RETURN",
-    "ROLBK",
     "SORTA",
-    "TEST",
     "XML-INTO",
     "XML-SAX"
   ]);
   const normalized = opcode.toUpperCase().trim().replace(/\(.*\)$/, ""); // strip off Operation Extender (if any)
-  return extOpcodes.has(opcode.toUpperCase());
+ // if (!isValidOpcode(normalized)) {
+ //   log('Invalid Opcode:', opcode);
+ // }
+  return extOpcodes.has(normalized);
 }
 
 function isFreeFormDclType(line: string, types: string[]): boolean {
@@ -797,31 +856,5 @@ export function isSpecEmpty(line: string): boolean {
   if (line.length < 7) return true;
   const codeArea = getCol(line, 7, 80).trimEnd();
   if (codeArea === '' || isComment(line)) return true;
-  return false;
-}
-
-export function getDclVarName(line: string): string | null {
-  // Match optional spaces, case-insensitive dcl-s, then the variable name (identifier)
-  const match = line.match(/^\s*dcl-s\s+([A-Z0-9_#$@]+)\b/i);
-  return match ? match[1] : null;
-}
-
-export function isVarDcl(name: string): boolean {
-  const editor = vscode.window.activeTextEditor;
-  if (!editor) return false;
-
-  const doc = editor.document;
-  const fromLine = editor.selection.active.line;
-
-  for (let i = fromLine - 1; i >= 0; i--) {
-    const line = doc.lineAt(i).text;
-    if (
-      line.match(new RegExp(`\\b${name}\\b`, 'i')) &&
-      /^\s*dcl-s/i.test(line)
-    ) {
-      return true;
-    }
-  }
-
   return false;
 }

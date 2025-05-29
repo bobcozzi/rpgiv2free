@@ -12,7 +12,7 @@ export function collectComments(allLines: string[], startIndex: number): stmtLin
 
   // Find start of comment block by scanning backward
   let start = startIndex;
-  while (start > 0) {
+  while (start > 0 && start < allLines.length) {
     const line = allLines[start-1].trimEnd();
     if (line === '' || rpgiv.isComment(line)) {
       start--;
