@@ -3,7 +3,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.6.33] - 2025-05-29
+## [0.6.34] - 2025-05-29
 - Hot fix for MOVEA logic causing other opcodes to not convert
 ## [0.6.32] - 2025-05-29
 - The MOVEA opcode is now partially supported in free format. A classic (legacy) technique often used to set on or off indicators can be converted carefully.

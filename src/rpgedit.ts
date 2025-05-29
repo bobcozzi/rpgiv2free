@@ -753,8 +753,10 @@ export function isSupportedMOVEA(line: string): boolean {
    * Examples: *IN(82), *IN(idx)
    */
   function isIndyArray(str: string): boolean {
-    // Matches *IN(n), where n is one or more digits or a variable name (letters, digits, underscores)
-    return /^\*IN\(\s*([A-Za-z_][A-Za-z0-9_]*|\d+)\s*\)/.test(str.trim());
+    // Matches *IN(n), where n is one or more digits or a variable name (letters, digits)
+    // or *INxx where xx is one or more digits or variable name (letters, digits)
+    // The /i flag makes *IN case-insensitive as well.
+    return /^\*IN(\(\s*([a-z][a-z0-9]*|\d+)\s*\)|[a-z][a-z0-9]*|\d+)$/i.test(str.trim());
   }
   const bMOVEA = (opcode === 'MOVEA');
   const bSupportedMOVEA = (bMOVEA && ((isBinaryFlags(factor2) && isIndyArray(result)) ||
