@@ -737,7 +737,28 @@ export function isUnSupportedOpcode(id: string): boolean {
 
   return oldRPGOpcodes.has(baseOpcode);
 }
+export function isUnSupportedMOVEA(line: string): boolean {
+  const factor1 = getCol(line, 12, 25).trim();
+  const opcode = getRawOpcode(line);
+  const factor2 = getCol(line, 36, 49).trim();
+  const result = getCol(line, 50, 63).trim();
+  function isBinaryFlags(str: string): boolean {
+    // Matches a single-quoted string containing only 0 and 1, at least one digit
+    return /^'([01]+)'$/.test(str.trim());
+  }
 
+  /**
+   * Checks if the string starts with *IN(n), where n is a number or variable name
+   * Examples: *IN(82), *IN(idx)
+   */
+  function isIndyArray(str: string): boolean {
+    // Matches *IN(n), where n is one or more digits or a variable name (letters, digits, underscores)
+    return /^\*IN\(\s*([A-Za-z_][A-Za-z0-9_]*|\d+)\s*\)/.test(str.trim());
+  }
+  return (!(isBinaryFlags(factor2) && isIndyArray(result)) &&
+    !(isBinaryFlags(result) && isIndyArray(factor2)));
+
+}
 
 // Is an OpCode that supports the Extended Factor 2 syntax?
 export function isExtOpcode(opcode: string): boolean {
@@ -762,9 +783,9 @@ export function isExtOpcode(opcode: string): boolean {
     "XML-SAX"
   ]);
   const normalized = opcode.toUpperCase().trim().replace(/\(.*\)$/, ""); // strip off Operation Extender (if any)
- // if (!isValidOpcode(normalized)) {
- //   log('Invalid Opcode:', opcode);
- // }
+  // if (!isValidOpcode(normalized)) {
+  //   log('Invalid Opcode:', opcode);
+  // }
   return extOpcodes.has(normalized);
 }
 

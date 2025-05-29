@@ -6,7 +6,7 @@
   "preview": true,
   "private": false,
   "publisher": "CozziResearch",
-  "version": "0.6.31",
+  "version": "0.6.32",
   "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0",
@@ -174,7 +174,7 @@
         },
         "rpgiv2free.tempVarName1": {
           "type": "string",
-          "title": "Name for Length variable for string opcodes",
+          "title": "Name of Length variable for string opcodes",
           "default": "f2f_tempSTG",
           "minLength": 5,
           "maxLength": 32,
@@ -182,11 +182,11 @@
         },
         "rpgiv2free.tempVarName2": {
           "type": "string",
-          "title": "Name for unspecified Do Loop counter variable",
+          "title": "Name of DO/FOR Loop counter variable",
           "default": "f2f_tempDO",
           "minLength": 5,
           "maxLength": 32,
-          "description": "Fixed to Free format Temp/Workfield name to generate for DO operations."
+          "description": "Fixed to Free format Temp/Workfield name to generate for DO/FOR operations."
         },
         "rpgiv2free.enableRPGSmartEnter": {
           "type": "string",

@@ -84,8 +84,11 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
         extraDCL
       ));
 
-    if (enhValues.opcode == '*DLT') {
+    if (enhValues.opcode === '*DLT') {
       enhValues.opcode = opcode;
+    }
+    else if (enhValues.opcode === '*KEEP') {
+      return []; // pass thru stmt such as MOVEA that is NOT *IN related
     }
     else {
       if (reformattedLine.length > 0) {
@@ -376,7 +379,13 @@ function convertOpcodeToFreeFormat(
       }
       newLines.push(freeFormat);
       break;
-
+    case "MOVEA":
+       const { lines: moveaLines, action: action } = op.convertMOVEA(fullOpcode, factor1, factor2, result, extraDCL);
+      if (action === '*KEEP') {
+        return { newLines: newLines, newOpcode: action };
+      }
+      newLines.push(...moveaLines);
+      break;
     case "MOVEL":
       if (config.altMOVEL && !factor2.startsWith('*')) {
         const altMove = `// %SUBST(${result} : 1 : %MIN(%LEN(${result}:%LEN(${factor2}))) = ${factor2};`;
@@ -484,7 +493,7 @@ function convertOpcodeToFreeFormat(
       // handle unrecognized opcode
       break;
   }
-  return { newLines: newLines, newOpcode: newOpcode };;
+  return { newLines: newLines, newOpcode: newOpcode };
 }
 
 function handleCondIndy(condIndy: string): string[] {
