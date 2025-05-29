@@ -6,14 +6,13 @@ All notable changes to this project will be documented in this file.
 ## [0.6.32] - 2025-05-29
 - The MOVEA opcode is not supported in free format. However a classic (legacy) technique often used to set on or off indicators can be converted carefully.
 - RPGIV2FREE now converts *IN-based MOVEA opcodes to a FOR loop and sets each indicator as specified. Here is an example with the before and after MOVEA:
- <pre>
+
 ```rpg
      C                   MOVEA     '10'          *IN(41)
           for f2f_tempDO = 1 to  %len('10');
             *in(41 + f2f_tempDO-1) = %subst('10' : f2f_tempDO : 1);
           endFor;
 ```
-</pre>
 
 - All other MOVEA opcodes are roundtripped (ignored) during conversion and need to be migrated manually.
 
