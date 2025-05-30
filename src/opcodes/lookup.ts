@@ -41,7 +41,7 @@ export function convertLOOKUP(
         compBool += 'T';
     }
     if (compBool === 'E') {
-        compBool += 'Q';
+        compBool = '';
     }
     if (result && result.trim() !== '') {
         bif = `%TLOOKUP${compBool}`;  // Table Lookup
@@ -71,10 +71,10 @@ export function convertLOOKUP(
             resBIF = '%FOUND()';
         }
         if (bif.startsWith('%T')) {
-            lookup = `${target} = (${bif}((${factor1} : ${arr} ${arrIndex}) and ${resBIF})`;
+            lookup = `${target} = (${bif}(${factor1} : ${arr} ${arrIndex}) and ${resBIF})`;
         }
         else {
-            lookup = `${target} = (${bif}((${factor1} : ${arr} ${arrIndex}) > 0 and ${resBIF})`;
+            lookup = `${target} = (${bif}(${factor1} : ${arr} ${arrIndex}) > 0 and ${resBIF})`;
         }
     }
     if (lookup && lookup.trim() !== '') {
