@@ -6,7 +6,7 @@
   "preview": true,
   "private": false,
   "publisher": "CozziResearch",
-  "version": "0.6.37",
+  "version": "0.6.38",
   "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0",
@@ -96,6 +96,20 @@
           "default": true,
           "description": "Insert %SUBST(...) as comment for alternate MOVEL conversion"
         },
+        "rpgiv2free.indyMOVEAStyle": {
+          "type": "string",
+          "title": "MOVEA Conversion Style",
+          "enum": [
+            "FOR",
+            "LIST"
+          ],
+          "enumDescriptions": [
+            "For Loop - Convert MOVEA to a FOR loop",
+            "List Assignment - Convert MOVEA to %SUBARR(*IN:n) = %LIST('1':'0') style."
+          ],
+          "default": "LIST",
+          "description": "Choose how to convert MOVEA operations when setting indicators."
+        },
         "rpgiv2free.addINZ": {
           "type": "boolean",
           "title": "Include INZ when converting data structures",
@@ -170,7 +184,7 @@
           "type": "boolean",
           "title": "Remove old deprecated legacy compiler directives",
           "default": true,
-          "markdownDescription": "Remove /SPACE, /SKIP, /EJECT and /TITLE directives."
+          "description": "Remove /SPACE, /SKIP, /EJECT and /TITLE directives."
         },
         "rpgiv2free.tempVarName1": {
           "type": "string",

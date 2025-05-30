@@ -43,6 +43,7 @@ export interface configSettings {
   srcRcdLen: number;
   indentDir: number;
   altMOVEL: boolean;
+  indyMOVEAStyle: string;
   addEXTDEVFLAG: boolean;
   removeFREEdir: boolean;
   removeOLDdir: boolean;
@@ -63,6 +64,7 @@ export function getRPGIVFreeSettings(): configSettings {
     rightMargin: config.get<number>('maxFreeFormatLineLength', 76),
     srcRcdLen: config.get<number>('maxRPGSourceLength', 80),
     altMOVEL: config.get<boolean>('ALTMOVEL', true),
+    indyMOVEAStyle: config.get<string>('indyMOVEAStyle',"LIST"),
     addEXTDEVFLAG: config.get<boolean>('AddEXTDeviceFlag', true),
     removeFREEdir: config.get<boolean>('RemoveFREEDirective', true),
     removeOLDdir: config.get<boolean>('RemoveOLDDirectives', true),
@@ -151,6 +153,17 @@ export function getDclVarName(line: string): string | null {
   return match ? match[1] : null;
 }
 
+/**
+ * Determines if a variable with the given name is declared using the `dcl-s` statement
+ * in the currently active text editor in VS Code.
+ *
+ * The function searches upwards from the current cursor line to find a line that both:
+ * - Contains the variable name as a whole word (case-insensitive).
+ * - Starts with the `dcl-s` declaration (ignoring leading whitespace, case-insensitive).
+ *
+ * @param name - The name of the variable to search for.
+ * @returns `true` if a matching declaration is found above the current line; otherwise, `false`.
+ */
 export function isVarDcl(name: string): boolean {
   const editor = vscode.window.activeTextEditor;
   if (!editor) return false;

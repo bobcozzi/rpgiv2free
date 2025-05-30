@@ -3,6 +3,14 @@
 import * as vscode from 'vscode';
 import * as rpgiv from '../rpgedit';
 
+function binToList(str: string): string {
+    // Remove quotes if present
+    const match = str.trim().match(/^'([01]+)'$/);
+    if (!match) return '';
+    const chars = match[1].split('').map(ch => `'${ch}'`);
+    return `%LIST(${chars.join(':')})`;
+}
+
 /**
  * Checks if the string is a quoted list of 1 or more 0 and 1, e.g. '1101'
  */
@@ -66,17 +74,23 @@ export function convertMOVEA(
         else {
             if (isBinaryLiteral(factor2) && isIndyArray(result)) {
                 const idx = getIndyIndex(result);
-
-                // const ffMOVEA = `%SUBARR(*IN : ${idx} : %len(${factor2})) = ${factor2}`;
-                const start = `for ${tempVar} = 1 to  %len(${factor2})`; // for i = 1 to %len(pattern);
-                const body = `*in(${idx} + ${tempVar}-1) = %subst(${factor2} : ${tempVar} : 1)`;
-                const endFor = `endFor`;
-                lines.push(`// MOVEA ${factor2} ${result}  --> to FOR loop`);
-                lines.push(start);
-                lines.push(body);
-                lines.push(endFor);
+                if (config.indyMOVEAStyle.trim() === 'FOR') {
+                    const start = `for ${tempVar} = 1 to  %len(${factor2})`; // for i = 1 to %len(pattern);
+                    const body = `*in(${idx} + ${tempVar}-1) = %subst(${factor2} : ${tempVar} : 1)`;
+                    const endFor = `endFor`;
+                    lines.push(`// MOVEA ${factor2} ${result}  --> to FOR loop`);
+                    lines.push(start);
+                    lines.push(body);
+                    lines.push(endFor);
+                }
+                else {
+                    const listAgg = binToList(factor2);
+                    lines.push(`%SUBARR(*in:${idx}) = ${listAgg}`);
+                }
             }
             else if (isIndyArray(factor2)) {
+                //  MOVEA *IN(43)   SAVEINDY
+                //  SAVEINDY = %SUBARR(*IN : 43 : %LEN(SAVEINDY));
                 const idx = getIndyIndex(factor2);
                 const ffMOVEA = `${result} = %SUBARR(*IN : ${idx} : %len(${result}))`;
                 lines.push(ffMOVEA);
