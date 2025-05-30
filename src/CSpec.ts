@@ -231,6 +231,9 @@ function convertOpcodeToFreeFormat(
 
   let lValue = '';
   let kwd = '';
+  let opAction = '';
+  let opLines: string[] = [];
+
   if (comments && comments.trim() !== '') {
     newLines.push(`// ${comments}`);
   }
@@ -368,6 +371,14 @@ function convertOpcodeToFreeFormat(
     case "XFOOT":
       newLines.push(`${result} = %XFOOT(${factor2})`);
       break
+    case 'LOOKUP':
+      ({ lines: opLines, action: opAction } = op.convertLOOKUP(fullOpcode, factor1, factor2, result, resInd1, resInd2, resInd3, extraDCL));
+      if (opLines && opLines.length > 0) {
+        newLines.push(...opLines);
+      }
+
+      break;
+
     case 'XLATE':
       const [from1, to1] = factor1.split(':').map(s => s.trim());
       const [src2, start2] = factor2.split(':').map(s => s.trim());
@@ -380,7 +391,7 @@ function convertOpcodeToFreeFormat(
       newLines.push(freeFormat);
       break;
     case "MOVEA":
-       const { lines: moveaLines, action: action } = op.convertMOVEA(fullOpcode, factor1, factor2, result, extraDCL);
+      const { lines: moveaLines, action: action } = op.convertMOVEA(fullOpcode, factor1, factor2, result, extraDCL);
       if (action === '*KEEP') {
         return { newLines: newLines, newOpcode: action };
       }
@@ -522,6 +533,9 @@ function handleResultingIndicators(
   const normalizedOpcode = opcode.toUpperCase().replace(/\(.*\)$/, "");
   const newLines: string[] = [];
 
+  if (opcode === 'LOOKUP') {
+    return newLines;  // returns empty set
+  }
   switch (normalizedOpcode) {
     case '':  // default is no Ind1, ind2=Error, ind2 = %Found()
       if (resInd3) {

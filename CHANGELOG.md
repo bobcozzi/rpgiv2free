@@ -3,6 +3,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.35] - 2025-05-29
+- Fixed an issue with parameters or subfields that have not attributes (such as those that use the LIKE keyword to define them) where it was combinine them with the prior statement.
+- Initial some support for LOOKUP translation to either %LOOKUP or %TLOOKUP, use caution in non-traditional naming conventions, especially for table lookups vs array lookups.
+
 ## [0.6.34] - 2025-05-29
 - Hot fix for MOVEA logic causing other opcodes to not convert
 ## [0.6.32] - 2025-05-29

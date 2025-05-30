@@ -832,6 +832,16 @@ export function dNameContinues(line: string): boolean {
   return /^[A-Za-z0-9_]+$/.test(namePrefix);
 }
 
+export function splitArray(factor2: string): [string, string | null] {
+  const trimmed = factor2.trim();
+  const match = trimmed.match(/^([A-Za-z_][A-Za-z0-9_]*)(?:\(\s*([^)]+)\s*\))?$/);
+  if (match) {
+    const arrayName = match[1];
+    const index = match[2] !== undefined ? match[2] : null;
+    return [arrayName, index];
+  }
+  return [trimmed, null];
+}
 export function dKwdContinues(line: string): boolean {
   // Keyword area is columns 44 to 80
   const kwdArea = getCol(line, 44, 80).trimEnd();
@@ -865,15 +875,18 @@ export function isJustKwds(line: string): boolean {
 export function isValidFixedDefnLine(curLine: string): boolean {
   let bValidDefn = false;
   if (dNameContinues(curLine)) return false;
-  const col6 = getColUpper(curLine, 6)
-  if (col6 !== 'D') return false;
+  const col6 = getSpecType(curLine);
+  if (col6 !== 'd') return false;
   const dclType = getDclType(curLine).toLowerCase();
+  const bLongName = getCol(curLine, 7, 80).trimEnd().endsWith('...');
   const hasName = getCol(curLine, 7, 21).trim().length > 0;
   const isExtSubfield = (getCol(curLine, 22).toUpperCase() === 'E');
+  const hasKwds = getCol(curLine, 44, 80).trim().length > 0;
   const hasType = getCol(curLine, 23, 25).trim().length > 0;
   const hasAttr = getCol(curLine, 26, 43).trim().length > 0;
 
-  if ((["ds", "pr", "pi", "s", "c"].includes(dclType)) || isExtSubfield || ((hasName || hasType) && hasAttr)) {
+  if ((["ds", "pr", "pi", "s", "c"].includes(dclType)) ||
+    isExtSubfield || (!bLongName && ((hasName || hasType) && (hasAttr || hasKwds)))) {
     bValidDefn = true;
   }
 

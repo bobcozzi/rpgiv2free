@@ -14,7 +14,7 @@ export function collectDSpecs(
 } {
 
   function isDefnSpecLine(line: string): boolean {
-    return rpgiv.getSpecType(line) === 'd' && rpgiv.isNotComment(line);
+    return rpgiv.getSpecType(line) === 'd' && rpgiv.isNotComment(line) && !rpgiv.isDirective(line);
   }
 
   if (!isDefnSpecLine(allLines[startIndex])) {
@@ -42,7 +42,7 @@ export function collectDSpecs(
     if (rpgiv.isSpecEmpty(line)) continue;
     if (!isDefnSpecLine(line)) break;
 
-    // once a continued name is detected (reading backwards) and
+    // Once a continued name is detected (reading backwards) and
     // this line is not also a continued name, then we are done reading backwards.
 
     const isKwdOnly = rpgiv.isJustKwds(line);
