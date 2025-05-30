@@ -40,25 +40,38 @@ export function expandCompoundRange(lines: string[], selectedIndex: number): num
   } else {
     // Boolean expression handling (IFxx, WHENxx, etc.)
     // read backwards to find the IFxx or SELECT/WHENxx block starting statement
-    while (start > 0) {
-      const prevLine = lines[start - 1];
-      if (rpgiv.isOpcodeANDxxORxx(prevLine)) { // boolean continuator/conjunction opcode?
-        start--;
-      } else if (rpgiv.isOpcodeIFxx(prevLine)) {
-        start--;  // IFxx opcode?
+ // Boolean expression handling (IFxx, WHENxx, etc.)
+    // If the selected line is a block start, use it.
+    if (
+      rpgiv.isOpcodeIFxx(selectedLine) ||
+      rpgiv.isOpcodeSELECT(selectedLine) ||
+      rpgiv.isOpcodeWHENxx(selectedLine)
+    ) {
+      // Already at block start
+      start = selectedIndex;
+      if (rpgiv.isOpcodeSELECT(selectedLine)) bIsSelect = true;
+      if (rpgiv.isOpcodeWHENxx(selectedLine)) bIsWhen = true;
+    } else {
+      while (start > 0) {
+        const prevLine = lines[start - 1];
+        if (rpgiv.isOpcodeANDxxORxx(prevLine)) { // boolean continuator/conjunction opcode?
+          start--;
+        } else if (rpgiv.isOpcodeIFxx(prevLine)) {
+          start--;  // IFxx opcode?
+          break;
+        }
+        else if (rpgiv.isOpcodeWHENxx(prevLine)) {
+          bIsWhen = true;
+          start--;  // IFxx or WHENxx opcode?
+          if (!bIsSelect) break;
+        }
+        else if (rpgiv.isOpcodeSELECT(prevLine)) {
+          bIsSelect = true;  // fixed-format SELECT opcode?
+          start--;
+          break;
+        }
         break;
       }
-      else if (rpgiv.isOpcodeWHENxx(prevLine)) {
-        bIsWhen = true;
-        start--;  // IFxx or WHENxx opcode?
-        if (!bIsSelect) break;
-      }
-      else if (rpgiv.isOpcodeSELECT(prevLine)) {
-        bIsSelect = true;  // fixed-format SELECT opcode?
-        start--;
-        break;
-      }
-      break;
     }
     end = start + 1;
 

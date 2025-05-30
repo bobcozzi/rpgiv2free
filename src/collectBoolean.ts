@@ -16,11 +16,13 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number): st
 
   // Backtrack to find the starting boolean opcode line
   let i = startIndex;
+  const firstLine = allLines[i];
+if (!rpgiv.isStartBooleanOpcode(firstLine)) {
   while (i >= 0 && !rpgiv.isStartBooleanOpcode(allLines[i])) {
     i--;
   }
   if (i < 0) return { lines: [], indexes: [], comments: null };
-
+}
   const startLine = allLines[i];
   indexes.push(i);
 
