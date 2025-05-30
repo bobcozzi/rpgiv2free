@@ -20,7 +20,7 @@ export function convertLOOKUP(
 
     let lookup = '';
     let bif = '';
-    let resBIF = '';
+    let extraIndy = '';
     let compBool = '';
     let compOper = '';
     let arrIndex = '';
@@ -50,50 +50,71 @@ export function convertLOOKUP(
         bif = `%LOOKUP${compBool}`;  // Array Lookup
     }
 
-    if (arrIndex && arrIndex.trim() !== '') {  // Has an Array Index?
-
-        lookup = `${target} = ${bif}(${factor1} : ${arr} ${arrIndex})`;
-    }
-    else {  // if no array index, then assign the resulting indicator as a result so it runs correctly
-        if (resInd3 && resInd3 !== '') {
-            target = `*in${resInd3}`;
-            compOper = '=';
-            resBIF = '%EQUAL()';
-        }
-        else if (resInd2 && resInd2 !== '') {
-            target = `*in${resInd2}`;
-            compOper = '<';
-            resBIF = '%FOUND()';
-        }
-        else if (resInd1 && resInd1 !== '') {
-            target = `*in${resInd1}`;
-            compOper = '>';
-            resBIF = '%FOUND()';
-        }
-        if (bif.startsWith('%T')) {
-            lookup = `${target} = (${bif}(${factor1} : ${arr} ${arrIndex}) and ${resBIF})`;
+    if (bif === '%LOOKUP' || bif === '%TLOOKUP') { // Lookup EQ only?
+        lookup = '';
+        if (arrIndex && arrIndex.trim() !== '') {  // Has an Array Index?
+            lines.push(`${target} = ${bif}(${factor1} : ${arr} ${arrIndex})`);
+            if (resInd3 && resInd3 !== '') {
+                lines.push(`*in${resInd3} = (${target} > 0)`);
+            }
         }
         else {
-            lookup = `${target} = (${bif}(${factor1} : ${arr} ${arrIndex}) > 0 and ${resBIF})`;
+            if (resInd3 && resInd3 !== '') {
+                lines.push(`*in${resInd3} = (${bif}(${factor1} : ${arr}) > 0)`);
+            }
         }
     }
-    if (lookup && lookup.trim() !== '') {
-        lines.push(lookup);
-    }
-    if (resInd1 && resInd1.trim() !== '') {
-        if (compOper !== '=') {
-            lines.push(`*in${resInd1} = %FOUND()`);
+    else {  // Any other %LOOKUPxx() function with 1 or 2 indy's
+        //  1,2
+        //  1,3
+        //  2,3
+        //  1
+        //  2
+        //  3
+        const indyCount = [resInd1, resInd2, resInd3].filter(s => s && s.trim() !== '').length;
+
+        if (arrIndex && arrIndex.trim() !== '') {  // Has an Array Index?
+            lines.push(`${target} = ${bif}(${factor1} : ${arr} ${arrIndex})`);
         }
-    }
-    if (resInd2 && resInd2.trim() !== '') {
-        if (compOper !== '<') {
-            lines.push(`*in${resInd2} = %FOUND()`);
+        else {
+            let targetIndy = '';
+            if (resInd3 && resInd3 !== '') {
+                targetIndy = resInd3;
+            }
+            else if (resInd2 && resInd2 !== '') {
+                targetIndy = resInd2;
+            }
+            else if (resInd1 && resInd1 !== '') {
+                targetIndy = resInd1;
+            }
+
+            lines.push(`*IN${targetIndy} = (${bif}(${factor1} : ${arr} ${arrIndex}) > 0)`);
         }
-    }
-    if (resInd3 && resInd3.trim() !== '') {
-        if (compOper !== '=') {
-            lines.push(`*in${resInd3} = %EQUAL()`);
+        if (resInd3 && resInd3 !== '') {
+            lines.push(`*IN${resInd3} = %EQUAL()`)
+            extraIndy = ' and NOT %EQUAL()';
+            resInd3 = '';
         }
+        if (resInd2 && resInd2 !== '') {
+            if (indyCount > 1) {
+                lines.push(`*IN${resInd2} = %FOUND() and NOT %EQUAL()`);
+            }
+            else {
+                lines.push(`*IN${resInd2} = %FOUND()`)
+            }
+            resInd2 = '';
+        }
+        if (resInd1 && resInd1 !== '') {
+            if (indyCount > 1) {
+                lines.push(`*IN${resInd1} = %FOUND() and NOT %EQUAL()`);
+            }
+            else {
+                lines.push(`*IN${resInd1} = %FOUND()`)
+            }
+            resInd1 = '';
+        }
+
+
     }
 
     return { lines, action };
