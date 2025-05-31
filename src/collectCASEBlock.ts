@@ -51,11 +51,13 @@ export function collectCaseOpcode(allLines: string[], startIndex: number): { lin
       if (!selector) { selector = f1 };
 
       if (comparisons.length === 0) {
-        comparisons.push(`IF (${selector} ${compSymbol} ${f2});${eol}${indent}exsr ${result};`);
+        comparisons.push(`IF (${selector} ${compSymbol} ${f2});`);
       }
       else {
-        comparisons.push(`elseIf (${selector} ${compSymbol} ${f2});${eol}${indent}exsr ${result};`);
+        comparisons.push(`elseIf (${selector} ${compSymbol} ${f2})`);
+
       }
+      comparisons.push(`${indent}exsr ${result}`);
     }
     else if (opCode === 'CAS') {  // PURE "CAS" is the "other/otherwise" clause for CASxx
       // This is the ELSE part

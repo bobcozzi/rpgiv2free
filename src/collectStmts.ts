@@ -169,7 +169,7 @@ export function collectStmt(
         indexes: caseOpcodeResult.indexes,
         comments: comments.length > 0 ? comments : null,
         isSQL: false,
-        isCollected: false,
+        isCollected: true,
       };
     } else if (rpgiv.isExtOpcode(rpgiv.getRawOpcode(startLine)) ||
       rpgiv.getCol(startLine, 8, 35).trim() == '') {
