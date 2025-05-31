@@ -3,6 +3,8 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.40] - 2025-05-31
+- Modified the CASxx conversion to use `IF/ELSEIF/ENDIF` instead of `SELECT/WHEN/OTHER/ENDSL`
 ## [0.6.38] - 2025-05-30
 - New option for `MOVEA'1001' *IN(38)` style statements to use either a FOR loop or the recommended `%SUBARR(*IN:38) = *LIST('1','0','0','1')` style conversion. See the settings for the extension to customize to taste.
 - Completed work on LOOKUP to %LOOKUPxx all converted test cases returned save results as fixed format. %TLOOKUP (table lookup) is implemented thes same way but was not tested due to lack of test case scenarios.

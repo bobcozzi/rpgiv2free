@@ -2,8 +2,7 @@
 import * as rpgiv from './rpgedit';
 import { collectedStmt, stmtLines } from './types'
 
-export function collectCaseOpcode(allLines: string[], startIndex: number):
-  { lines: string[], indexes: number[] } {
+export function collectCaseOpcode(allLines: string[], startIndex: number): { lines: string[], indexes: number[] } {
   const lines: string[] = [];
   const indexes: number[] = [];
   const comments: string[] = [];
@@ -28,7 +27,13 @@ export function collectCaseOpcode(allLines: string[], startIndex: number):
       i++;
       continue;
     }
-    const opCode = rpgiv.getColUpper(line, 26, 35).trim();
+    else if (rpgiv.isSkipStmt(line)) {
+      i++
+      continue;
+    }
+    if (rpgiv.getSpecType(line) !== 'c') break;
+
+    const opCode = rpgiv.getFullOpcode(line);
     const f1 = rpgiv.getCol(line, 12, 25).trim();
     const f2 = rpgiv.getCol(line, 36, 49).trim();
     const result = rpgiv.getCol(line, 50, 63).trim();
@@ -46,9 +51,11 @@ export function collectCaseOpcode(allLines: string[], startIndex: number):
       if (!selector) { selector = f1 };
 
       if (comparisons.length === 0) {
-        comparisons.push(`SELECT;`);
+        comparisons.push(`IF (${selector} ${compSymbol} ${f2});${eol}${indent}exsr ${result};`);
       }
-      comparisons.push(`WHEN (${selector} ${compSymbol} ${f2});${eol}${indent}exsr ${result};`);
+      else {
+        comparisons.push(`elseIf (${selector} ${compSymbol} ${f2});${eol}${indent}exsr ${result};`);
+      }
     }
     else if (opCode === 'CAS') {  // PURE "CAS" is the "other/otherwise" clause for CASxx
       // This is the ELSE part
@@ -61,11 +68,11 @@ export function collectCaseOpcode(allLines: string[], startIndex: number):
 
   if (elseLineIndex !== null) {
     const elseResult = rpgiv.getCol(allLines[elseLineIndex], 50, 63).trim();
-    comparisons.push(`OTHER;${eol}${indent}exsr ${elseResult}`);
-    // comparisons.push(``);
+    comparisons.push(`ELSE;`);
+    comparisons.push(`${indent}exsr ${elseResult}`);
   }
 
-  comparisons.push('endsl');
+  comparisons.push('endif');
   lines.push(...comparisons);
 
   const result: stmtLines = {
