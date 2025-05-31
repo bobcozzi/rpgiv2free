@@ -3,7 +3,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.6.41] - 2025-05-31
+## [0.6.42] - 2025-05-31
 - Enhanced the SUBST (substring) opcode conversion routine to match our contemporary design style. In some cases the resulting %SUBST will be more streamlined, but the result will be the same.
 ## [0.6.40] - 2025-05-31
 - Modified the CASxx conversion to use `IF/ELSEIF/ENDIF` instead of `SELECT/WHEN/OTHER/ENDSL`
