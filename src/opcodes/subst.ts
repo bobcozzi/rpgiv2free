@@ -38,29 +38,30 @@ export function convertSUBST(
         sourceStart = '1';
         bPlainSUBST = true;
     }
-    // === Rule 1: If no Factor 1, use Factor 2's value's length ===
+    // === Rule 1: If Factor 1, use it as the length, otherwise use Factor 2's value's length ===
     if (factor1.trim() !== '') {
-        sourceLen = factor1.trim();
+        sourceLen = ` : ${factor1}`;
         bPlainSUBST = false;
     }
     else {
-        sourceLen = `%len(${sourceVar})`;
+        sourceLen = '';  // ` : %len(${sourceVar})`;
     }
 
     if (hasP) {
         // Rule: If extender (P), replace target entirely
         target = `${result}`;
     } else {
-        target = `%SUBST(${result}:1:${sourceLen})`;
+        target = `%SUBST(${result}:1: %MIN(%LEN(${result}) ${sourceLen}))`;
     }
     if (bPlainSUBST) {
         expr = `${target} = ${sourceVar}`;
     }
     else {
-        expr = `${target} = %SUBST(${sourceVar}:${sourceStart}:${sourceLen});`
+        expr = `${target} = %SUBST(${sourceVar}:${sourceStart}${sourceLen});`
     }
     const orgStmt = ` // ${factor1}  ${opcode}  ${factor2}  ${result}`
-    lines.push(expr + orgStmt);
+    lines.push(orgStmt);
+    lines.push(expr);
 
     return lines;
 }
