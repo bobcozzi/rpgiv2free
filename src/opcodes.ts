@@ -6,3 +6,4 @@ export * from './opcodes/lookup';
 export * from './opcodes/movea';
 export * from './opcodes/scan';
 export * from './opcodes/subst';
+export * from './opcodes/test';

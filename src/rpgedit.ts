@@ -913,3 +913,14 @@ export function isSpecEmpty(line: string): boolean {
   if (codeArea === '' || isComment(line)) return true;
   return false;
 }
+
+export function bitStringToHex(bitString: string): string {
+  let mask = 0;
+  for (const c of bitString) {
+    const bitNum = parseInt(c, 10);
+    if (bitNum < 0 || bitNum > 7) continue; // skip invalid
+    mask |= 1 << (7 - bitNum); // RPG bit 0 = leftmost (bit 7 in a byte)
+  }
+  let hex = mask.toString(16).padStart(2, '0').toUpperCase(); // always 2 hex digits
+  return `X'${hex}'`;
+}

@@ -22,6 +22,7 @@ function extractComment(line: string): { code: string, comment: string | null } 
 
   return { code: line.trimEnd(), comment: null };
 }
+
 export const formatRPGIV = (input: string, splitOffComments: boolean = false): string[] => {
   const config = rpgiv.getRPGIVFreeSettings();
   const firstIndentLen = config.indentFirstLine - 1;
@@ -63,14 +64,11 @@ export const formatRPGIV = (input: string, splitOffComments: boolean = false): s
 
   const tokenLen = token.length + tokenSpacer.length;
   let margin = rightMargin;
-  if (currentLength + tokenLen > margin && currentLength + tokenLen < srcRcdLen) {
+  if (currentLength + tokenLen >= margin && currentLength + tokenLen < srcRcdLen) {
     margin = srcRcdLen;
     flushLine(true, addIndent);
   }
-  if (
-    currentLength + tokenLen > margin &&
-    !isSpecialPrefixToken(token)
-  ) {
+  if (currentLength + tokenLen > margin) { // &&    !isSpecialPrefixToken(token)) {
     if (currentLine.trim().length > 0) {
       flushLine(true, addIndent);
     }
@@ -174,7 +172,8 @@ export const formatRPGIV = (input: string, splitOffComments: boolean = false): s
       const token = tokens[i];
 
       // Handle quoted string literals
-      if (token.startsWith("'") && token.endsWith("'")) {
+      // if (token.startsWith("'") && token.endsWith("'")) {
+      if (/^(X|B)?'([^']|'')*'$/.test(token)) {
 
         // Determine if the full quoted string fits on the current line
         if (currentLength + token.length <= rightMargin) {
@@ -221,19 +220,55 @@ export const formatRPGIV = (input: string, splitOffComments: boolean = false): s
   return result;
 
 }
-// dcl-f RMTDTY disk usage(*input) KEYED prefix(rmt) extfile(rmtduty) usropn rename(dutyrec:rmtdutycdf)
-//  dcl-f RMTDTY disk usage(*input) KEYED prefix(rmt) extfile(rmtduty) usropnrename(dutyrec:
-//           rmtdutycdf);
 function tokenizeWithSpacing(line: string): { tokens: string[], spacers: string[] } {
   const tokens: string[] = [];
   const spacers: string[] = [];
+  // This regex matches quoted strings, identifiers, keywords, operators, punctuation, and whitespace.
+  const regex = /(%[A-Z][A-Z0-9]*\()|(%[A-Z][A-Z0-9]*)|([XB]'([^']|'')*')|('([^']|'')*')|[A-Z#$@][A-Z0-9#$@_]*|\*IN\d{2}|(\+=|-=|\*=|\/=|%=|==|<=|>=|<>|!=)|[(){}\[\]+\-*\/=<>:,;]|[^\sA-Z0-9_]+|\s+/gi;
+
+  let match: RegExpExecArray | null;
+  let lastIndex = 0;
+  while ((match = regex.exec(line)) !== null) {
+    const part = match[0];
+    const start = match.index;
+    // If there is a gap between the last match and this one, it's whitespace
+    if (start > lastIndex) {
+      const space = line.slice(lastIndex, start);
+      if (tokens.length > 0) {
+        spacers[spacers.length - 1] += space;
+      }
+    }
+    if (!/^\s+$/.test(part)) {
+      tokens.push(part);
+      spacers.push('');
+    } else {
+      // If it's whitespace, add it as a spacer for the previous token
+      if (tokens.length > 0) {
+        spacers[spacers.length - 1] += part;
+      }
+    }
+    lastIndex = start + part.length;
+  }
+  // If there's trailing whitespace after the last token, add it as a spacer
+  if (lastIndex < line.length && tokens.length > 0) {
+    spacers[spacers.length - 1] += line.slice(lastIndex);
+  }
+  // Ensure spacers array matches tokens array length
+  while (spacers.length < tokens.length) spacers.push('');
+
+  return { tokens, spacers };
+}
+
+function tokenizeWithSpacing_ALT2(line: string): { tokens: string[], spacers: string[] } {
+  const tokens: string[] = [];
+  const spacers: string[] = [];
   // Regex: match quoted strings, identifiers, numbers, keywords, operators, and punctuation, then any following whitespace (including none)
-  const regex = /('([^']|'')*'|\*IN\d{2}|\*[A-Z0-9_]+|[A-Z#$@][A-Z0-9#$@_]*|\d+(\.\d+)?|(\+=|-=|\*=|\/=|%=|==|<=|>=|<>|!=)|[(){}\[\]+\-*/=<>:,;]|[^\sA-Z0-9_]+)(\s*)/gi;
+   const regex = /('([^']|'')*'|\*IN\d{2}|\*[A-Z0-9_]+|[A-Z#$@][A-Z0-9#$@_]*|\d+(\.\d+)?|(\+=|-=|\*=|\/=|%=|==|<=|>=|<>|!=)|[(){}\[\]+\-*/=<>:,;]|[^\sA-Z0-9_]+)(\s*)/gi;
 
   let match: RegExpExecArray | null;
   while ((match = regex.exec(line)) !== null) {
     tokens.push(match[1]);
-    spacers.push(match[5] || '');
+    spacers.push(match[match.length - 1] || '');
   }
   return { tokens, spacers };
 }

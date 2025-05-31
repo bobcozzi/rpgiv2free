@@ -376,7 +376,41 @@ function convertOpcodeToFreeFormat(
       if (opLines && opLines.length > 0) {
         newLines.push(...opLines);
       }
+      break;
 
+    case 'TESTZ':
+      ({ lines: opLines, action: opAction } = op.convertTESTZ(fullOpcode, factor1, factor2, result, resInd1, resInd2, resInd3, extraDCL));
+      if (opLines && opLines.length > 0) {
+        newLines.push(...opLines);
+      }
+      break;
+
+    case 'TESTB':
+      ({ lines: opLines, action: opAction } = op.convertTESTB(fullOpcode, factor1, factor2, result, resInd1, resInd2, resInd3, extraDCL));
+      if (opLines && opLines.length > 0) {
+        newLines.push(...opLines);
+      }
+      break;
+
+    case 'TESTN':
+      ({ lines: opLines, action: opAction } = op.convertTESTN(fullOpcode, factor1, factor2, result, resInd1, resInd2, resInd3, extraDCL));
+      if (opLines && opLines.length > 0) {
+        newLines.push(...opLines);
+      }
+      break;
+
+    case 'BITON':
+      ({ lines: opLines, action: opAction } = op.convertBITON(fullOpcode, factor1, factor2, result, resInd1, resInd2, resInd3, extraDCL));
+      if (opLines && opLines.length > 0) {
+        newLines.push(...opLines);
+      }
+      break;
+
+    case 'BITOFF':
+      ({ lines: opLines, action: opAction } = op.convertBITOFF(fullOpcode, factor1, factor2, result, resInd1, resInd2, resInd3, extraDCL));
+      if (opLines && opLines.length > 0) {
+        newLines.push(...opLines);
+      }
       break;
 
     case 'XLATE':
@@ -533,9 +567,12 @@ function handleResultingIndicators(
   const normalizedOpcode = opcode.toUpperCase().replace(/\(.*\)$/, "");
   const newLines: string[] = [];
 
-  if (opcode === 'LOOKUP') {
-    return newLines;  // returns empty set
+  // Bail out if the opcode is one of those whose resulting indicators are handled during conversion
+  const indicatorOpcodes = new Set(['LOOKUP','TESTZ','TESTB','TESTN','BITON','BITOFF']);
+  if (indicatorOpcodes.has(normalizedOpcode)) {
+    return newLines; // returns empty set for these opcodes
   }
+
   switch (normalizedOpcode) {
     case '':  // default is no Ind1, ind2=Error, ind2 = %Found()
       if (resInd3) {
@@ -625,7 +662,7 @@ function handleResultingIndicators(
       break;
     case "SETGT":
       if (resInd1) {
-        newLines.push(`*IN${resInd3} = NOT %FOUND();`);
+        newLines.push(`*IN${resInd1} = NOT %FOUND();`);
       }
       if (resInd2) {
         newLines.push(`*IN${resInd2} = %ERROR();`);
@@ -633,20 +670,26 @@ function handleResultingIndicators(
       break;
     case "SETLL":
       if (resInd1) {
-        newLines.push(`*IN${resInd3} = NOT %FOUND();`);
+        newLines.push(`*IN${resInd1} = NOT %FOUND();`);
       }
       if (resInd2) {
         newLines.push(`*IN${resInd2} = %ERROR();`);
       }
       if (resInd3) {
-        newLines.push(`*IN${resInd3} = %EOF();`);
+        newLines.push(`*IN${resInd3} = %EQUAL();`);
       }
       break;
 
     case "UPDATE":
-    case "DELETE":
       if (resInd2) {
-        newLines.push(`*IN${resInd2} = %ERROR(${factor2});`);
+        newLines.push(`*IN${resInd2} = %ERROR();`);
+      }
+    case "DELETE":
+      if (resInd1) {
+        newLines.push(`*IN${resInd1} = NOT %FOUND();`);
+      }
+      if (resInd2) {
+        newLines.push(`*IN${resInd2} = %ERROR();`);
       }
       break;
 
@@ -655,7 +698,7 @@ function handleResultingIndicators(
         newLines.push(`*IN${resInd2} = %ERROR(${factor2});`);
       }
       if (resInd3) {
-        newLines.push(`*IN${resInd2} = %EOF();`);
+        newLines.push(`*IN${resInd3} = %EOF();`);
       }
       break;
 

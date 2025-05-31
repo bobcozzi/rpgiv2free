@@ -3,6 +3,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.43] - 2025-05-31
+- Corrected resulting indicator conversion for database I/O opcodes
+- Added `TESTZ`, `TESTB`, `TESTN`,`BITON`, and `BITOFF` opcodes to the conversion.
+- Corrected an issue with Formatted output related to hexadecimal and binary notation.
 ## [0.6.42] - 2025-05-31
 - Enhanced the SUBST (substring) opcode conversion routine to match our contemporary design style. In some cases the resulting %SUBST will be more streamlined, but the result will be the same.
 ## [0.6.40] - 2025-05-31
