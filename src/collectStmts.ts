@@ -85,7 +85,7 @@ export function collectStmt(
   if (curSpec === 'c') {
     if (rpgiv.isUnSupportedOpcode(rpgiv.getRawOpcode(startLine))) return null;
     const opcode = rpgiv.getRawOpcode(startLine);
-    if (opcode==='MOVEA' && !rpgiv.isSupportedMOVEA(startLine)) return null;
+    if (opcode === 'MOVEA' && !rpgiv.isSupportedMOVEA(startLine)) return null;
   }
   if (!startLine || startLine.trim() === '') return null;
 
@@ -321,6 +321,7 @@ export function collectStmt(
   let entityNameParts: string[] = [];
   let finalNameLineFound = false;
   let index = start;
+  let commentIndexes = new Set<number>();
   let collectedIndexes = new Set<number>();
   let collectedLines: string[] = [];
 
@@ -337,6 +338,7 @@ export function collectStmt(
     if (rpgiv.isComment(line)) {
       comments.push(rpgiv.convertCmt(line));
       collectedIndexes.add(index);
+      commentIndexes.add(index);
       index++;
       continue;
     }
@@ -441,6 +443,25 @@ export function collectStmt(
 
     index++;
   }
+// Convert Sets to arrays for indexed access (no need to sort if already ascending)
+const collectedIndexesArr = Array.from(collectedIndexes);
+const commentIndexesArr = Array.from(commentIndexes);
+
+let i = collectedIndexesArr.length - 1;
+let c = commentIndexesArr.length - 1;
+
+// Remove trailing indexes that match in both sets
+while (
+  i >= 0 &&
+  c >= 0 &&
+  collectedIndexesArr[i] === commentIndexesArr[c]
+) {
+  collectedIndexes.delete(collectedIndexesArr[i]);
+  commentIndexes.delete(commentIndexesArr[c]); // <-- Remove from commentIndexes as well
+  comments.pop(); // <-- Remove the last collected ("embedded") comment as well
+  i--;
+  c--;
+}
 
   // Ensure that entityName is always returned, even if it's an empty string
   const entityName = entityNameParts.join('').trim() || null;

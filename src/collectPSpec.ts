@@ -66,6 +66,7 @@ export function collectPSpecs(
   }
 
   // Walk FORWARD
+  const commentIndexes: number[] = [];
   const indexes: number[] = [];
   const lines: string[] = [];
   let entityNameParts: string[] = [];
@@ -80,6 +81,7 @@ export function collectPSpecs(
 
     if (rpgiv.isComment(line)) {
       comments.push(rpgiv.convertCmt(line));
+      commentIndexes.push(i);
       indexes.push(i);
       continue;
     }
@@ -112,21 +114,37 @@ export function collectPSpecs(
     let isCommentNext = false;
     let nextLine = '';
     let bNextIsPSpec = false;
-    if (i+1 < allLines.length) { // Peak at next line
-          nextLine = allLines[i + 1];
-        bNextIsPSpec = (isProcSpec(allLines[i + 1]))
+    if (i + 1 < allLines.length) { // Peak at next line
+      nextLine = allLines[i + 1];
+      bNextIsPSpec = (isProcSpec(allLines[i + 1]))
     }
 
     if (bNextIsPSpec) { // Peak at next line
       isKwdOnly = rpgiv.isJustKwds(nextLine);
       if (!isKwdOnly) {
-        isCommentNext = (rpgiv.isComment(nextLine) || rpgiv.isSkipStmt(nextLine) );
+        isCommentNext = (rpgiv.isComment(nextLine) || rpgiv.isSkipStmt(nextLine));
       }
     }
     // going forward through the lines, if we hit a Defn spec (DS, PI, C, PR, S) we're done
     if (!rpgiv.dNameContinues(line) && !rpgiv.dKwdContinues(line) && (!isKwdOnly && !isCommentNext)) {
       break;
     }
+  }
+
+  let i = indexes.length - 1;
+  let c = commentIndexes.length - 1;
+
+  // Remove trailing indexes that match in both sets
+  while (
+    i >= 0 &&
+    c >= 0 &&
+    indexes[i] === commentIndexes[c]
+  ) {
+    indexes.pop();
+    commentIndexes.pop();
+    comments.pop(); // <-- Remove the last collected ("embedded") comment as well
+    i--;
+    c--;
   }
 
   return {

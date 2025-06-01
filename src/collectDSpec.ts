@@ -73,6 +73,7 @@ export function collectDSpecs(
     firstIndex = i;
   }
 
+  const commentIndexes: number[] = [];
   // Walk FORWARD
   const indexes: number[] = [];
   const lines: string[] = [];
@@ -88,6 +89,7 @@ export function collectDSpecs(
 
     if (rpgiv.isComment(line)) {
       comments.push(rpgiv.convertCmt(line));
+      commentIndexes.push(i);
       indexes.push(i);
       continue;
     }
@@ -123,7 +125,7 @@ export function collectDSpecs(
     let isKwdOnly = false;
     let isCommentNext = false;
     // Changed to i+1 since we're getting the next line and array elements can't be exceeded
-    if (bValidDefnLine && i+1 < allLines.length) { // Peak at next line
+    if (bValidDefnLine && i + 1 < allLines.length) { // Peak at next line
       isKwdOnly = rpgiv.isJustKwds(allLines[i + 1]);
       if (!isKwdOnly) {
         isCommentNext = rpgiv.isComment(allLines[i + 1]);
@@ -134,6 +136,24 @@ export function collectDSpecs(
       break;
     }
   }
+
+
+  let i = indexes.length - 1;
+  let c = commentIndexes.length - 1;
+
+  // Remove trailing indexes that match in both sets
+  while (
+    i >= 0 &&
+    c >= 0 &&
+    indexes[i] === commentIndexes[c]
+  ) {
+    indexes.pop();
+    commentIndexes.pop();
+    comments.pop(); // <-- Remove the last collected ("embedded") comment as well
+    i--;
+    c--;
+  }
+
 
   return {
     specType: 'D',

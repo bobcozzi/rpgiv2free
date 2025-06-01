@@ -281,7 +281,9 @@ export function activate(context: vscode.ExtensionContext) {
         continue;
       }
 
-      const { lines: specLines, comments, isSQL, isCollected, entityName } = collectedStmts;
+      //      const { lines: specLines, comments, isSQL, isCollected, entityName } = collectedStmts;
+      const { lines: specLines, comments: rawComments, isSQL, isCollected, entityName } = collectedStmts;
+      let comments = rawComments ?? [];
 
       // if (i !== indexes[0]) continue;
 
@@ -307,7 +309,7 @@ export function activate(context: vscode.ExtensionContext) {
             : specType === 'f' ? convertFSpec(specLines)
               : specType === 'd' ? convertDSpec(specLines, entityName, extraDCL, allLines, i)
                 : specType === 'p' ? convertPSpec(specLines, entityName)
-                  : specType === 'c' ? convertCSpec(specLines, extraDCL)
+                  : specType === 'c' ? convertCSpec(specLines, comments, extraDCL, allLines, i)
                     : specLines;
         if (specType) {
           convertedText = converted.flatMap(line => formatRPGIV(line)).join(rpgiv.getEOL());
@@ -320,10 +322,12 @@ export function activate(context: vscode.ExtensionContext) {
 
       const eol = rpgiv.getEOL();
       if (Array.isArray(comments) && comments.length > 0) {
-        if (!convertedText.endsWith(eol) && convertedText.length > 0) {
-          convertedText += eol;
+        if (comments.length === 1 && comments[0] === '') {
+          convertedText = '' + eol + convertedText;
         }
-        convertedText += comments.join(eol);
+        else {
+          convertedText = comments.join(eol) + eol + convertedText;
+        }
       }
 
       const rangeStart = new vscode.Position(indexes[0], 0);
@@ -383,7 +387,7 @@ export function activate(context: vscode.ExtensionContext) {
           vscode.window.showErrorMessage('Failed to apply conversion edits. Please try again.');
         }
       } catch (error) {
-      //  console.log('Error applying edits:', (error as Error).message, 'Edits:', JSON.stringify(edits, null, 2));
+        //  console.log('Error applying edits:', (error as Error).message, 'Edits:', JSON.stringify(edits, null, 2));
         vscode.window.showErrorMessage('Error applying edits: ' + (error as Error).message);
       }
     }

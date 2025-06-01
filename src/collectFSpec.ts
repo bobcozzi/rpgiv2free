@@ -74,6 +74,7 @@ export function collectFSpecs(
   }
 
   // Walk FORWARD
+  const commentIndexes: number[] = [];
   const indexes: number[] = [];
   const lines: string[] = [];
   let entityNameParts: string[] = [];
@@ -88,6 +89,7 @@ export function collectFSpecs(
 
     if (rpgiv.isComment(line)) {
       comments.push(rpgiv.convertCmt(line));
+      commentIndexes.push(i);
       indexes.push(i);
       continue;
     }
@@ -106,6 +108,22 @@ export function collectFSpecs(
     indexes.push(i);
     lines.push(line);
 
+  }
+
+  let i = indexes.length - 1;
+  let c = commentIndexes.length - 1;
+
+  // Remove trailing indexes that match in both sets
+  while (
+    i >= 0 &&
+    c >= 0 &&
+    indexes[i] === commentIndexes[c]
+  ) {
+    indexes.pop();
+    commentIndexes.pop();
+    comments.pop(); // <-- Remove the last collected ("embedded") comment as well
+    i--;
+    c--;
   }
 
   return {

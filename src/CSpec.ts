@@ -13,7 +13,11 @@ type OpcodeEnhancement = {
   result: string;
 };
 
-export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
+export function convertCSpec(lines: string[],
+  comments: string[] | null, // Comments parm is optional
+  extraDCL: string[],
+  allLines: string[],
+  curLineIndex: number): string[] {
   if (!Array.isArray(lines) || lines.length === 0) return [];
 
   const line = lines[0].padEnd(80, ' '); // RPG fixed-format always assumes 80-char line
@@ -25,6 +29,7 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
   const condIndy = rpgiv.getCol(line, 9, 11).trim();
   const factor1 = rpgiv.getCol(line, 12, 25).trim();
   let opcode = rpgiv.getFullOpcode(line);
+
   const factor2 = rpgiv.getCol(line, 36, 49).trim();
   const factor2Ext = rpgiv.getCol(line, 36, 80).trim();
   const result = rpgiv.getCol(line, 50, 63).trim();
@@ -33,11 +38,14 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
   const resInd1 = rpgiv.getCol(line, 71, 72).trim();
   const resInd2 = rpgiv.getCol(line, 73, 74).trim();
   const resInd3 = rpgiv.getCol(line, 75, 76).trim();
-  const comments = rpgiv.getCol(line, 81, 100).trim();
+  const comment = rpgiv.getCol(line, 81, 100).trim();
   let extFactor2 = rpgiv.getCol(line, 36, 80).trim();
 
   let freeFormLine: string[] = [];
   let afterOpcode = '';
+
+  let prevCalc: OpcodeEnhancement | null = null;
+
   if (condIndy && condIndy.trim() !== '' && (levelBreak.trim() === '' || levelBreak.toLowerCase().trim() === 'sr')) {
     const condStmt = handleCondIndy(condIndy);
     if (condStmt.length > 0) {
@@ -49,6 +57,11 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
   }
   let { rawOpcode: rawOpcode, extenders: opExt } = rpgiv.splitOpCodeExt(opcode);
 
+  // Only get prevCalc for these opcodes
+  if (["MVR", "DIV", "MULT"].includes(rawOpcode)) {
+    prevCalc = getPrevCalcSpec(allLines, curLineIndex);
+  }
+
   if (rpgiv.isExtOpcode(rawOpcode)) {
     if (lines.length > 1) {
       // Extract cols 36–80 (1-based) from each line starting with index 1
@@ -57,7 +70,6 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
         .join(' ')
         .trim();
     }
-
     // e.g., IF extFactor2
     if ((!opExt && opExt === '') && rawOpcode.toLowerCase() === "eval" || rawOpcode.toLowerCase() === 'callp') {
       rawOpcode = "";  // EVAL/callp is not needed in free-form
@@ -80,6 +92,7 @@ export function convertCSpec(lines: string[], extraDCL: string[]): string[] {
         resInd1,
         resInd2,
         resInd3,
+        prevCalc,
         comments,
         extraDCL
       ));
@@ -196,7 +209,8 @@ function convertOpcodeToFreeFormat(
   resInd1: string,
   resInd2: string,
   resInd3: string,
-  comments: string,
+  prevCalc: OpcodeEnhancement | null,
+  comments: string[] | null, // Comments parm is optional
   extraDCL: string[]
 ): { newLines: string[], newOpcode: string } {
 
@@ -234,10 +248,6 @@ function convertOpcodeToFreeFormat(
   let opAction = '';
   let opLines: string[] = [];
 
-  if (comments && comments.trim() !== '') {
-    newLines.push(`// ${comments}`);
-  }
-
   // If database I/O, see if it uses a Key List
   // If it does, change Factor2 to the keylist before conversion
   switch (opCode.toUpperCase()) {
@@ -260,6 +270,53 @@ function convertOpcodeToFreeFormat(
     case 'SETON':
     case 'SETOFF':
       newOpcode = '*DLT';
+
+    case "ADD":
+      if (factor1) {
+        newLines.push(`${result} = ${factor1} + ${factor2}`);
+      } else {
+        newLines.push(`${result} += ${factor2}`);
+      }
+      break;
+    case "SUB":
+      if (factor1) {
+        newLines.push(`${result} = ${factor1} - ${factor2}`);
+      } else {
+        newLines.push(`${result} -= ${factor2}`);
+      }
+      break;
+    case "MULT":
+      if (factor1) {
+        newLines.push(`${result} = ${factor1} * ${factor2}`);
+      } else {
+        newLines.push(`${result} *= ${factor2}`);
+      }
+      break;
+    case "DIV":
+      if (factor1) {
+        newLines.push(`${result} = ${factor1} / ${factor2}`);
+      } else {
+        newLines.push(`${result} /= ${factor2}`);
+      }
+      break;
+
+    case 'MVR':
+      if (prevCalc) {
+        if (!prevCalc.opcode.trim().startsWith('DIV')) {
+          comments?.push('           // Previous Opcode is not DIV opcode requied by MVR -> %REM()');
+        }
+        newLines.push(`${result} = %REM(${prevCalc.factor1}:${prevCalc.factor2})`);
+      }
+      else {
+        newOpcode = '*KEEP'
+        comments?.push('// Cannot find previous Fixed-Format DIV opcode.');
+      }
+      break;
+
+    case 'SQRT':
+      newLines.push(`${result} += %SQRT(${factor2})`);
+      break;
+
     case "Z-ADD":
       newLines.push(`${result} = ${factor2}`);
       break;
@@ -267,6 +324,7 @@ function convertOpcodeToFreeFormat(
       newLines.push(`${result} = 0`);
       newLines.push(`${result} -= ${factor2}`);
       break;
+
     case "END":
       freeFormat = `${opCode}xx; // "END" opcode deprecated. Use ENDxx (e.g., ENDIF, ENDDO, etc.)`;
       break;
@@ -460,20 +518,6 @@ function convertOpcodeToFreeFormat(
       newLines.push(...op.convertDO(fullOpcode, factor1, factor2, result, extraDCL));
       newOpcode = '';
       break;
-    case "SUB":
-      if (factor1) {
-        newLines.push(`${result} = ${factor1} - ${factor2}`);
-      } else {
-        newLines.push(`${result} -= ${factor2}`);
-      }
-      break;
-    case "ADD":
-      if (factor1) {
-        newLines.push(`${result} = ${factor1} + ${factor2}`);
-      } else {
-        newLines.push(`${result} += ${factor2}`);
-      }
-      break;
     case "DEFN":
     case "DEFINE":
       let newDEFN = '';
@@ -506,20 +550,7 @@ function convertOpcodeToFreeFormat(
       newDEFN = `           // ${factor1} ${opcode} ${factor2} ${result}; // See converted DCL-xx`;
       newLines.push(newDEFN);
       break;
-    case "MULT":
-      if (factor1) {
-        newLines.push(`${result} = ${factor1} * ${factor2}`);
-      } else {
-        newLines.push(`${result} *= ${factor2}`);
-      }
-      break;
-    case "DIV":
-      if (factor1) {
-        newLines.push(`${result} = ${factor1} / ${factor2}`);
-      } else {
-        newLines.push(`${result} /= ${factor2}`);
-      }
-      break;
+
     case "COMP":
       if (resInd1) {
         newLines.push(`*IN${resInd1} = (${factor1} > ${factor2})`);
@@ -568,7 +599,7 @@ function handleResultingIndicators(
   const newLines: string[] = [];
 
   // Bail out if the opcode is one of those whose resulting indicators are handled during conversion
-  const indicatorOpcodes = new Set(['LOOKUP','TESTZ','TESTB','TESTN','BITON','BITOFF']);
+  const indicatorOpcodes = new Set(['LOOKUP', 'TESTZ', 'TESTB', 'TESTN', 'BITON', 'BITOFF']);
   if (indicatorOpcodes.has(normalizedOpcode)) {
     return newLines; // returns empty set for these opcodes
   }
@@ -608,8 +639,9 @@ function handleResultingIndicators(
 
     case "ADD":
     case "SUB":
-    case "MULLT":
     case "DIV":
+    case "MULT":
+    case "MVR":
     case 'XFOOT':
       if (resInd1) {
         newLines.push(`*IN${resInd1} = (${result} > 0);`);
@@ -756,4 +788,33 @@ function convertConditionalOpcode(
     }
   }
   return [];
+}
+
+function getPrevCalcSpec(
+  allLines: string[],
+  index: number
+): OpcodeEnhancement | null {
+  // Walk backwards from the given index
+  for (let i = index - 1; i >= 0; i--) {
+    const line = allLines[i];
+    const specType = rpgiv.getSpecType(line);
+    // Check for a fixed-format Calc spec (specType 'C')
+    if (specType === 'c' && rpgiv.isValidFixedFormat(line)) {
+      // Parse out opcode, factor1, factor2, result
+      // (You can fill in more logic here as needed)
+      const opcode = rpgiv.getFullOpcode(line);
+      const factor1 = rpgiv.getCol(line, 12, 25).trim();
+      const factor2 = rpgiv.getCol(line, 36, 49).trim();
+      const result = rpgiv.getCol(line, 50, 63).trim();
+      return { opcode, factor1, factor2, result };
+    }
+    // If we hit a free-format Calc spec, continue otherwise, bail out
+    else if (specType === '' && (line.startsWith('dcl-') || line.startsWith('end-'))
+      || (specType !== '' && specType !== 'c')) {
+      // Return null or empty parameters if not found
+      return null;
+    }
+  }
+  // If nothing found, return null
+  return null;
 }

@@ -33,6 +33,7 @@ export function collectHKeywords(
   firstIndex: number
 ): CollectResult {
   let hspec = '';
+  const commentIndexes: number[] = [];
   const indexes: number[] = [];
   const comments: string[] = [];
   let inQuote = false;
@@ -44,6 +45,7 @@ export function collectHKeywords(
     const line = allLines[i];
     if (rpgiv.isComment(line)) {
       comments.push(rpgiv.convertCmt(line));
+      commentIndexes.push(i);
       indexes.push(i);
       continue;
     }
@@ -95,6 +97,22 @@ export function collectHKeywords(
     wasQuoted = inQuote;
 
     indexes.push(i);
+  }
+
+  let i = indexes.length - 1;
+  let c = commentIndexes.length - 1;
+
+  // Remove trailing indexes that match in both sets
+  while (
+    i >= 0 &&
+    c >= 0 &&
+    indexes[i] === commentIndexes[c]
+  ) {
+    indexes.pop();
+    commentIndexes.pop();
+    comments.pop(); // <-- Remove the last collected ("embedded") comment as well
+    i--;
+    c--;
   }
   hspec = 'ctl-opt ' + hspec.trimStart();
   return { lines: [hspec], indexes: indexes, comments: comments };

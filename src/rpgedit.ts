@@ -227,8 +227,9 @@ export function isDirective(line: string): boolean {
 }
 
 export function isValidFixedFormat(line: string): boolean {
-  const bValidFormat = (isNotSkipStmt(line) && getSpecType(line).trim() !== '');
-  return bValidFormat;
+  const specType = getSpecType(line).trim();
+  // isNotSkipStmt checks for things like comments and directives and empty lines
+  return  (isNotSkipStmt(line) && ['h', 'f', 'd', 'c', 'p', 'i', 'o'].includes(specType));
 }
 
 // for non-executable source lines, like comments, blanks line, or compiler directives
@@ -237,6 +238,12 @@ export function isSkipStmt(line: string): boolean {
   const bEmptyStmt = isEmptyStmt(line);
   const bDirective = isDirective(line);
   return bComment || bDirective || bEmptyStmt;
+}
+// for non-executable source lines, like comments, blanks line, or compiler directives
+export function isSkipNonComment(line: string): boolean {
+  const bEmptyStmt = isEmptyStmt(line);
+  const bDirective = isDirective(line);
+  return bDirective || bEmptyStmt;
 }
 
 export function isNotSkipStmt(line: string): boolean {
@@ -448,38 +455,36 @@ export function isExtFactor2(line: string): boolean {
   return false;
 }
 
-function isFreeFormCalcStmt(line: string): boolean {
+export function isFreeFormCalcStmt(line: string): boolean {
   const trimmedLine = line.trim();
 
   // If the line is empty, return false
-  if (trimmedLine === '') return false;
+  if (isSkipStmt(trimmedLine)) return false;
 
-  if (isComment(line)) {
-    return false;
-  }
+  // Split the line into tokens by space or (
+  const tokens = trimmedLine.split(/\s+|\(/);
+  const firstToken = tokens[0].toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-  // Split the line into tokens by space
-  const tokens = trimmedLine.split(/\s+|\(/);  // Regular split by spaces
-
-  const firstToken = tokens[0].toUpperCase().replace(/[^A-Z0-9]/g, ''); // Get first token and clean it
-
-  // Check if the first token is a valid opcode (skip control structures)
-  if (isValidOpcode(firstToken)) {
+  // Check if the first token is a valid opcode or %SUBST() built-in function (l-value)
+  if (isValidOpcode(firstToken) || firstToken.startsWith('%SUB')) {
     return true;
   }
 
-  // Check for the presence of assignment or function call
-  const splitIndex = trimmedLine.indexOf('=');  // Check for assignment operator
-  if (splitIndex === -1) {
-    const openParenIndex = trimmedLine.indexOf('(');  // Check for a function call
-    if (openParenIndex === -1) return false;  // No assignment and no function call
-    // Check if it's a valid function (procedure call) by validating the first token
-    if (isExtOpcode(firstToken)) return true;  // Procedure call
-    return false;
+  // Check for assignment operators (=, +=, -=, *=, /=)
+  const assignmentMatch = trimmedLine.match(/(\+?=|\-?=|\*?=|\/?=)/);
+  if (assignmentMatch) {
+    // Check if the left-hand side is a valid variable or built-in function
+    // (You may want to enhance this logic for your needs)
+    return true;
   }
 
-  // For assignment statements: check if it's a valid variable (e.g., target variable for the assignment)
-  return true;
+  // Check for a function/procedure call
+  const openParenIndex = trimmedLine.indexOf('(');
+  if (openParenIndex !== -1) {
+    if (isValidOpcode(firstToken)) return true; // Procedure call
+  }
+
+  return false;
 }
 
 
