@@ -562,6 +562,25 @@ function convertOpcodeToFreeFormat(
         newLines.push(`*IN${resInd3} = (${factor1} = ${factor2})`);
       }
       break;
+
+    case 'OCCUR':
+      // The result receives the occurrances after the optional new occurrance (factor 1) is assigned.
+      if (resInd2) {
+        newLines.push('monitor');
+      }
+      if (factor1) {
+        newLines.push(`%OCCURS(${factor2}) = ${factor1}`);
+      }
+      if (result) {
+        newLines.push(`${result} = %OCCURS(${factor2})`);
+      }
+      if (resInd2) {
+        newLines.push('on-error');
+        newLines.push(`*IN${resInd2} = *ON`);
+        newLines.push('endmon');
+      }
+      break;
+
     default:
       freeFormat = `${fullOpcode} ${factor1} ${factor2} ${result}`;
       newLines.push(freeFormat);
@@ -599,7 +618,7 @@ function handleResultingIndicators(
   const newLines: string[] = [];
 
   // Bail out if the opcode is one of those whose resulting indicators are handled during conversion
-  const indicatorOpcodes = new Set(['LOOKUP', 'TESTZ', 'TESTB', 'TESTN', 'BITON', 'BITOFF']);
+  const indicatorOpcodes = new Set(['LOOKUP', 'OCCUR','TESTZ', 'TESTB', 'TESTN', 'BITON', 'BITOFF']);
   if (indicatorOpcodes.has(normalizedOpcode)) {
     return newLines; // returns empty set for these opcodes
   }

@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 - Math conversion now includes the MVR (move remainder) opcode.
 - Better handling of blank comment (e.g., "C*") and blank lines embedded between specs.
 - Some math opcodes with resulting indicator use (which is very rare) were returning Resulting Indicator 1 in all cases. This has been corrected.
+- Support for the `OCCUR` and `MVR` opcodes have been added
 ## [0.6.43] - 2025-05-31
 - Corrected resulting indicator conversion for database I/O opcodes
 - Added `TESTZ`, `TESTB`, `TESTN`,`BITON`, and `BITOFF` opcodes to the conversion.
