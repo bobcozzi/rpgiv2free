@@ -197,14 +197,16 @@ export function isEmptyStmt(line: string): boolean {
   return (bBlankLine || bEmptyStmt);
 }
 
-export function isDirective(line: string): boolean {
+export function isDirective(line: string, bFreeFormOnly?: boolean): boolean {
   // Classic RPG directive: column 7 is '/' and column 8 is not '/'
   const bDirective = (
     line.length > 7 &&
     line[6] === '/' &&
     line[7] !== '/'
   );
-  if (bDirective) return true;
+  if (bFreeFormOnly !== true) {
+    if (bDirective) return true;
+  }
 
   // Free-form or modern: line starts with '/' followed by A-Za-z0-9 and nothing or whitespace
   const trimmed = getCol(line, 7, 80).trim().toUpperCase();
@@ -310,7 +312,7 @@ export function insertExtraDCLLinesBatch(
       for (let i = currentLineIndex; i >= 0; i--) {
         const line = allLines[i];
         if (typeof line !== 'string' || !line.trim()) continue;
-        if (isComment(line)) continue;
+        if (isSkipStmt(line)) continue;
 
         // Defensive: line must be at least 6 chars for specType
         const specType = line.length > 5 ? line[5].toLowerCase?.() || '' : '';
@@ -318,9 +320,13 @@ export function insertExtraDCLLinesBatch(
         // so we do not check for 'I' specs here.
         const legacyD = line.length > 5 && (["d", "p", "f", "h"].includes(specType));
         const freeDCL = getColUpper(line, 8, 25).toUpperCase().trimStart();
-        const freeDCL2 = getColUpper(line, 1, 80).toUpperCase().trimStart();
-        const isDCL = freeDCL.startsWith('DCL-') || freeDCL.startsWith('CTL-') ||
-          freeDCL2.startsWith('DCL-') || freeDCL2.startsWith('CTL-');
+        const fullyFreeDCL = getColUpper(line, 1, 80).toUpperCase().trimStart();
+        const isDCL =
+          freeDCL.startsWith('DCL-') ||
+          freeDCL.startsWith('END-') ||
+          fullyFreeDCL.startsWith('DCL-') ||
+          fullyFreeDCL.startsWith('END-') ||
+          freeDCL.startsWith('CTL-') || fullyFreeDCL.startsWith('CTL-');
 
         if (legacyD || isDCL) {
           insertAfterLine = i;

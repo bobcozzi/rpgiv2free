@@ -33,8 +33,9 @@ export function collectKLIST() {
 
     for (let i = 0; i < allLines.length; i++) {
         const line = allLines[i].padEnd(80, ' ');
-        if (rpgiv.isValidFixedFormat(line) && rpgiv.getSpecType(line) === 'o') {
-            break;
+        const specType = rpgiv.getSpecType(line); // Get fixed-format Spec type
+        if (rpgiv.isValidFixedFormat(line)) {
+            if (['p', 'o', 'i', 'd', 'h'].includes(specType)) continue;
         }
         const len = line.trim().length;
         if (len >= 2 && len <= 20) {

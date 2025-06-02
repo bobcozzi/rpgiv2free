@@ -53,6 +53,9 @@ export function convertDSpec(lines: string[],
   if (lenMatch && lenMatch[1]) {
     toPosOrLen = lenMatch[1];
   }
+  else {
+    length = calcLength(dataType, fromPos, toPosOrLen);
+  }
 
   if (fromPos.charAt(0) === '*') {
     const specPos = fromPos + toPosOrLen;
@@ -69,18 +72,21 @@ export function convertDSpec(lines: string[],
     }
     else if (/^\d+$/.test(decPos)) {
       if (dclType === 'S') {
-        fieldType = `packed(${toPosOrLen}:${decPos || '0'})`;
+        fieldType = `packed(${length}:${decPos || '0'})`;
       }
       else {
-        fieldType = `zoned(${toPosOrLen}:${decPos || '0'})`;
+        fieldType = `zoned(${length}:${decPos || '0'})`;
       }
     }
     else {
       if (/varying/i.test(kwdArea)) {
-        fieldType = `varchar(${toPosOrLen})`;
+        fieldType = `varchar(${length})`;
         kwdArea = kwdArea.replace(/\bvarying\b\s*/i, '').replace(/\s{2,}/g, ' ').trim();
-      } else if (toPosOrLen) {
-        fieldType = `char(${toPosOrLen})`;
+      } else if (length) {
+        fieldType = `char(${length})`;
+      }
+      else if (/len/i.test(kwdArea)) {
+        kwdArea = kwdArea.replace(/\blen\(\b\s*/i, 'char(').replace(/\s{2,}/g, ' ').trim();
       }
     }
   }
@@ -207,8 +213,13 @@ function fixKeywordArgs(KwdArea: string): string {
  * Calculates the length for use in convertTypeToKwd.
  * - If fromPos and toPos are both all digits, length = toPos - (fromPos - 1)
  * - If fromPos is not all digits, length = toPos
- * - If dataType is 'P', use packed decimal rules: positions = toPos - (fromPos - 1); if positions is even, length = positions - 1; if odd, length = positions
+ * - If dataType is 'P', use packed decimal rules: positions = toPos - (fromPos - 1);
+ * - If positions is even, length = positions - 1; if odd, length = positions
  */
+// Likely need to pass in decimal positions as a string so that,
+// if decimal positions and no dataType, then assume Packed or Zoned
+// likely also need to know if this is a stand-aloe field (DCL-S) or not
+// so we can default to Packed or Zoned respectively.
 function calcLength(dataType: string, fromPos: string, toPos: string): number {
 
   if (dataType === 'P') {
@@ -327,13 +338,14 @@ function convertTypeToKwd(
       length = calcLength(dataType, fromPos, toPos);
     }
   }
-  else {
-    length = calcLength(dataType, fromPos, toPos); // simple length calc for other data types
-  }
+
 
   // If Data Structure has a length, then add the LEN(nnn) keyword
   if (dclType === 'DS') {
-    if (toPos) {
+    if (toPos && fromPos) {
+      kwds += `LEN(${length})`;
+    }
+    else if (toPos) {
       kwds += ` LEN(${toPos})`
     }
     if (fromPos) {

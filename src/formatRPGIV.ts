@@ -62,24 +62,24 @@ export const formatRPGIV = (input: string, splitOffComments: boolean = false): s
 
   const addToken = (token: string, tokenSpacer: string = '', addIndent = true) => {
 
-  const tokenLen = token.length + tokenSpacer.length;
-  let margin = rightMargin;
-  if (currentLength + tokenLen >= margin && currentLength + tokenLen < srcRcdLen) {
-    margin = srcRcdLen;
-    flushLine(true, addIndent);
-  }
-  if (currentLength + tokenLen > margin) { // &&    !isSpecialPrefixToken(token)) {
-    if (currentLine.trim().length > 0) {
+    const tokenLen = token.length + tokenSpacer.length;
+    let margin = rightMargin;
+    if (currentLength + tokenLen >= margin && currentLength + tokenLen < srcRcdLen) {
+      margin = srcRcdLen;
       flushLine(true, addIndent);
     }
-    currentLine += token + tokenSpacer;
-    currentLength = contIndentLen + tokenLen;
-    return;
-  }
+    if (currentLength + tokenLen > margin) { // &&    !isSpecialPrefixToken(token)) {
+      if (currentLine.trim().length > 0) {
+        flushLine(true, addIndent);
+      }
+      currentLine += token + tokenSpacer;
+      currentLength = contIndentLen + tokenLen;
+      return;
+    }
 
-  currentLine += token + tokenSpacer;
-  currentLength += tokenLen;
-};
+    currentLine += token + tokenSpacer;
+    currentLength += tokenLen;
+  };
 
 
   const breakLongName = (name: string) => {
@@ -155,19 +155,33 @@ export const formatRPGIV = (input: string, splitOffComments: boolean = false): s
     return parts;
   };
 
-  const { code, comment } = extractComment(input);
-  const bIsDir = rpgiv.isDirective(input);
+  let { code, comment } = extractComment(input);
+
+  const bIsDir = rpgiv.isDirective(input, true); // check free format style for directives, only
   if (bIsDir) {
     result.push(indent(dirIndent) + input.trim());
   }
   else {
+      if (code.trim()!== '' && !code.trimEnd().endsWith(';')) {
+        code = code.trimEnd() + ';';
+      }
     // Separate comment from code
     // const tokens = code.match(/'([^']|'')*'|[^\s]+/g) || [];
-    const { tokens, spacers } = tokenizeWithSpacing(code);
-
+    // If total line is < rightMargin, the don't extract the comments
+    if (
+      comment &&
+      comment.trim() !== '' &&
+      input.trimEnd().length <= (rightMargin - firstIndentLen) + 1
+    ) {
+      code = code.trimEnd() + ' ' + comment.trim();
+      comment = '';
+    }
     if (comment && splitOffComments) {
       result.push(indent(contIndentLen) + comment);
     }
+
+    const { tokens, spacers } = tokenizeWithSpacing(code);
+
     for (let i = 0; i < tokens.length; i++) {
       const token = tokens[i];
 
@@ -263,7 +277,7 @@ function tokenizeWithSpacing_ALT2(line: string): { tokens: string[], spacers: st
   const tokens: string[] = [];
   const spacers: string[] = [];
   // Regex: match quoted strings, identifiers, numbers, keywords, operators, and punctuation, then any following whitespace (including none)
-   const regex = /('([^']|'')*'|\*IN\d{2}|\*[A-Z0-9_]+|[A-Z#$@][A-Z0-9#$@_]*|\d+(\.\d+)?|(\+=|-=|\*=|\/=|%=|==|<=|>=|<>|!=)|[(){}\[\]+\-*/=<>:,;]|[^\sA-Z0-9_]+)(\s*)/gi;
+  const regex = /('([^']|'')*'|\*IN\d{2}|\*[A-Z0-9_]+|[A-Z#$@][A-Z0-9#$@_]*|\d+(\.\d+)?|(\+=|-=|\*=|\/=|%=|==|<=|>=|<>|!=)|[(){}\[\]+\-*/=<>:,;]|[^\sA-Z0-9_]+)(\s*)/gi;
 
   let match: RegExpExecArray | null;
   while ((match = regex.exec(line)) !== null) {

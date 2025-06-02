@@ -17,18 +17,22 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number): st
   // Backtrack to find the starting boolean opcode line
   let i = startIndex;
   const firstLine = allLines[i];
-if (!rpgiv.isStartBooleanOpcode(firstLine)) {
-  while (i >= 0 && !rpgiv.isStartBooleanOpcode(allLines[i])) {
-    i--;
+  if (!rpgiv.isStartBooleanOpcode(firstLine)) {
+    while (i >= 0 && !rpgiv.isStartBooleanOpcode(allLines[i])) {
+      i--;
+    }
+    if (i < 0) return { lines: [], indexes: [], comments: null };
   }
-  if (i < 0) return { lines: [], indexes: [], comments: null };
-}
   const startLine = allLines[i];
   indexes.push(i);
 
   const factor1 = rpgiv.getCol(startLine, 12, 25).trim();
   const opcode = rpgiv.getRawOpcode(startLine); // IFEQ, WHENNE, etc.
   const factor2 = rpgiv.getCol(startLine, 36, 49).trim();
+  const comment = rpgiv.getCol(startLine, 81, 100).trim();
+  if (comment && comment.trim() !== '') {
+    comments.push(comment);
+  }
 
   let ffOpcode = '';
   let isIf = false;
@@ -79,13 +83,16 @@ if (!rpgiv.isStartBooleanOpcode(firstLine)) {
     const contFactor1 = rpgiv.getCol(line, 12, 25).trim();
     const contOpcode = rpgiv.getRawOpcode(line); // ANDGT, ORLE, etc.
     const contFactor2 = rpgiv.getCol(line, 36, 49).trim();
+    const comment = rpgiv.getCol(line, 81, 100).trim();
 
     const logicOp = contOpcode.startsWith('OR') ? 'or' :
       contOpcode.startsWith('AND') ? 'and' :
         contOpcode.startsWith('WHEN') ? 'when' : '?';
     const comp = contOpcode.slice(-2); // Last 2 characters
     const compSymbol = opMap[comp] ?? '?';
-
+    if (comment && comment.trim() !== '') {
+      comments.push(comment);
+    }
     booleanExpr += ` ${logicOp} ${contFactor1} ${compSymbol} ${contFactor2}`;
     i++;
   }

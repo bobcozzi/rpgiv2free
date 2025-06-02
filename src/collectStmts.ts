@@ -156,7 +156,7 @@ export function collectStmt(
         entityName: null,
         lines: booleanOpcodeResult.lines,
         indexes: booleanOpcodeResult.indexes,
-        comments: comments.length > 0 ? comments : null,
+        comments: booleanOpcodeResult.comments,
         isSQL: false,
         isCollected: true,
       };

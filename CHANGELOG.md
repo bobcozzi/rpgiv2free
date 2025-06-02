@@ -4,6 +4,31 @@
 All notable changes to this project will be documented in this file.
 
 ## [0.7.1] - 2025-06-01
+### The following Bug Fixes and Enhancements are rolled into this release
+### File Specs
+- If the USAGE keyword contains *DELETE, "File Addition/ADD" was included.
+- The WORKSTN keyword means that for CF (combined) files, no USAGE keyword is necessary but USAGE(*INPUT:*OUTPUT) is optional.
+- For DISK usage Update files (e.g., "U") are USAGE(*UPDATE:*DELETE) in free format, although techincally only USAGE(*DELETE) is required.
+- The USAGE(*OUTPUT) is now added when required or when the "File Addition" flag equal 'A'.
+
+### General Issues
+- Comments in columns 1–5 are not supported and will be lost. This is now a policy for rpgiv2free.
+- Comments in column 81 on Calc and D specs are now preserved.
+- Extension-generated comments now appear before the converted code instead of after.
+- Embedded comments (columns 81 to 100) are only rendered on the same line unless that line exceeds the record length/right margin.
+
+### Definition (D) Spec Issues
+- When From/To columns are the same (e.g., 30 30), the field length is now correctly calculated as 1, not the "to column" value.
+- When adding ad hoc fields, extraDCL fields were being inserted after the UDS and before its subfields; this is corrected.
+- Non-dataType fields, especially those with LEN(n), were losing attributes; this is fixed.
+
+### Calc Spec/Opcode Issues
+- Math opcodes with H or R extenders no include them when converting to free format.
+- Keylist conversions in subprocedures (and possibly elsewhere) were not applied to CHAIN/READ, etc. This was due to the top-down scan stopping at Output specs. Now it continues until EOF or ** in columns 1–2 is detected to search for key lists.
+- Fixed a bug in DIV where the terminating semicolon was missing when checking for directives in the resulting free-format statement.
+- Added half-adjust support to all math opcodes.
+
+## [0.7.1] - 2025-06-01
 - Math conversion now includes the MVR (move remainder) opcode.
 - Better handling of blank comment (e.g., "C*") and blank lines embedded between specs.
 - Some math opcodes with resulting indicator use (which is very rare) were returning Resulting Indicator 1 in all cases. This has been corrected.

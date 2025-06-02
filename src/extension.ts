@@ -24,10 +24,12 @@ export function activate(context: vscode.ExtensionContext) {
 
   rpgSmartTabEnabled = context.globalState.get<boolean>('rpgSmartTabEnabled', true);
 
-  function loadSettings() {
-    const config = vscode.workspace.getConfiguration('rpgiv2free');
-    rpgSmartTabEnabled = config.get<boolean>('enableRPGSmartEnter', true);
-  }
+  const config = rpgiv.getRPGIVFreeSettings();
+
+ // function loadSettings() {
+ //   const config = vscode.workspace.getConfiguration('rpgiv2free');
+ //   rpgSmartTabEnabled = config.get<boolean>('enableRPGSmartEnter', true);
+ // }
 
 
   //
@@ -326,7 +328,9 @@ export function activate(context: vscode.ExtensionContext) {
           convertedText = '' + eol + convertedText;
         }
         else {
-          convertedText = comments.join(eol) + eol + convertedText;
+          const indent = config.indentFirstLine - 1;
+            const prefix = ' '.repeat(Math.max(0, indent)) + '// ';
+            convertedText = comments.map(c => prefix + c).join(eol) + eol + convertedText;
         }
       }
 

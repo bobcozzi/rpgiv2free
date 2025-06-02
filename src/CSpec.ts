@@ -75,6 +75,7 @@ export function convertCSpec(lines: string[],
       rawOpcode = "";  // EVAL/callp is not needed in free-form
     }
     freeFormLine.push(`${opcode.toLowerCase()} ${extFactor2}`);
+
   } else if (!rpgiv.isUnSupportedOpcode(opcode)) {
     // Common 3-operand statement: result = factor1 opcode factor2;
     const enhValues: OpcodeEnhancement = enhanceOpcode(opcode, factor1, factor2, result, length, decimals, resInd1, resInd2, resInd3);
@@ -92,6 +93,7 @@ export function convertCSpec(lines: string[],
         resInd1,
         resInd2,
         resInd3,
+        comment,  // Line comment
         prevCalc,
         comments,
         extraDCL
@@ -104,6 +106,7 @@ export function convertCSpec(lines: string[],
       return []; // pass thru stmt such as MOVEA that is NOT *IN related
     }
     else {
+
       if (reformattedLine.length > 0) {
         freeFormLine.push(...reformattedLine);
       } else {
@@ -111,6 +114,7 @@ export function convertCSpec(lines: string[],
         freeFormLine.push(newLine.trimEnd() + ';');
       }
     }
+
     if (extraDCL.length === 0 && length.trim() !== '') {
       const dataType = (decimals.trim() !== '') ? `packed(${length}:${decimals})` : `char(${length})`;
       extraDCL.push(` dcl-s ${result} ${dataType}; // Calc Spec work-field`);
@@ -209,6 +213,7 @@ function convertOpcodeToFreeFormat(
   resInd1: string,
   resInd2: string,
   resInd3: string,
+  comment: string,
   prevCalc: OpcodeEnhancement | null,
   comments: string[] | null, // Comments parm is optional
   extraDCL: string[]
@@ -219,6 +224,7 @@ function convertOpcodeToFreeFormat(
   const condLines = convertConditionalOpcode(opcode, factor1, factor2);
   if (condLines.length > 0) return { newLines: condLines, newOpcode: opcode };
   const fullOpcode = opcode.toUpperCase();
+  const { rawOpcode: rawOpcode, extenders: opExt } = rpgiv.splitOpCodeExt(fullOpcode);
 
   const newLines: string[] = [];
   let freeFormat = '';
@@ -245,8 +251,13 @@ function convertOpcodeToFreeFormat(
 
   let lValue = '';
   let kwd = '';
+  let newMath = '';
   let opAction = '';
   let opLines: string[] = [];
+  let cmt = '';
+  if (comment?.trim() !== '') {
+    cmt = comment.trim();
+  }
 
   // If database I/O, see if it uses a Key List
   // If it does, change Factor2 to the keylist before conversion
@@ -264,7 +275,6 @@ function convertOpcodeToFreeFormat(
       factor1 = getKeyList(factor1);
       break;
   }
-
   switch (opCode.toUpperCase()) {
     case 'COMP':   // Skippable non-opcode in free format (indy manipulations only)
     case 'SETON':
@@ -272,32 +282,75 @@ function convertOpcodeToFreeFormat(
       newOpcode = '*DLT';
 
     case "ADD":
-      if (factor1) {
-        newLines.push(`${result} = ${factor1} + ${factor2}`);
-      } else {
-        newLines.push(`${result} += ${factor2}`);
+      if (opExt?.trim() !== '') {
+        newMath = `eval(${opExt}) `;
       }
+      if (factor1) {
+        newMath += `${result} = ${factor1} + ${factor2}`;
+      } else {
+        newMath += `${result} += ${factor2}`;
+      }
+      newLines.push(newMath);
       break;
+
     case "SUB":
-      if (factor1) {
-        newLines.push(`${result} = ${factor1} - ${factor2}`);
-      } else {
-        newLines.push(`${result} -= ${factor2}`);
+      if (opExt?.trim() !== '') {
+        newMath = `eval(${opExt}) `;
       }
+      if (factor1) {
+        newMath += `${result} = ${factor1} - ${factor2}`;
+      } else {
+        newMath += `${result} -= ${factor2}`;
+      }
+      newLines.push(newMath);
+
       break;
     case "MULT":
-      if (factor1) {
-        newLines.push(`${result} = ${factor1} * ${factor2}`);
-      } else {
-        newLines.push(`${result} *= ${factor2}`);
+      if (opExt?.trim() !== '') {
+        newMath = `eval(${opExt}) `;
       }
+      if (factor1) {
+        newMath += `${result} = ${factor1} * ${factor2}`;
+      } else {
+        newMath += `${result} *= ${factor2}`;
+      }
+      newLines.push(newMath);
+
       break;
     case "DIV":
-      if (factor1) {
-        newLines.push(`${result} = ${factor1} / ${factor2}`);
-      } else {
-        newLines.push(`${result} /= ${factor2}`);
+      if (opExt?.trim() !== '') {
+        newMath = `eval(${opExt}) `;
       }
+      if (factor1) {
+        newMath += `${result} = ${factor1} / ${factor2}`;
+      } else {
+        newMath += `${result} /= ${factor2}`;
+      }
+      newLines.push(newMath);
+
+      break;
+
+    case 'SQRT':
+      if (opExt?.trim() !== '') {
+        newMath = `eval(${opExt}) `;
+      }
+      newMath += `${result} += %SQRT(${factor2})`;
+      newLines.push(newMath);
+      break;
+
+    case "Z-ADD":
+      if (opExt?.trim() !== '') {
+        newMath = `eval(${opExt}) `;
+      }
+      newMath += `${result} = ${factor2}`;
+      newLines.push(newMath);
+      break;
+    case "Z-SUB":
+      if (opExt?.trim() !== '') {
+        newMath = `eval(${opExt}) `;
+      }
+      newMath += `${result} = (0 - ${factor2})`;
+      newLines.push(newMath);
       break;
 
     case 'MVR':
@@ -311,18 +364,6 @@ function convertOpcodeToFreeFormat(
         newOpcode = '*KEEP'
         comments?.push('// Cannot find previous Fixed-Format DIV opcode.');
       }
-      break;
-
-    case 'SQRT':
-      newLines.push(`${result} += %SQRT(${factor2})`);
-      break;
-
-    case "Z-ADD":
-      newLines.push(`${result} = ${factor2}`);
-      break;
-    case "Z-SUB":
-      newLines.push(`${result} = 0`);
-      newLines.push(`${result} -= ${factor2}`);
       break;
 
     case "END":
@@ -588,6 +629,13 @@ function convertOpcodeToFreeFormat(
       // handle unrecognized opcode
       break;
   }
+
+  if (cmt && cmt.trim() !== '') {
+    if (newLines.length > 0 && !newLines[0].includes(cmt)) {
+      newLines[0] = newLines[0] + ' // ' + cmt;
+    }
+  }
+
   return { newLines: newLines, newOpcode: newOpcode };
 }
 
@@ -618,7 +666,7 @@ function handleResultingIndicators(
   const newLines: string[] = [];
 
   // Bail out if the opcode is one of those whose resulting indicators are handled during conversion
-  const indicatorOpcodes = new Set(['LOOKUP', 'OCCUR','TESTZ', 'TESTB', 'TESTN', 'BITON', 'BITOFF']);
+  const indicatorOpcodes = new Set(['LOOKUP', 'OCCUR', 'TESTZ', 'TESTB', 'TESTN', 'BITON', 'BITOFF']);
   if (indicatorOpcodes.has(normalizedOpcode)) {
     return newLines; // returns empty set for these opcodes
   }

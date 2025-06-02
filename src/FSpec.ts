@@ -33,11 +33,15 @@ export function convertFSpec(lines: string[]): string[] {
   let usage = '';
   if (fileType === 'I') usage = '*input';
   else if (fileType === 'O') usage = '*output';
-  else if (fileType === 'U') usage = '*update:*delete';
-  else if (fileType === 'C') usage = '*input:*output';
+  else if (fileType === 'U') {
+    usage = '*update:*delete';  // Technically only *DELETE is needed but thats confusing!
+  }
+  else if (fileType === 'C' && deviceType != "WORKSTN") {
+    usage = '*input:*output';
+  }
 
-  // Append *output if needed
-  if (fileAddition === 'A' && !usage.toLowerCase().includes('*output')) {
+  // DISK with File Addition = 'A' ("ADD output) then append usage(*output) if needed
+  if (fileAddition === 'A' && !/(\*output)/i.test(usage)) {
     usage += (usage ? ':' : '') + '*output';
   }
 
@@ -78,9 +82,9 @@ export function convertFSpec(lines: string[]): string[] {
   }
 
   // Combine everything
-  if (usage) decl += ` usage(${usage})`;
-  if (keyedClause) decl += ` ${keyedClause}`;
-  if (kwdArea) decl += ` ${kwdArea.trim()}`;
+  if (usage?.trim()) decl += ` usage(${usage})`;
+  if (keyedClause?.trim()) decl += ` ${keyedClause}`;
+  if (kwdArea?.trim()) decl += ` ${kwdArea.trim()}`;
 
   return [decl];
 }
