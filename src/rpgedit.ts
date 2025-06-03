@@ -439,6 +439,52 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
   return insertPoint;
 }
 
+export function isBitLiteral(factor2: string): boolean {
+        return /^'[0-7]{1,8}'$/.test(factor2);
+}
+
+/**
+ * Checks if the input string contains a valid RPG IV Date format *xxxS.
+ * Allows for optional trailing characters (e.g., *ISO0, *YMD-, *MDY/).
+ */
+export function isValidDateFmt(input: string): boolean {
+    const dateFmtPrefixes = [
+        '*ISO', '*USA', '*EUR', '*JIS', '*MDY', '*DMY', '*YMD', '*JUL', '*LONGJUL',
+        '*CYMD', '*CDMY', '*CMDY', '*JOB', '*JOBRUN', '*SYS', '*SYSVAL'
+    ];
+    const upperInput = input.toUpperCase();
+    return dateFmtPrefixes.some(fmt =>
+        upperInput.split(/[\s,;()]+/).some(token =>
+            dateFmtPrefixes.some(prefix =>
+                token.startsWith(prefix)
+            )
+        )
+    );
+}
+
+/**
+ * Splits the input string on the first colon (:) not inside single quotes.
+ * Returns an array: [factorValue, factorArg]. If no such colon, returns [input, ''].
+ */
+export function splitFactor(input: string): [factorValue: string, factorArg: string] {
+    let inQuotes = false;
+    let splitIdx = -1;
+    for (let i = 0; i < input.length; i++) {
+        const ch = input[i];
+        if (ch === "'") inQuotes = !inQuotes;
+        if (ch === ':' && !inQuotes) {
+            splitIdx = i;
+            break;
+        }
+    }
+    if (splitIdx !== -1) {
+        const factorValue = input.slice(0, splitIdx).trim();
+        const factorArg = input.slice(splitIdx + 1).trim();
+        return [factorValue, factorArg];
+    }
+    return [input.trim(), ''];
+}
+
 export function isExtFactor2(line: string): boolean {
   if (typeof line !== 'string' || !line) return false;
 

@@ -531,28 +531,14 @@ function convertOpcodeToFreeFormat(
       newLines.push(...moveaLines);
       break;
     case "MOVEL":
-      if (config.altMOVEL && !factor2.startsWith('*')) {
-        const altMove = `// %SUBST(${result} : 1 : %MIN(%LEN(${result}:%LEN(${factor2}))) = ${factor2};`;
-        newLines.push(altMove);
-      }
-      newLines.push(`${result} = ${factor2}`);
-      break;
     case "MOVE":
-      // If result or factor2 is an indicator or boolean literal, do not use EVALR
-      const isResultIndicator = result.trim().toUpperCase().startsWith('*IN');
-      const factor2Upper = factor2.trim().toUpperCase();
-      const isFactor2Indicator =
-        factor2Upper.startsWith('*') ||
-        factor2Upper === 'ON' ||
-        factor2Upper === 'OFF' ||
-        factor2Upper === "'1'" ||
-        factor2Upper === "'0'";
-      if (isResultIndicator || isFactor2Indicator) {
-        newLines.push(`${result} = ${factor2}`);
-      } else {
-        newLines.push(`EVALR ${result} = ${factor2}`);
+      const { lines: moveLines, action: moveAction } = op.convertMOVE(fullOpcode, factor1, factor2, result, extraDCL);
+      if (moveAction === '*KEEP') {
+        return { newLines: moveLines, newOpcode: moveAction };
       }
+      newLines.push(...moveLines);
       break;
+
     case 'DO':  // Do is converted to a FOR loop
       newLines.push(...op.convertDO(fullOpcode, factor1, factor2, result, extraDCL));
       newOpcode = '';

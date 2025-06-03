@@ -224,9 +224,12 @@ export const formatRPGIV = (input: string, splitOffComments: boolean = false): s
     flushLine();
 
   }
+
   // Ensure semicolon terminates final statement
   if (!bIsDir && result.length > 0 && !result[result.length - 1].trimEnd().endsWith(';')) {
-    result[result.length - 1] = result[result.length - 1].trimEnd() + ';';
+    if (!rpgiv.isComment(result[result.length - 1])) {
+      result[result.length - 1] = result[result.length - 1].trimEnd() + ';';
+    }
   }
   if (comment && !splitOffComments) {
     result.push(indent(contIndentLen) + comment);

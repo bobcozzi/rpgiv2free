@@ -6,7 +6,7 @@
   "preview": true,
   "private": false,
   "publisher": "CozziResearch",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0",
@@ -92,9 +92,9 @@
         },
         "rpgiv2free.altMOVEL": {
           "type": "boolean",
-          "title": "Include comment for alternate MOVEL",
+          "title": "Include alternative MOVEL conversion as comment",
           "default": true,
-          "description": "Insert %SUBST(...) as comment for alternate MOVEL conversion"
+          "description": "Insert comment with an alternative MOVEL conversion"
         },
         "rpgiv2free.indyMOVEAStyle": {
           "type": "string",
