@@ -542,9 +542,7 @@ function convertOpcodeToFreeFormat(
       const isResultIndicator = result.trim().toUpperCase().startsWith('*IN');
       const factor2Upper = factor2.trim().toUpperCase();
       const isFactor2Indicator =
-        factor2Upper.startsWith('*IN') ||
-        factor2Upper === '*ON' ||
-        factor2Upper === '*OFF' ||
+        factor2Upper.startsWith('*') ||
         factor2Upper === 'ON' ||
         factor2Upper === 'OFF' ||
         factor2Upper === "'1'" ||

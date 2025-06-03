@@ -3,6 +3,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.2] - 2025-06-02
+- Corrected the MOVE opcode such that when Factor 2 contains *BLANK, *ZEROS, etc, a standard eval assignment is generated instead of an EVALR opcode.
+- Corrected and issue when multiple data structures are converted at once and more than one has the same name or has no named (e.g., an unnamed data structure) where the END-DS statement was not being inserted.
+-
 ## [0.7.1] - 2025-06-01
 ### The following Bug Fixes and Enhancements are rolled into this release
 ### File Specs

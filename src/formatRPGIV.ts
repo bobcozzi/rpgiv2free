@@ -64,9 +64,10 @@ export const formatRPGIV = (input: string, splitOffComments: boolean = false): s
 
     const tokenLen = token.length + tokenSpacer.length;
     let margin = rightMargin;
+
     if (currentLength + tokenLen >= margin && currentLength + tokenLen < srcRcdLen) {
       margin = srcRcdLen;
-      flushLine(true, addIndent);
+   //   flushLine(true, addIndent);
     }
     if (currentLength + tokenLen > margin) { // &&    !isSpecialPrefixToken(token)) {
       if (currentLine.trim().length > 0) {
@@ -238,7 +239,7 @@ function tokenizeWithSpacing(line: string): { tokens: string[], spacers: string[
   const tokens: string[] = [];
   const spacers: string[] = [];
   // This regex matches quoted strings, identifiers, keywords, operators, punctuation, and whitespace.
-  const regex = /(%[A-Z][A-Z0-9]*\()|(%[A-Z][A-Z0-9]*)|([XB]'([^']|'')*')|('([^']|'')*')|[A-Z#$@][A-Z0-9#$@_]*|\*IN\d{2}|(\+=|-=|\*=|\/=|%=|==|<=|>=|<>|!=)|[(){}\[\]+\-*\/=<>:,;]|[^\sA-Z0-9_]+|\s+/gi;
+  const regex = /(%[A-Z][A-Z0-9]*\()|(%[A-Z][A-Z0-9]*)|([XB]'([^']|'')*')|('([^']|'')*')|(\*IN[A-Z0-9]{2})|(\*IN\([^)]+\))|(\*[A-Z#$@][A-Z0-9#$@_]*)|[A-Z#$@][A-Z0-9#$@_]*|(\+=|-=|\*=|\/=|%=|==|<=|>=|<>|!=)|[(){}\[\]+\-*\/=<>:,;]|[^\sA-Z0-9_]+|\s+/gi;
 
   let match: RegExpExecArray | null;
   let lastIndex = 0;

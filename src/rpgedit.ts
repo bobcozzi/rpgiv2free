@@ -347,12 +347,13 @@ export function insertExtraDCLLinesBatch(
     }
   }
   const seen = new Set<string>();
-  const uniqueData = insertData.filter(item => {
-    if (seen.has(item.text)) return false;
-    seen.add(item.text);
-    return true;
-  });
-
+const uniqueData = insertData.filter(item => {
+  // If the line starts with "end-" (case-insensitive), always include it
+  if (/^end-/i.test(item.text.trim())) return true;
+  if (seen.has(item.text)) return false;
+  seen.add(item.text);
+  return true;
+});
   return editor.edit(editBuilder => {
     // Sort by position.line descending so inserts don't shift subsequent positions
     uniqueData
@@ -394,7 +395,7 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
       break;  // If fixed-format but not a D spec, we're done
     }
 
-    // Free-format opcode, procedure call, or built-in function check
+
     const trimmed = line.trim();
     if (trimmed && !bFixedFormat) {
       const tokens = trimmed.split(/\s+|\(/);
