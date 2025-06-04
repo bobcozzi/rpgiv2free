@@ -26,10 +26,10 @@ export function activate(context: vscode.ExtensionContext) {
 
   const config = rpgiv.getRPGIVFreeSettings();
 
- // function loadSettings() {
- //   const config = vscode.workspace.getConfiguration('rpgiv2free');
- //   rpgSmartTabEnabled = config.get<boolean>('enableRPGSmartEnter', true);
- // }
+  // function loadSettings() {
+  //   const config = vscode.workspace.getConfiguration('rpgiv2free');
+  //   rpgSmartTabEnabled = config.get<boolean>('enableRPGSmartEnter', true);
+  // }
 
 
   //
@@ -329,8 +329,8 @@ export function activate(context: vscode.ExtensionContext) {
         }
         else {
           const indent = config.indentFirstLine - 1;
-            const prefix = ' '.repeat(Math.max(0, indent)) + '// ';
-            convertedText = comments.map(c => prefix + c).join(eol) + eol + convertedText;
+          const prefix = ' '.repeat(Math.max(0, indent)) + '// ';
+          convertedText = comments.map(c => prefix + c).join(eol) + eol + convertedText;
         }
       }
 
@@ -396,16 +396,17 @@ export function activate(context: vscode.ExtensionContext) {
       }
     }
 
-    // Sort in descending order so later inserts don't shift earlier ones
-    convertedExtraDCL.sort((a, b) => b.insertAt - a.insertAt);
-
-    if (convertedExtraDCL.length > 0) {
-      const lines = rpgiv.splitLines(editor.document.getText());
-      await rpgiv.insertExtraDCLLinesBatch(editor, lines, convertedExtraDCL.map(dcl => ({
-        currentLineIndex: dcl.insertAt,
-        extraDCL: dcl.lines
-      })));
-    }
+if (convertedExtraDCL.length > 0) {
+  const lines = rpgiv.splitLines(editor.document.getText());
+  await rpgiv.insertExtraDCLLinesBatch(
+    editor,
+    lines,
+    convertedExtraDCL.map(dcl => ({
+      currentLineIndex: dcl.insertAt,
+      extraDCL: dcl.lines
+    }))
+  );
+}
     rpgiv.log('CMD Handler ending');
   });
 

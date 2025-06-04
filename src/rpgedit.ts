@@ -64,7 +64,7 @@ export function getRPGIVFreeSettings(): configSettings {
     rightMargin: config.get<number>('maxFreeFormatLineLength', 76),
     srcRcdLen: config.get<number>('maxRPGSourceLength', 80),
     altMOVEL: config.get<boolean>('ALTMOVEL', true),
-    indyMOVEAStyle: config.get<string>('indyMOVEAStyle',"LIST"),
+    indyMOVEAStyle: config.get<string>('indyMOVEAStyle', "LIST"),
     addEXTDEVFLAG: config.get<boolean>('AddEXTDeviceFlag', true),
     removeFREEdir: config.get<boolean>('RemoveFREEDirective', true),
     removeOLDdir: config.get<boolean>('RemoveOLDDirectives', true),
@@ -197,6 +197,35 @@ export function isEmptyStmt(line: string): boolean {
   return (bBlankLine || bEmptyStmt);
 }
 
+export const rpgDataTypes = [
+  'char', 'varchar', 'packed', 'zoned', 'int', 'uns', 'float', 'real',
+  'date', 'time', 'timestamp', 'ind', 'like', 'likeds', 'likerec', 'pointer', 'const'
+];
+
+function isRPGFreeSubfield(line: string): boolean {
+  const trimmed = line.trim();
+  if (!trimmed || isComment(line)) return false;
+
+  // Tokenize the line
+  const tokens = trimmed.split(/\s+/);
+  if (tokens.length === 0) return false;
+
+  // Check each token for a datatype keyword as a whole word,
+  // or immediately followed by '(' or ';'
+  for (let i = 0; i < tokens.length; i++) {
+    for (const type of rpgDataTypes) {
+      const regex = new RegExp(`^${type}(\\(|;|$)`, 'i');
+      if (regex.test(tokens[i])) {
+        // If the type is not the first token, ensure the first token is not an opcode
+        if (i === 0 || !isValidOpcode(tokens[0].toUpperCase())) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
 export function isDirective(line: string, bFreeFormOnly?: boolean): boolean {
   // Classic RPG directive: column 7 is '/' and column 8 is not '/'
   const bDirective = (
@@ -231,7 +260,7 @@ export function isDirective(line: string, bFreeFormOnly?: boolean): boolean {
 export function isValidFixedFormat(line: string): boolean {
   const specType = getSpecType(line).trim();
   // isNotSkipStmt checks for things like comments and directives and empty lines
-  return  (isNotSkipStmt(line) && ['h', 'f', 'd', 'c', 'p', 'i', 'o'].includes(specType));
+  return (isNotSkipStmt(line) && ['h', 'f', 'd', 'c', 'p', 'i', 'o'].includes(specType));
 }
 
 // for non-executable source lines, like comments, blanks line, or compiler directives
@@ -276,11 +305,6 @@ export function insertExtraDCLLinesBatch(
 ): Thenable<boolean> {
   if (inserts.length === 0) return Promise.resolve(true);
 
-
-  // if first entry in DCLInsert is "end-xx" then look forward from starting line
-  // to find the first non-subfield, non-parm (i.e., non-XX) line and insert just before it.
-  log(`extraDCL ${inserts.length}`)
-
   // Find all insertion positions and prepare insertions
   const insertData: { position: vscode.Position; text: string }[] = [];
   let insertAfterLine = 0;
@@ -291,33 +315,25 @@ export function insertExtraDCLLinesBatch(
     const firstDCL = extraDCL[0].trim().toLowerCase();
 
     if (firstDCL.startsWith('end-')) {
-      // Step 1: Find rough insert point by scanning forward
+      // Find rough insert point by scanning forward
       insertAfterLine = findLocationForEndStmt(currentLineIndex, allLines);
 
-      // Step 2: Walk backwards to find last non-blank, non-comment line
+      // Walk backwards to find last non-blank, non-comment line
       while (insertAfterLine > 0) {
         const candidate = allLines[insertAfterLine].trim();
-
-        // Skip blank or comment lines
-
         if (candidate === '' || isComment(candidate)) {
           insertAfterLine--;
         } else {
           break;
         }
       }
-
-      // Now insertAfterLine is at the last meaningful line before the next block
     } else {
       for (let i = currentLineIndex; i >= 0; i--) {
         const line = allLines[i];
         if (typeof line !== 'string' || !line.trim()) continue;
         if (isSkipStmt(line)) continue;
 
-        // Defensive: line must be at least 6 chars for specType
         const specType = line.length > 5 ? line[5].toLowerCase?.() || '' : '';
-        // Note: Input specs must appear after D specs/DCL-DS/DCL-S specs.
-        // so we do not check for 'I' specs here.
         const legacyD = line.length > 5 && (["d", "p", "f", "h"].includes(specType));
         const freeDCL = getColUpper(line, 8, 25).toUpperCase().trimStart();
         const fullyFreeDCL = getColUpper(line, 1, 80).toUpperCase().trimStart();
@@ -328,7 +344,7 @@ export function insertExtraDCLLinesBatch(
           fullyFreeDCL.startsWith('END-') ||
           freeDCL.startsWith('CTL-') || fullyFreeDCL.startsWith('CTL-');
 
-        if (legacyD || isDCL) {
+        if (legacyD || isDCL || isRPGFreeSubfield(line)) {
           insertAfterLine = i;
           break;
         }
@@ -346,14 +362,13 @@ export function insertExtraDCLLinesBatch(
       insertData.push({ position, text });
     }
   }
+
   const seen = new Set<string>();
-const uniqueData = insertData.filter(item => {
-  // If the line starts with "end-" (case-insensitive), always include it
-  if (/^end-/i.test(item.text.trim())) return true;
-  if (seen.has(item.text)) return false;
-  seen.add(item.text);
-  return true;
-});
+  const uniqueData = insertData.filter(item => {
+    if (seen.has(item.text)) return false;
+    seen.add(item.text);
+    return true;
+  });
   return editor.edit(editBuilder => {
     // Sort by position.line descending so inserts don't shift subsequent positions
     uniqueData
@@ -440,7 +455,7 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
 }
 
 export function isBitLiteral(factor2: string): boolean {
-        return /^'[0-7]{1,8}'$/.test(factor2);
+  return /^'[0-7]{1,8}'$/.test(factor2);
 }
 
 /**
@@ -448,18 +463,18 @@ export function isBitLiteral(factor2: string): boolean {
  * Allows for optional trailing characters (e.g., *ISO0, *YMD-, *MDY/).
  */
 export function isValidDateFmt(input: string): boolean {
-    const dateFmtPrefixes = [
-        '*ISO', '*USA', '*EUR', '*JIS', '*MDY', '*DMY', '*YMD', '*JUL', '*LONGJUL',
-        '*CYMD', '*CDMY', '*CMDY', '*JOB', '*JOBRUN', '*SYS', '*SYSVAL'
-    ];
-    const upperInput = input.toUpperCase();
-    return dateFmtPrefixes.some(fmt =>
-        upperInput.split(/[\s,;()]+/).some(token =>
-            dateFmtPrefixes.some(prefix =>
-                token.startsWith(prefix)
-            )
-        )
-    );
+  const dateFmtPrefixes = [
+    '*ISO', '*USA', '*EUR', '*JIS', '*MDY', '*DMY', '*YMD', '*JUL', '*LONGJUL',
+    '*CYMD', '*CDMY', '*CMDY', '*JOB', '*JOBRUN', '*SYS', '*SYSVAL'
+  ];
+  const upperInput = input.toUpperCase();
+  return dateFmtPrefixes.some(fmt =>
+    upperInput.split(/[\s,;()]+/).some(token =>
+      dateFmtPrefixes.some(prefix =>
+        token.startsWith(prefix)
+      )
+    )
+  );
 }
 
 /**
@@ -467,22 +482,22 @@ export function isValidDateFmt(input: string): boolean {
  * Returns an array: [factorValue, factorArg]. If no such colon, returns [input, ''].
  */
 export function splitFactor(input: string): [factorValue: string, factorArg: string] {
-    let inQuotes = false;
-    let splitIdx = -1;
-    for (let i = 0; i < input.length; i++) {
-        const ch = input[i];
-        if (ch === "'") inQuotes = !inQuotes;
-        if (ch === ':' && !inQuotes) {
-            splitIdx = i;
-            break;
-        }
+  let inQuotes = false;
+  let splitIdx = -1;
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i];
+    if (ch === "'") inQuotes = !inQuotes;
+    if (ch === ':' && !inQuotes) {
+      splitIdx = i;
+      break;
     }
-    if (splitIdx !== -1) {
-        const factorValue = input.slice(0, splitIdx).trim();
-        const factorArg = input.slice(splitIdx + 1).trim();
-        return [factorValue, factorArg];
-    }
-    return [input.trim(), ''];
+  }
+  if (splitIdx !== -1) {
+    const factorValue = input.slice(0, splitIdx).trim();
+    const factorArg = input.slice(splitIdx + 1).trim();
+    return [factorValue, factorArg];
+  }
+  return [input.trim(), ''];
 }
 
 export function isExtFactor2(line: string): boolean {
