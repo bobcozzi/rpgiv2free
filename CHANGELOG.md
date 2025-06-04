@@ -6,36 +6,37 @@ All notable changes to this project will be documented in this file.
 - Fixed an issue when a data structure and its subfields were converted at the same time as an ad hoc Calc spec result field. The generated work fields' DCL-S statements were incorrectly positioned below the data structure's DCL-DS statement.
 
 ## [0.7.4] - 2025-06-03
-- MOVE opcodes with a date format in Factor 1 (i.e., converting non-Date fields to Date fields and vice versa) were dropping Factor 1. Now 2 EVAL statements are generated to support a user-selectable conversion choice.
-- Corrected minor issue with semicolon being appended to comment-only lines.
+- MOVE opcodes with a date format code in Factor 1 were dropping Factor 1. Now 2 EVAL statements are generated. One live, one as a comment to support a user-selectable conversion choice.
+- Corrected minor issues with semicolon being appended to comment-only lines.
 
 ## [0.7.2] - 2025-06-02
-- Corrected the MOVE opcode such that when Factor 2 contains *BLANK, *ZEROS, etc, a standard eval assignment is generated instead of an EVALR opcode.
-- Corrected and issue when multiple data structures are converted at once and more than one has the same name or has no named (e.g., an unnamed data structure) where the END-DS statement was not being inserted.
+- Corrected the MOVE opcode such that when Factor 2 contains *BLANK, *ZEROS, etc, a standard eval assignment is generated instead of an EVALR opcode. For example: `MOVE *BLANK CUSTNAME` now results in `CUSTNAME = *BLANKS;` instead of `EVALR CUSTNAME = *BLANKS;` or similar.
+- Corrected an issue when multiple data structures are converted at once and more than one has the same name or has no named (e.g., an unnamed data structure) where the END-DS statement was not being inserted.
 
 ## [0.7.1] - 2025-06-01
 ### The following Bug Fixes and Enhancements are rolled into this release
 ### File Specs
-- If the USAGE keyword contains *DELETE, "File Addition/ADD" was included.
-- The WORKSTN keyword means that for CF (combined) files, no USAGE keyword is necessary but USAGE(*INPUT:*OUTPUT) is optional.
-- For DISK usage Update files (e.g., "U") are USAGE(*UPDATE:*DELETE) in free format, although techincally only USAGE(*DELETE) is required.
-- The USAGE(*OUTPUT) is now added when required or when the "File Addition" flag equal 'A'.
+- Fixed: If the USAGE keyword contains *DELETE when "File Addition/ADD" was included.
+- A WORKSTN device file that uses the standard CF (combined) I/O usage, no long includes a USAGE keyword.
+- DISK usage Update files (e.g., "UF") are now converted as USAGE(*UPDATE:*DELETE) although techincally only USAGE(*DELETE) is required.
+  - Note: *DELETE can be safely removed if your code does not DELETE records from the file but *UPDATE:*DELETE is the free format equivalent to "UF" in fixed format.
+- USAGE(*OUTPUT) is now added only when required or when the "File Addition" flag is 'A'.
 
 ### General Issues
 - Comments in columns 1–5 are not supported and will be lost. This is now a policy for rpgiv2free.
-- Comments in column 81 on Calc and D specs are now preserved.
+- Comments in column 81 to 100 on Calc and D specs are now preserved.
+- Comments in columns 81 to 100 are now rendered on the same line unless that line exceeds the record length/right margin, or converting an IFxx/ANDxx/ORxx block in which case only the first comment is preserved.
 - Extension-generated comments now appear before the converted code instead of after.
-- Embedded comments (columns 81 to 100) are only rendered on the same line unless that line exceeds the record length/right margin.
 
 ### Definition (D) Spec Issues
-- When From/To columns are the same (e.g., 30 30), the field length is now correctly calculated as 1, not the "to column" value.
-- When adding ad hoc fields, extraDCL fields were being inserted after the UDS and before its subfields; this is corrected.
-- Non-dataType fields, especially those with LEN(n), were losing attributes; this is fixed.
+- When From/To columns are the same (e.g., 30 30), the field length is now correctly calculated as 1, instead of the "to column" value.
+- When adding ad hoc fields (fields declared in Calc specs), they fields were being inserted after UDS (*LDA data structures) but before its subfields; this has been corrected.
+- Non-dataType fields (i.e., when lazy programmers omit the datatype), especially those with a LEN(n) keyword, were losing some attributes; this is fixed.
 
 ### Calc Spec/Opcode Issues
-- Math opcodes with H or R extenders no include them when converting to free format.
-- Keylist conversions in subprocedures (and possibly elsewhere) were not applied to CHAIN/READ, etc. This was due to the top-down scan stopping at Output specs. Now it continues until EOF or ** in columns 1–2 is detected to search for key lists.
-- Fixed a bug in DIV where the terminating semicolon was missing when checking for directives in the resulting free-format statement.
+- Math opcodes with H or R extenders now include them via EVAL(H R) when converting to free format.
+- Keylist conversions in subprocedures (and possibly elsewhere) were not applied to CHAIN/READ, etc. This was due to the top-down scan stopping at Output specs. Now it continues until EOF or ** in columns 1–2 is detected while searching for and building the key list database.
+- Fixed a bug in DIV conversion where the terminating semicolon was missing.
 - Added half-adjust support to all math opcodes.
 
 ## [0.7.1] - 2025-06-01
