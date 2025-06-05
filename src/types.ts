@@ -1,4 +1,10 @@
 
+export let ibmiAPI: any = undefined;
+
+export function setIbmiApi(api: any) {
+  ibmiAPI = api;
+}
+
 export interface collectedStmt {
   specType: string;
   lines: string[];

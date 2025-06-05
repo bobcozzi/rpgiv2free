@@ -12,14 +12,17 @@ import { convertFSpec } from './FSpec';
 import { convertDSpec } from './DSpec';
 import { convertPSpec } from './PSpec';
 import { convertCSpec } from './CSpec';
+import { collectCondCalc } from './collectCondCalc';
 import { convertToFreeFormSQL } from './collectSQLSpec';
+
+import { getIBMiAPI } from './codeforibmi';
 import * as types from './types';
 import * as rpgiv from './rpgedit';
 
 
 let rpgSmartTabEnabled = true;  // ← In-memory toggle
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
   // Load saved setting at startup
 
   rpgSmartTabEnabled = context.globalState.get<boolean>('rpgSmartTabEnabled', true);
@@ -30,7 +33,6 @@ export function activate(context: vscode.ExtensionContext) {
   //   const config = vscode.workspace.getConfiguration('rpgiv2free');
   //   rpgSmartTabEnabled = config.get<boolean>('enableRPGSmartEnter', true);
   // }
-
 
   //
   // ✅ Smart Tab Toggle UI (no reload required)
@@ -225,6 +227,7 @@ export function activate(context: vscode.ExtensionContext) {
     const allLines = doc.getText().split(rpgiv.getEOL());
     let specType = '';
     let index_Offset = 0;
+    let newBeginIndex = -1;
 
     const processedLines = new Set<number>();
     rpgiv.log('Total lines: ' + allLines.length);
@@ -233,6 +236,7 @@ export function activate(context: vscode.ExtensionContext) {
     const edits: { range: vscode.Range, text: string }[] = [];
     //    const extraDCLs: { insertAt: number, lines: string[] }[] = [];
     const extraDCLs: { insertAt: number, lines: string[], netLineChangeAtInsert: number }[] = [];
+
     try {
       for (const sel of editor.selections) {
         if (sel.isEmpty) {
@@ -250,6 +254,8 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     const expandedLineIndexes = new Set<number>();
+    let beforeCond: ReturnType<typeof collectCondCalc> | undefined;
+
     rpgiv.log('CMD Handler expanding range selections');
 
     for (const lineNbr of selectedLineIndexes) {
@@ -263,20 +269,50 @@ export function activate(context: vscode.ExtensionContext) {
           expandedLineIndexes.add(idx);
         }
       }
+
+      let firstLineNbr = Infinity;
+      let firstLineNo = 0;
+      if (expandedLineIndexes.size > 0) {
+        firstLineNbr = Math.min(...expandedLineIndexes);
+        beforeCond = collectCondCalc(allLines, firstLineNbr);
+        for (const idx of beforeCond.indexes) {
+          // Only add if not already present (skip duplicates)
+          if (!expandedLineIndexes.has(idx)) {
+            expandedLineIndexes.add(idx);
+          }
+        }
+        if (beforeCond.indexes.length > 0) {
+          newBeginIndex = Math.min(...beforeCond.indexes);
+        }
+      }
+
     }
+
     rpgiv.log('CMD Handler expanding range selections');
+    // Check if...
+    // (A) Fixed-Format Calc Spec
+    // (B) Is conditioned with legacy Conditioning Indicators.
+    // If so, then translate and build a free-format Condtional IF statement
 
     const selectedLineList = [...expandedLineIndexes].sort((a, b) => a - b);
-    rpgiv.log('CMD Handler checking selections');
+
+    // Now you can reference `beforeCond` after the loop as needed.
+
     let netLineChange = 0;
 
     for (const i of selectedLineList) {
 
       if (i >= allLines.length) continue;
       if (processedLines.has(i)) continue; // <-- Skip if already processed
-
-      const collectedStmts = collectStmt(allLines, i);
+      if (rpgiv.isCondIndyOnly(allLines[i])) {
+        if (!processedLines.has(i)) {
+          processedLines.add(i);
+        }
+        continue;  // Skip indicator-only lines
+      }
+      const collectedStmts = collectStmt(allLines, i, beforeCond?.condStmt ?? null);
       if (!collectedStmts) continue;
+
       const { indexes } = collectedStmts;
       // If ANY index in this block is already processed, skip this block
       if (indexes.some(idx => processedLines.has(idx))) {
@@ -296,13 +332,18 @@ export function activate(context: vscode.ExtensionContext) {
         continue;
       }
 
+      // If beforeCond.indexes exist, add them to expandedLineIndexes and selectedLineList
       let extraDCL: string[] = [];
       let convertedText = '';
+      const eol = rpgiv.getEOL();
 
+      if (newBeginIndex >= 0 && !indexes.includes(newBeginIndex)) {
+        indexes.push(newBeginIndex);
+      }
       if (isSQL) {
         convertedText = convertToFreeFormSQL(specLines).join(rpgiv.getEOL());
       } else if (isCollected) {
-        convertedText = specLines.flatMap(line => formatRPGIV(line)).join(rpgiv.getEOL());
+        convertedText = specLines.flatMap(line => formatRPGIV(line)).join(eol);
       } else {
         const line = specLines[0] ?? '';
         specType = line.length > 5 ? line.charAt(5).toLowerCase().trim() : '';
@@ -314,15 +355,45 @@ export function activate(context: vscode.ExtensionContext) {
                   : specType === 'c' ? convertCSpec(specLines, comments, extraDCL, allLines, i)
                     : specLines;
         if (specType) {
-          convertedText = converted.flatMap(line => formatRPGIV(line)).join(rpgiv.getEOL());
+          // "converted" is a const, so you cannot reassign it (e.g., converted = ...), but you can mutate it if it's an array.
+          if (specType === 'c') {
+            beforeCond = collectCondCalc(allLines, i);
+            if (beforeCond && Array.isArray(beforeCond.indexes) && beforeCond.indexes.length > 0) {
+              beforeCond.indexes.forEach(idx => {
+                if (!processedLines.has(idx)) {
+                  processedLines.add(idx);
+                }
+                if (!indexes.includes(idx)) {
+                  indexes.push(idx);
+                }
+              });
+              // Sort indexes after adding new ones
+
+            }
+
+            if (Array.isArray(converted) && beforeCond.condStmt.length > 0) {
+              // Insert beforeCond.condStmt at the front
+              converted.unshift(beforeCond.condStmt); // ✅ Adds the whole string as the first element
+              // If beforeCond.condStmt starts with 'if ', then add 'endif' to the end
+              if (beforeCond.condStmt.toLowerCase().startsWith('if ')) {
+                converted.push('endif');
+              }
+            }
+          }
+
+          convertedText = converted.flatMap(line => formatRPGIV(line)).join(eol);
         } else {
           convertedText = Array.isArray(converted)
-            ? converted.join(rpgiv.getEOL())
+            ? converted.join(eol)
             : String(converted);
         }
       }
 
-      const eol = rpgiv.getEOL();
+
+      // if specType === 'c' then
+
+
+
       if (Array.isArray(comments) && comments.length > 0) {
         if (comments.length === 1 && comments[0] === '') {
           convertedText = '' + eol + convertedText;
@@ -333,7 +404,8 @@ export function activate(context: vscode.ExtensionContext) {
           convertedText = comments.map(c => prefix + c).join(eol) + eol + convertedText;
         }
       }
-
+        // make sure the indexes (line numbers to replace) are sorted in ascending sequence
+      indexes.sort((a, b) => a - b);
       const rangeStart = new vscode.Position(indexes[0], 0);
       const lastLineText = doc.lineAt(indexes[indexes.length - 1]).text;
       const rangeEnd = new vscode.Position(indexes[indexes.length - 1], lastLineText.length);
@@ -396,21 +468,39 @@ export function activate(context: vscode.ExtensionContext) {
       }
     }
 
-if (convertedExtraDCL.length > 0) {
-  const lines = rpgiv.splitLines(editor.document.getText());
-  await rpgiv.insertExtraDCLLinesBatch(
-    editor,
-    lines,
-    convertedExtraDCL.map(dcl => ({
-      currentLineIndex: dcl.insertAt,
-      extraDCL: dcl.lines
-    }))
-  );
-}
+    if (convertedExtraDCL.length > 0) {
+      const lines = rpgiv.splitLines(editor.document.getText());
+      await rpgiv.insertExtraDCLLinesBatch(
+        editor,
+        lines,
+        convertedExtraDCL.map(dcl => ({
+          currentLineIndex: dcl.insertAt,
+          extraDCL: dcl.lines
+        }))
+      );
+    }
     rpgiv.log('CMD Handler ending');
   });
 
   context.subscriptions.push(disposable);
+
+  // Resolve the Code for IBM i API and store it globally
+  // that way if I need it somewhere else, its already loaded and available
+  getIBMiAPI().then(ibmiAPI => {
+    types.setIbmiApi(ibmiAPI);
+    // Log CODE for IBM i APIs but only when in debug mode
+    const bCheckCode4i = config.verifyCODE4i;
+    if (bCheckCode4i && ibmiAPI && context.extensionMode === vscode.ExtensionMode.Development) {
+      for (const key of Object.keys(ibmiAPI)) {
+        const value = ibmiAPI[key];
+        if (value && typeof value === 'object') {
+          rpgiv.log(`ibmiAPI.${key}:`, Object.keys(value));
+          rpgiv.log('Code for IBM i API:', Object.keys(ibmiAPI));
+        }
+      }
+    }
+  });
+
 }
 
 // This method is called when your extension is deactivated

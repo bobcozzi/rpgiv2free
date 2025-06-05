@@ -11,7 +11,7 @@ type CollectResult = {
   namedOpcode: string;
 };
 
-export function collectExtOpcode(allLines: string[], startIndex: number): { lines: string[], indexes: number[], comments: string[] } {
+export function collectExtOpcode(allLines: string[], startIndex: number, condIndyStmt: string): { lines: string[], indexes: number[], comments: string[] } {
   const lines: string[] = [];
   const indexes: number[] = [];
   const comments: string[] = [];
@@ -66,14 +66,25 @@ export function collectExtOpcode(allLines: string[], startIndex: number): { line
       || (ext && ext.trim() !== '')
     ) ? true : false;
     if (!isEvalOrCallP || (isEvalOrCallP && keepOpcode)) {
-      lines.push(`${namedOpcode} ${extF2};`)
+      lines.push(`${namedOpcode}`);
+      lines.push(`${ extF2 }`)
     }
     else {
-      lines.push(`${extF2};`)
+      lines.push(`${extF2}`)
     }
   }
+  if (condIndyStmt && condIndyStmt.trim() !== '') {
+    const condIndyStmtStripped = condIndyStmt.replace(/^\w+\s+/, '');
+    if (condIndyStmtStripped) {
+      lines.splice(1, 0, `(${condIndyStmtStripped}) and (`);
+    }
+  }
+  if (condIndyStmt && condIndyStmt.trim() !== '') {
+    lines.push(`)`)
+  }
+  const combinedLine = lines.join(' ');
   return {
-    lines,
+    lines: [combinedLine],
     indexes: usedIndexes,
     comments: collectedComments
   };
@@ -99,7 +110,6 @@ export function collectExtF2(
     if (rpgiv.getSpecType(line) !== 'c') break;
 
     let opCode = rpgiv.getFullOpcode(line);
-
     const opArea = rpgiv.getCol(line, 8, 35).trim();
     const factor2 = rpgiv.getCol(line, 36, 80).trimEnd();
 

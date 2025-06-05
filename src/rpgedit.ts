@@ -51,6 +51,7 @@ export interface configSettings {
   replaceCOPYinSQLRPG: boolean;
   tempVar1STG: string;
   tempVar2DO: string;
+  verifyCODE4i: boolean;
 }
 
 export function getRPGIVFreeSettings(): configSettings {
@@ -71,7 +72,8 @@ export function getRPGIVFreeSettings(): configSettings {
     replaceCOPYinRPG: config.get<boolean>('ReplaceCOPYwithINCLUDE_RPG', true),
     replaceCOPYinSQLRPG: config.get<boolean>('ReplaceCOPYwithINCLUDE_SQLRPG', false),
     tempVar1STG: config.get<string>('tempVarName1', 'rpg2ff_tempSTG'),
-    tempVar2DO: config.get<string>('tempVarName2', 'rpg2ff_tempDO')
+    tempVar2DO: config.get<string>('tempVarName2', 'rpg2ff_tempDO'),
+    verifyCODE4i: config.get<boolean>('VerifyCode4IBMi', false)
 
   };
 }
@@ -996,4 +998,29 @@ export function bitStringToHex(bitString: string): string {
   }
   let hex = mask.toString(16).padStart(2, '0').toUpperCase(); // always 2 hex digits
   return `X'${hex}'`;
+}
+
+
+
+export function isCondIndyOnly(line: string): boolean {
+  const conjunction = getCol(line, 7, 8).toLowerCase().trim();
+  const polarization = getCol(line, 9).trim();
+  const condIndy = getCol(line, 10, 11).trim();
+  if (['', 'or', 'an'].includes(conjunction.trim()) && condIndy.trim() !== '') {
+    if (getCol(line, 12, 80).trimEnd() === '') {
+      // if just a conditioning indicator return null
+      return true;
+    }
+  }
+  return false;
+}
+export function hasCondIndy(line: string): boolean {
+  const conjunction = getCol(line, 7, 8).toLowerCase().trim();
+  const polarization = getCol(line, 9).trim();
+  const condIndy = getCol(line, 10, 11).trim();
+  if (['', 'or', 'an'].includes(conjunction.trim()) && condIndy.trim() !== '') {
+    // if it is conditioned by a conditioning indicator return true
+    return true;
+  }
+  return false;
 }

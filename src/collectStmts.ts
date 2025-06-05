@@ -32,7 +32,8 @@ const END_EXEC_RX = /^.{5}[cC]?[\/]{1}END-EXEC/i;
 
 export function collectStmt(
   allLines: string[],
-  startIndex: number
+  startIndex: number,
+  condIndyStmt: string | null,
 ): collectSpecs | null {
 
   const isLineEmpty = (line: string) => line.trim().length === 0;
@@ -86,6 +87,7 @@ export function collectStmt(
     if (rpgiv.isUnSupportedOpcode(rpgiv.getRawOpcode(startLine))) return null;
     const opcode = rpgiv.getRawOpcode(startLine);
     if (opcode === 'MOVEA' && !rpgiv.isSupportedMOVEA(startLine)) return null;
+    if (rpgiv.isCondIndyOnly(startLine)) return null;
   }
   if (!startLine || startLine.trim() === '') return null;
 
@@ -151,7 +153,7 @@ export function collectStmt(
   if (curSpec === 'c' && !rpgiv.isUnSupportedOpcode(rpgiv.getRawOpcode(startLine))) {
     if (rpgiv.isBooleanOpcode(startLine) || rpgiv.isOpcodeSELECT(startLine)) {
       // Handle boolean opcode lines separately
-      const booleanOpcodeResult = collectBooleanOpcode(allLines, startIndex);
+      const booleanOpcodeResult = collectBooleanOpcode(allLines, startIndex, (condIndyStmt) ? condIndyStmt : '');
       return {
         entityName: null,
         lines: booleanOpcodeResult.lines,
@@ -162,7 +164,7 @@ export function collectStmt(
       };
     } else if (rpgiv.isCASEOpcode(startLine)) {
       // Handle CASE/CASxx blocks
-      const caseOpcodeResult = collectCaseOpcode(allLines, startIndex);
+      const caseOpcodeResult = collectCaseOpcode(allLines, startIndex, (condIndyStmt) ? condIndyStmt : '');
       return {
         entityName: null,
         lines: caseOpcodeResult.lines,
@@ -177,7 +179,7 @@ export function collectStmt(
       // this is a continued Extended Factor 2 spec. So read backwards
       // until we find an opcode or any free format statement.
       // Handle CASE/CASxx blocks
-      const extF2 = collectExtOpcode(allLines, startIndex);
+      const extF2 = collectExtOpcode(allLines, startIndex, (condIndyStmt) ? condIndyStmt : '');
       return {
         entityName: null,
         lines: extF2.lines,
@@ -383,6 +385,7 @@ export function collectStmt(
         }
       }
       else {
+        // if (isCondIndyOnly(startLine)) return null;
         if (!rpgiv.isUnSupportedOpcode(rpgiv.getRawOpcode(line))) {
           collectedIndexes.add(index);
           collectedLines.push(line);
@@ -443,25 +446,25 @@ export function collectStmt(
 
     index++;
   }
-// Convert Sets to arrays for indexed access (no need to sort if already ascending)
-const collectedIndexesArr = Array.from(collectedIndexes);
-const commentIndexesArr = Array.from(commentIndexes);
+  // Convert Sets to arrays for indexed access (no need to sort if already ascending)
+  const collectedIndexesArr = Array.from(collectedIndexes);
+  const commentIndexesArr = Array.from(commentIndexes);
 
-let i = collectedIndexesArr.length - 1;
-let c = commentIndexesArr.length - 1;
+  let i = collectedIndexesArr.length - 1;
+  let c = commentIndexesArr.length - 1;
 
-// Remove trailing indexes that match in both sets
-while (
-  i >= 0 &&
-  c >= 0 &&
-  collectedIndexesArr[i] === commentIndexesArr[c]
-) {
-  collectedIndexes.delete(collectedIndexesArr[i]);
-  commentIndexes.delete(commentIndexesArr[c]); // <-- Remove from commentIndexes as well
-  comments.pop(); // <-- Remove the last collected ("embedded") comment as well
-  i--;
-  c--;
-}
+  // Remove trailing indexes that match in both sets
+  while (
+    i >= 0 &&
+    c >= 0 &&
+    collectedIndexesArr[i] === commentIndexesArr[c]
+  ) {
+    collectedIndexes.delete(collectedIndexesArr[i]);
+    commentIndexes.delete(commentIndexesArr[c]); // <-- Remove from commentIndexes as well
+    comments.pop(); // <-- Remove the last collected ("embedded") comment as well
+    i--;
+    c--;
+  }
 
   // Ensure that entityName is always returned, even if it's an empty string
   const entityName = entityNameParts.join('').trim() || null;

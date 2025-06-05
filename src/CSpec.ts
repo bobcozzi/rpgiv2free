@@ -46,16 +46,18 @@ export function convertCSpec(lines: string[],
 
   let prevCalc: OpcodeEnhancement | null = null;
 
-  if (condIndy && condIndy.trim() !== '' && (levelBreak.trim() === '' || levelBreak.toLowerCase().trim() === 'sr')) {
-    const condStmt = handleCondIndy(condIndy);
-    if (condStmt.length > 0) {
-      freeFormLine.push(condStmt[0]);
-      if (condStmt.length > 1) {
-        afterOpcode = condStmt[1];
-      }
-    }
-  }
+  // if (condIndy && condIndy.trim() !== '' && (levelBreak.trim() === '' || levelBreak.toLowerCase().trim() === 'sr')) {
+  //  const condStmt = handleCondIndy(condIndy);
+  //  if (condStmt.length > 0) {
+  //    freeFormLine.push(condStmt[0]);
+  //    if (condStmt.length > 1) {
+  //      afterOpcode = condStmt[1];
+  //    }
+  //  }
+  //}
+
   let { rawOpcode: rawOpcode, extenders: opExt } = rpgiv.splitOpCodeExt(opcode);
+
 
   // Only get prevCalc for these opcodes
   if (["MVR", "DIV", "MULT"].includes(rawOpcode)) {

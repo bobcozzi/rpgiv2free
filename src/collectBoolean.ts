@@ -2,14 +2,14 @@
 import * as rpgiv from './rpgedit';
 import { stmtLines } from './types';
 
-export function collectBooleanOpcode(allLines: string[], startIndex: number): stmtLines {
+export function collectBooleanOpcode(allLines: string[], startIndex: number, condIndyStmt: string): stmtLines {
   const lines: string[] = [];
   const indexes: number[] = [];
   const comments: string[] = [];
   const eol = rpgiv.getEOL();
 
   const indent = ' '.repeat(12);
-
+  const condStmt = (!condIndyStmt || condIndyStmt.trim() === '') ? '' : condIndyStmt;
   const opMap: { [key: string]: string } = {
     EQ: '=', NE: '<>', GT: '>', LT: '<', GE: '>=', LE: '<='
   };
@@ -68,7 +68,8 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number): st
     else {
       ffOpcode = opcode;  // 'OTHER'?
     }
-    booleanExpr = `${ffOpcode} ${factor1} ${comparison} ${factor2}`;
+    lines.push(ffOpcode);
+    booleanExpr = `${factor1} ${comparison} ${factor2}`;
   }
 
   i++;
@@ -96,16 +97,24 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number): st
     booleanExpr += ` ${logicOp} ${contFactor1} ${compSymbol} ${contFactor2}`;
     i++;
   }
-
+  if (condIndyStmt && condIndyStmt.trim() !== '') {
+    const condIndyStmtStripped = condIndyStmt.replace(/^\w+\s+/, '');
+    lines.push(`(${condIndyStmtStripped}) and (`)
+  }
   if (booleanExpr && booleanExpr !== '') {
     lines.push(booleanExpr);
   }
-
+  if (condIndyStmt && condIndyStmt.trim() !== '') {
+    lines.push(`)`)
+  }
+  const combinedLine = lines.join(' ');
+  // Return as an array with a single string element
   return {
-    lines,
+    lines: [combinedLine],
     indexes,
     comments: comments.length > 0 ? comments : null
   };
+
 }
 
 function getBooleanConnector(opcode: string): string {

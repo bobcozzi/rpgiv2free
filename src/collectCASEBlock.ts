@@ -2,7 +2,7 @@
 import * as rpgiv from './rpgedit';
 import { collectedStmt, stmtLines } from './types'
 
-export function collectCaseOpcode(allLines: string[], startIndex: number): { lines: string[], indexes: number[] } {
+export function collectCaseOpcode(allLines: string[], startIndex: number, condIndyStmt: string): { lines: string[], indexes: number[] } {
   const lines: string[] = [];
   const indexes: number[] = [];
   const comments: string[] = [];
@@ -28,7 +28,7 @@ export function collectCaseOpcode(allLines: string[], startIndex: number): { lin
       continue;
     }
     else if (rpgiv.isSkipStmt(line)) {
-      i++
+      i++;
       continue;
     }
     if (rpgiv.getSpecType(line) !== 'c') break;

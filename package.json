@@ -90,6 +90,12 @@
           ],
           "description": "Controls how RPG IV B ('binary') fields are converted to integers."
         },
+        "rpgiv2free.VerifyCode4IBMi": {
+          "type": "boolean",
+          "title": "Verify CODE for IBM i Extension API",
+          "default": true,
+          "description": "Verify and log Code4IBMi Extension APIs checkout (Debug mode only)."
+        },
         "rpgiv2free.altMOVEL": {
           "type": "boolean",
           "title": "Include alternative MOVEL conversion as comment",
@@ -287,6 +293,7 @@
     "typescript": "^4.8.0"
   },
   "dependencies": {
+    "@halcyontech/vscode-ibmi-types": "^2.15.3",
     "odbc": "^2.4.9",
     "sql-formatter": "^15.5.2"
   }
