@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.7.6] - 2025-06-07 Release candidate 1:
+## [0.7.8] - 2025-06-08 Release candidate 1:
 - `Conditioning Indicators` are now fully supported/converted to free format! (you're welcome)
 - Fixed issues with Smart Enter and Smart Tab activations
 - Refactored the main body of our code
