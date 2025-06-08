@@ -259,12 +259,6 @@ export function isDirective(line: string, bFreeFormOnly?: boolean): boolean {
   return false;
 }
 
-export function isValidFixedFormat(line: string): boolean {
-  const specType = getSpecType(line).trim();
-  // isNotSkipStmt checks for things like comments and directives and empty lines
-  return (isNotSkipStmt(line) && ['h', 'f', 'd', 'c', 'p', 'i', 'o'].includes(specType));
-}
-
 // for non-executable source lines, like comments, blanks line, or compiler directives
 export function isSkipStmt(line: string): boolean {
   const bComment = isComment(line);  // Assumes isComment() handles RPG IV logic
@@ -758,8 +752,16 @@ export function isRPGDocument(document: vscode.TextDocument): boolean {
   return langId === 'rpgle' || langId.startsWith('sqlrpg');
 }
 
+export function isValidFixedFormat(line: string): boolean {
+  const specType = getSpecType(line).trim();
+  // isNotSkipStmt checks for things like comments and directives and empty lines
+  const bIsFixedFormat = (isNotSkipStmt(line) && ['h', 'f', 'd', 'c', 'p', 'i', 'o'].includes(specType));
+  return bIsFixedFormat;
+}
+
 export function isFixedFormatRPG(document: vscode.TextDocument): boolean {
   if (!isRPGDocument(document)) return false;
+  if (document.lineCount === 0) return true; // Treat empty document as fixed format
   const firstLine = document.lineAt(0).text;
 
   // Must be at least 6 chars, no leading whitespace, exactly **FREE in columns 1-6

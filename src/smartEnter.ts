@@ -6,9 +6,32 @@ export async function handleSmartEnter(editor: vscode.TextEditor, position: vsco
   const config = vscode.workspace.getConfiguration('rpgiv2free');
   const copySpec = config.get<boolean>('enableRPGCopySpecOnEnter', true);
 
+  // Check if Smart Enter is enabled
+  const smartRPGEnterMode = config.get<string>('enableRPGSmartEnter', 'fixedOnly');
+  if (!smartRPGEnterMode || smartRPGEnterMode === 'disable') {
+    await vscode.commands.executeCommand('default:type', { text: rpgiv.getEOL() });
+    return;
+  }
+
   const doc = editor.document;
+  if (rpgiv.isNOTFixedFormatRPG(doc)) {
+    await vscode.commands.executeCommand('default:type', { text: rpgiv.getEOL() });
+    return;
+  }
+
   const line = doc.lineAt(position.line);
+  if (!line) {
+    await vscode.commands.executeCommand('default:type', { text: rpgiv.getEOL() });
+    return;
+  }
+
   const text = line.text;
+  if (!text || !rpgiv.isValidFixedFormat(text)) {
+    await vscode.commands.executeCommand('default:type', { text: rpgiv.getEOL() });
+    return;
+  }
+
+
   const eol = rpgiv.getEOL();
   const col1To5 = text.substring(0, 5);
   const specPrefix = text.substring(0, 6);

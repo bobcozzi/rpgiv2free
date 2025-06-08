@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.7.8] - 2025-06-08 Release candidate 1:
+## [0.7.9] - 2025-06-08 Release candidate 1:
 - `Conditioning Indicators` are now fully supported/converted to free format! (you're welcome)
-- Fixed issues with Smart Enter and Smart Tab activations
+- Fixed issues with Smart Enter and Smart Tab activations, they now ONLY RUN if the line is FIXED Format.
 - Refactored the main body of our code
 - RPGII-style comments in columns 1 to 5 of Calc specs (only Calc specs) are _now retained_ when there are NO comments in columns 81 - 100.
 - This is release candidate 1. If no significant issues are reported, We will move forward with updating it to the 1.0.0 release by 1 July 2025.
