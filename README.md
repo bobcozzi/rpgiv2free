@@ -8,12 +8,6 @@ For a list of changes and release notes, see the [Changelog](https://github.com/
 This extension is an RPG IV to Free Format statement converter. Select the RPG IV fixed format statements you want to convert to free format, right-click and select **Convert RPG IV to free format**.
 This extension s **NOT a refactoring or modernization tool**. Its only purpose is to convert an RPG IV fixed-format statement into free format RPG IV syntax.
 
-## Warnings
-- **Conditioning Indicators on Calc Specs Support is Limited**:
-  Presently we convert opcode that are conditioned by 0 or 1 conditioning indicator, but when more than one is used, they are ignored and not converted. A single conditioning indicator is converted to an `IF (*INxx = *ON|*OFF)` statement. Use your UNDO Ctrl+Z (PC/Windows) Cmd+Z (macOS) key sequence to return the line back to its original state if you have an opcode with multiple indicators that was converted. Then convert that statement manually. Note that **Resulting Indicators** are fully supported.
--**Level Break Indicators are not Converted**:
-We do nothing with RPG Cycle code including Level Break Indicators in columns 7 and 8, input primary/secondary, etc.
-
 ## Features
 
 - **Convert RPG IV Fixed-Format to Free Format**:
@@ -34,12 +28,32 @@ We do nothing with RPG Cycle code including Level Break Indicators in columns 7 
   - Procedure (P) Specs
 
 - **Bonus Editing Features**
-- **Smart RPG Tab key** When enabled (default: `true`) then on fixed-foramt RPG IV statements, when the TAB key is pressed, it moves to the next available "tab" location for the specification. For example: On a C (calc) spec, it'll tab from factor 1 to the opcode then to factor 2 and so on. The tab is non-distructive so you can tab over existing code now quickly and safely. To turn these feature off, press the "RPG Smart Tab" option on the bottonm status bar of the editor winodow.
-- **Smart RPG Enter key** When enabled (default: `true`) then on fixed-format RPG IV statments, when you press ENTER, the current line is **not** broken and a new line with the same source spec type is inserted. The cursor is moved under the first non-blank position (after the spec) of the previous line. To turn this off, go to the settings for the `rpgiv2free` extension.
+- **Smart RPG Tab key** When enabled (default: `true`) on fixed-foramt RPG IV statements, when the TAB key is pressed, it moves to the next available "tab" location for the specification. For example: On a C (calc) spec, you may _tab_ from factor 1 to the opcode then to factor 2 and so on. The tab is non-distructive so tabbing can be done quickly and safely. To turn off Smart RPG Tab, press the "RPG Smart Tab" _button_ on the bottom status bar of the editor winodow.
+- **Smart RPG Enter key** When enabled (default: `true`) on fixed-format RPG IV statments, when you press ENTER, the current line is **not** broken and a new line with the same source spec type is inserted. The cursor is moved under the first non-blank position (after the spec) of the previous line. To turn this off, go to the settings for the `rpgiv2free` extension.
 - **Columnar Boundaries** When the Smart RPG Tab key is enabled (on) the extension highlights the boundaries of each fixed-format RPG IV statement to show where the various fields such as Factor 1, Opcode, Factor 2, Result Field, etc. are located. This gives you a visual cue to verify that you are editing in the correct location.  To use this feature, turn off the VS CODE for IBM i "Format Ruler" setting, using Shift+F4. On my personal VS CODE install, I turn that feature off by default. To do that, go to the settings.json file. To do that (Ctrl + comma or Cmd + comma on macOS) then search for this setting: `"vscode-rpgle.rulerEnabledByDefault": false,` if it is false, you're good. If true, then set it to false as shown. Note you can toggle this setting using the Shift+F4 key at any time. But I find it an annoyance so I turn it off by default.
 
-## Extension Settings
+## Advanced Support and Special-CASE
+- **Conditioning Indicators on Calc Specs Support**:
+  We convert opcode that are conditioned by 0 or more conditioning indicators by adding an IF condition to the opcode. When the opcode itself is a conditional statement, such as IFxx, WHENxx or even CASxx the conditioning indicators are integrated into that condition, otherwise they are simply added as a conditional statement. This can get ugly if you have "10 opcodes" in a row conditioned by the same indicator, so some post-conversion manual streamlining may be called for.
+- **CASxx opcodes should be converted together** When converting CASxx statements, it is recommended to convert the entire block of CASxx at one time by selecting all of them at once. This allows the conversion tool to read the before and after statements and determing if it is the first CASxx or a secondary one. If you convert them one at a time, then each will be turned into an IF condition instead of IF/ELSEIF/ELSE. If you convert the entire block at once, it figures out which controlling conditional statement is needed to mimic the CASxx statements. When we say _select all of them_ we mean all of the CASxx statements in a block not all CASxx statement in the entire program. Each separate block may be converted separately.
+- **CASxx opcodes should be converted together:**
+When converting CASxx statements, select the entire block of related CASxx lines at once. This enables the tool to determine the correct IF/ELSEIF/ELSE structure. Converting CASxx statements individually will result in each being turned into a separate IF condition, rather than a proper conditional chain. Be sure to select all CASxx statements in a logical block (not the entire program) for best results; separate blocks can be converted independently. If you use the _Select ALL -> convert RPG IV to free format_ sequence, that works too.
+- **Resulting Indicators** are fully supported/converted.
+- **Level Break Indicators are not Converted**:
+- **Input and Output specs are NOT converted.**
+- **We do nothing with RPG Cycle components** including Level Break Indicators in columns 7 and 8, input primary/secondary files, or total-time processing.
 
+**Extended RPG IV Fixed Format Keyboard Features**
+
+## Smart RPG Tab
+- The RPG IV Smart Tab feature appears in the status bar at the bottom of the VS CODE editor window (right side). When RPGLE or SQLRPGLE are detected and the source is NOT **FREE, this feature is enabled for Fixed Format code. It gives you the abilit to forward TAB or backwards TAB within the lines (such as going from Factor 1 to the Opcode to Factor 2, etc.) in a non-distructive way. It also outlines columnar boundaries on each fixed-format line in a non-intrusive mannor, and highlights the "column" in which the cursor is located. For example, if your cursor is in the Opcode area, that entire 10-byte area is highlighted. The highlight follows your cursor in any fixed format line, to help you insure you've place the code in the right place.
+
+## Smart Enter Key
+- In Fixed-format, when you press Enter, the current fixed-format line will not break at the Enter location and a new line is inserted normally. In addition, the Smart Enter key adds the new line with the same specification as the prior line (the one where Enter was pressed) and positions the cursor at the first non-blank position of that prior line. This is simlar to how other editors work.
+
+**NOTE:** Both features may be turned off in the settings, but the Smart RPG Tab key feature also has a "toggle" switch located in the right-side of the Status bar. See the Extension Settings for details on turning off either of these features.
+
+## Extension Settings
 This extension provides several settings to customize its behavior. You can configure these in your VS Code `settings.json` or through the extension settings user interface.
 
 ### `rpgiv2free.RemoveFREEDirective`
@@ -65,6 +79,35 @@ Converts the legacy /copy statement to the more modern and cross-language /inclu
 - `false` — /copy statements are not converted.
 
 Default: `false`
+
+### `rpgiv2free.enableRPGSmartEnter`
+Enables the RPG Smart Tab feature. This is shipped as `true` and may be toggled on/off using the "RPG Smart Tab" _button_ on the status bar.
+
+- `true` — RPG Fixed Format Smart Tab is Active at start up.
+- `false` — RPG Fixed Format Smart Tab is disabled at start up
+
+Default: `true`
+
+### `rpgiv2free.enableRPGSmartEnter`
+
+Enables the RPG Smart Enter key behavior which adds a new line without breaking the current fixed-format statement.
+
+- **fixedOnly** (default): Enable Smart Enter only for fixed-format RPG.
+- **fixedAndFree**: Enable Smart Enter for both fixed-format and free-format RPG.
+- **\*ALL**: Enable Smart Enter for all source file types (RPG and non-RPG).
+- **disable**: Disable Smart Enter entirely.
+
+Default: `fixedOnly`
+
+### `rpgiv2free.enableRPGCopySpecOnEnter`
+When enableRPGSmartEnter is not disabled, the new line will receive the same specification in column 6 as the current line. In addition the cursor is moved over to the first non-blank column in original line.
+
+- `true` — RPG Fixed Format Smart Enter adds the same spec type to new lines.
+- `false` — RPG Fixed Format Smart Enter adds a blank new line.
+
+Default: `true`
+
+Since this feature is also disabled when enableRPGSmartEnter is disabled, you can set it and forget it. .
 
 ### `rpgiv2free.convertBINTOINT`
 Controls whether binary (B) data types on RPG IV D specs are converted to integers in free-format RPG.

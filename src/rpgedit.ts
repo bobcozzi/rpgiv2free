@@ -649,7 +649,7 @@ export function isOpcodeANDxxORxx(line: string): boolean {
 
 export function isStartBooleanOpcode(line: string): boolean {
   return (
-    (isOpcodeIFxx(line) ||
+     (isOpcodeIFxx(line) ||
       isOpcodeDOWxx(line) ||
       isOpcodeDOUxx(line) ||
       isOpcodeWHENxx(line) ||
@@ -659,7 +659,7 @@ export function isStartBooleanOpcode(line: string): boolean {
 
 export function isBooleanOpcode(line: string): boolean {
   return (
-    (isOpcodeIFxx(line) ||
+     (isOpcodeIFxx(line) ||
       isOpcodeDOWxx(line) ||
       isOpcodeDOUxx(line) ||
       isOpcodeWHENxx(line) ||

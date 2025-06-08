@@ -3,10 +3,10 @@
   "displayName": "Bob Cozzi's RPG IV to RPG Free Conversion extension for VS CODE for i",
   "description": "Bob Cozzi's Convert RPG IV fixed-format code to free-format code. Extension for Visual Studio CODE for i.",
   "icon": "images/rpgiv2free.png",
-  "preview": true,
+  "preview": false,
   "private": false,
   "publisher": "CozziResearch",
-  "version": "0.7.5",
+  "version": "0.7.6",
   "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0",
@@ -94,7 +94,7 @@
           "type": "boolean",
           "title": "Verify CODE for IBM i Extension API",
           "default": true,
-          "description": "Verify and log Code4IBMi Extension APIs checkout (Debug mode only)."
+          "description": "Verify and log Code4IBMi Extension is running (Debug mode only)."
         },
         "rpgiv2free.altMOVEL": {
           "type": "boolean",

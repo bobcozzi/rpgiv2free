@@ -8,7 +8,8 @@ export function expandCompoundRange(lines: string[], selectedIndex: number): num
   const lineCount = lines.length;
   const opcode = rpgiv.getRawOpcode(selectedLine);
 
-  if (!rpgiv.isBooleanOpcode(selectedLine) && !rpgiv.isCASEOpcode(selectedLine)) {
+  // removed CASE opcode from compoundRange expansion
+  if (!rpgiv.isBooleanOpcode(selectedLine) || rpgiv.isCASEOpcode(selectedLine)) {
     expanded.push(selectedIndex);
     return expanded;
   }

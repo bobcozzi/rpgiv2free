@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.6] - 2025-06-07 Release candidate 1:
+- `Conditioning Indicators` are now fully supported/converted to free format! (you're welcome)
+- Fixed issues with Smart Enter and Smart Tab activations
+- Refactored the main body of our code
+- RPGII-style comments in columns 1 to 5 of Calc specs (only Calc specs) are _now retained_ when there are NO comments in columns 81 - 100.
+- This is release candidate 1. If no significant issues are reported, We will move forward with updating it to the 1.0.0 release by 1 July 2025.
+
 ## [0.7.5] - 2025-06-04
 - Fixed an issue when a data structure and its subfields were converted at the same time as an ad hoc Calc spec result field. The generated work fields' DCL-S statements were incorrectly positioned below the data structure's DCL-DS statement.
 
@@ -23,7 +30,7 @@ All notable changes to this project will be documented in this file.
 - USAGE(*OUTPUT) is now added only when required or when the "File Addition" flag is 'A'.
 
 ### General Issues
-- Comments in columns 1–5 are not supported and will be lost. This is now a policy for rpgiv2free.
+- Comments in columns 1–5 are unsupported by this conversion extension and are lost during translation.
 - Comments in column 81 to 100 on Calc and D specs are now preserved.
 - Comments in columns 81 to 100 are now rendered on the same line unless that line exceeds the record length/right margin, or converting an IFxx/ANDxx/ORxx block in which case only the first comment is preserved.
 - Extension-generated comments now appear before the converted code instead of after.

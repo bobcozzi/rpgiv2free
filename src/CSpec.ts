@@ -13,11 +13,14 @@ type OpcodeEnhancement = {
   result: string;
 };
 
-export function convertCSpec(lines: string[],
+export function convertCSpec(
+  lines: string[],
   comments: string[] | null, // Comments parm is optional
+  condIndyStmt: string,
   extraDCL: string[],
   allLines: string[],
-  curLineIndex: number): string[] {
+  curLineIndex: number
+): string[] {
   if (!Array.isArray(lines) || lines.length === 0) return [];
 
   const line = lines[0].padEnd(80, ' '); // RPG fixed-format always assumes 80-char line
@@ -26,7 +29,7 @@ export function convertCSpec(lines: string[],
   if (specType !== 'c') return [];
 
   const levelBreak = rpgiv.getCol(line, 7, 8).trim();
-  const condIndy = rpgiv.getCol(line, 9, 11).trim();
+
   const factor1 = rpgiv.getCol(line, 12, 25).trim();
   let opcode = rpgiv.getFullOpcode(line);
 
@@ -39,6 +42,7 @@ export function convertCSpec(lines: string[],
   const resInd2 = rpgiv.getCol(line, 73, 74).trim();
   const resInd3 = rpgiv.getCol(line, 75, 76).trim();
   const comment = rpgiv.getCol(line, 81, 100).trim();
+  const altCmt  = rpgiv.getCol(line, 1, 5).trim();
   let extFactor2 = rpgiv.getCol(line, 36, 80).trim();
 
   let freeFormLine: string[] = [];
@@ -46,21 +50,13 @@ export function convertCSpec(lines: string[],
 
   let prevCalc: OpcodeEnhancement | null = null;
 
-  // if (condIndy && condIndy.trim() !== '' && (levelBreak.trim() === '' || levelBreak.toLowerCase().trim() === 'sr')) {
-  //  const condStmt = handleCondIndy(condIndy);
-  //  if (condStmt.length > 0) {
-  //    freeFormLine.push(condStmt[0]);
-  //    if (condStmt.length > 1) {
-  //      afterOpcode = condStmt[1];
-  //    }
-  //  }
-  //}
-
   let { rawOpcode: rawOpcode, extenders: opExt } = rpgiv.splitOpCodeExt(opcode);
 
-
-  // Only get prevCalc for these opcodes
-  if (["MVR", "DIV", "MULT"].includes(rawOpcode)) {
+  // Only get prevCalc for these opcodes, including CAS and CASxx (e.g., CASEQ, CASNE, etc.)
+  if (
+    ["MVR", "DIV", "MULT"].includes(rawOpcode) ||
+    /^CAS([A-Z]{0,2})$/i.test(rawOpcode)
+  ) {
     prevCalc = getPrevCalcSpec(allLines, curLineIndex);
   }
 
@@ -82,9 +78,12 @@ export function convertCSpec(lines: string[],
     // Common 3-operand statement: result = factor1 opcode factor2;
     const enhValues: OpcodeEnhancement = enhanceOpcode(opcode, factor1, factor2, result, length, decimals, resInd1, resInd2, resInd3);
 
-    let reformattedLine: string[] = [];
+    let convertedLines: string[] = [];
 
-    ({ newLines: reformattedLine, newOpcode: enhValues.opcode } =
+    // Use altCmt as the comment if comment is null, empty, or blank and altCmt is non-blank
+    const effectiveComment = (!comment || comment.trim() === '') && altCmt && altCmt.trim() !== '' ? altCmt : comment;
+
+    ({ newLines: convertedLines, newOpcode: enhValues.opcode } =
       convertOpcodeToFreeFormat(
         opcode,
         factor1,
@@ -95,8 +94,9 @@ export function convertCSpec(lines: string[],
         resInd1,
         resInd2,
         resInd3,
-        comment,  // Line comment
+        effectiveComment,  // Use effective comment
         prevCalc,
+        condIndyStmt,
         comments,
         extraDCL
       ));
@@ -109,11 +109,11 @@ export function convertCSpec(lines: string[],
     }
     else {
 
-      if (reformattedLine.length > 0) {
-        freeFormLine.push(...reformattedLine);
+      if (convertedLines.length > 0) {
+        freeFormLine.push(...convertedLines);
       } else {
         const newLine = `${enhValues.opcode.toLowerCase()} ${enhValues.factor1} ${enhValues.factor2} ${enhValues.result}`;
-        freeFormLine.push(newLine.trimEnd() + ';');
+        freeFormLine.push(newLine.trimEnd() + ';'); // See if we can remove the addition of the ';', I think we can.
       }
     }
 
@@ -140,6 +140,11 @@ export function convertCSpec(lines: string[],
   }
   if (afterOpcode && afterOpcode.trim() !== '') {
     freeFormLine.push(afterOpcode);
+  }
+  let condIndy = (condIndyStmt && condIndyStmt.trim() !== '') ? condIndyStmt.trim() : '';
+  if (condIndy && !opcode.toUpperCase().trim().startsWith('CAS')) {
+    freeFormLine.unshift(condIndy);
+    freeFormLine.push('endIf');
   }
 
   return freeFormLine;
@@ -217,6 +222,7 @@ function convertOpcodeToFreeFormat(
   resInd3: string,
   comment: string,
   prevCalc: OpcodeEnhancement | null,
+  condIndyStmt: string | null,
   comments: string[] | null, // Comments parm is optional
   extraDCL: string[]
 ): { newLines: string[], newOpcode: string } {
@@ -231,6 +237,7 @@ function convertOpcodeToFreeFormat(
   const newLines: string[] = [];
   let freeFormat = '';
   let newOpcode = '';
+  let bCondHandled = false;
 
   let extenders: string[] = [];
   const opcodeMatch = opcode.match(/^([A-Z\-]+)(\(\s*([A-Z\s]+)\s*\))?$/i);
@@ -248,8 +255,18 @@ function convertOpcodeToFreeFormat(
     extenders.length > 0
       ? `${newOpcode}(${extenders.join(" ")})`
       : newOpcode;
-  const opCode = opcode.toUpperCase().replace(/\(.*\)$/, "");
-  // newOpcode = opCode;
+
+  let opCode = opcode.toUpperCase().replace(/\(.*\)$/, "");
+
+  if (opCode.startsWith('CAS')) {
+    // special handling when CASxx opcode is being converted
+    newOpcode = opCode;
+    opCode = 'CASE';
+  }
+
+  const booleanMap: { [key: string]: string } = {
+    EQ: '=', NE: '<>', GT: '>', LT: '<', GE: '>=', LE: '<='
+  };
 
   let lValue = '';
   let kwd = '';
@@ -368,8 +385,72 @@ function convertOpcodeToFreeFormat(
       }
       break;
 
+    case "CASE":
+      {
+        bCondHandled = true;
+        let opCodeBoolean = '';
+        let booleanSymbol = '';
+        let condIndy = (condIndyStmt && condIndyStmt.trim() !== '') ? condIndyStmt.trim() : '';
+        // strip off the leading IF opcode, if present.
+        if (condIndy.toUpperCase().startsWith('IF ')) {
+          condIndy = condIndy.substring(3).trimStart();
+        }
+
+        if (prevCalc) {
+          if (prevCalc.opcode.trim().startsWith('CAS')) {
+            if (newOpcode.toLowerCase().trim() === 'cas') {
+              freeFormat = 'ELSE';
+            }
+            else {
+              freeFormat = 'ELSEIF ';
+            }
+          }
+          else {
+            freeFormat = 'IF ';
+          }
+        }
+        else {
+          if (newOpcode.toLowerCase().trim() === 'cas') {  // simple/ending "CAS" is just an else, no comparison
+            newLines.push('ELSE');
+          }
+          else {
+            freeFormat = 'IF ';
+          }
+        }
+        if (condIndy !== '') {
+          if (newOpcode.toLowerCase().trim() === 'cas') {
+            freeFormat += `IF (${condIndy})`;  // creates an "ELSEIF" opcode by adding "IF" to earlier "ELSE"
+          }
+          if (newOpcode.toLowerCase().trim() !== 'cas') {
+            freeFormat += ` (${condIndy}) AND (`;
+          }
+        }
+        if (/^CAS(EQ|NE|LT|LE|GT|GE)$/.test(newOpcode)) {
+          // Extract the boolean comparison and convert it to free-format symbols
+          opCodeBoolean = newOpcode.slice(-2);
+          booleanSymbol = booleanMap[opCodeBoolean] ?? '?';
+        }
+        if (booleanSymbol && booleanSymbol.trim() !== '') {
+          freeFormat += `${factor1} ${booleanSymbol} ${factor2}`;
+        }
+
+        if (freeFormat && freeFormat.trim() !== '') {
+          if (condIndy !== '' && newOpcode.toLowerCase().trim() !== 'cas') {
+            freeFormat += ')';
+          }
+          newLines.push(freeFormat);
+        }
+        newLines.push(`exsr ${result}`);
+      }
+      break;
+
     case "END":
-      freeFormat = `${opCode}xx; // "END" opcode deprecated. Use ENDxx (e.g., ENDIF, ENDDO, etc.)`;
+      freeFormat = ` ENDIF; // ${opCode}xx; opcode deprecated. Use ENDxx (e.g., ENDIF, ENDDO, etc.)`;
+      newLines.push(freeFormat);
+      break;
+    case "ENDCS":
+      freeFormat = `endif; // ENDCS (end CASxx) `;
+      newLines.push(freeFormat);
       break;
     case 'SUBST':
       newLines.push(...op.convertSUBST(fullOpcode, factor1, factor2, result, extraDCL));
@@ -625,19 +706,7 @@ function convertOpcodeToFreeFormat(
   return { newLines: newLines, newOpcode: newOpcode };
 }
 
-function handleCondIndy(condIndy: string): string[] {
-  const newCond: string[] = [];
-  let status = "*ON";
-  let indy = condIndy.trim();
-  if (indy.length > 0 && indy[0].toLowerCase() === 'n') {
-    status = "*OFF";
-    indy = indy.slice(1).trim();
-  }
-  const stmt = `IF (*IN${indy} = ${status})`;
-  newCond.push(stmt);
-  newCond.push("endif");
-  return newCond;
-}
+
 function handleResultingIndicators(
   opcode: string,
   factor1: string,
@@ -851,21 +920,25 @@ function getPrevCalcSpec(
   for (let i = index - 1; i >= 0; i--) {
     const line = allLines[i];
     const specType = rpgiv.getSpecType(line);
+    if (rpgiv.isSkipStmt(line)) {
+      continue;
+    }
     // Check for a fixed-format Calc spec (specType 'C')
+    const opcode = rpgiv.getFullOpcode(line);
+    const fixedArea = rpgiv.getCol(line, 8, 80).toLowerCase();
     if (specType === 'c' && rpgiv.isValidFixedFormat(line)) {
       // Parse out opcode, factor1, factor2, result
       // (You can fill in more logic here as needed)
-      const opcode = rpgiv.getFullOpcode(line);
+      if (rpgiv.isCondIndyOnly(line)) {
+        continue;  // Skip continuation indicators lines and look for real prev Calc statement
+      }
       const factor1 = rpgiv.getCol(line, 12, 25).trim();
       const factor2 = rpgiv.getCol(line, 36, 49).trim();
       const result = rpgiv.getCol(line, 50, 63).trim();
       return { opcode, factor1, factor2, result };
     }
-    // If we hit a free-format Calc spec, continue otherwise, bail out
-    else if (specType === '' && (line.startsWith('dcl-') || line.startsWith('end-'))
-      || (specType !== '' && specType !== 'c')) {
-      // Return null or empty parameters if not found
-      return null;
+    else {
+      break;
     }
   }
   // If nothing found, return null

@@ -98,6 +98,7 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number, con
     i++;
   }
   if (condIndyStmt && condIndyStmt.trim() !== '') {
+    // remove opcode from conditioning indicator in free format
     const condIndyStmtStripped = condIndyStmt.replace(/^\w+\s+/, '');
     lines.push(`(${condIndyStmtStripped}) and (`)
   }

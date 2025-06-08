@@ -2,11 +2,18 @@
 import * as rpgiv from './rpgedit';
 import { collectedStmt, stmtLines } from './types'
 
-export function collectCaseOpcode(allLines: string[], startIndex: number, condIndyStmt: string): { lines: string[], indexes: number[] } {
+export function collectCaseOpcode(
+  allLines: string[],
+  startIndex: number,
+  condIndyStmt: string): {
+    lines: string[],
+    indexes: number[]
+  } {
   const lines: string[] = [];
   const indexes: number[] = [];
   const comments: string[] = [];
   const eol = rpgiv.getEOL();
+  const condStmt = (!condIndyStmt || condIndyStmt.trim() === '') ? '' : `(${condIndyStmt}) and `;
 
   const opMap: { [key: string]: string } = {
     EQ: '=', NE: '<>', GT: '>', LT: '<', GE: '>=', LE: '<='
@@ -37,6 +44,7 @@ export function collectCaseOpcode(allLines: string[], startIndex: number, condIn
     const f1 = rpgiv.getCol(line, 12, 25).trim();
     const f2 = rpgiv.getCol(line, 36, 49).trim();
     const result = rpgiv.getCol(line, 50, 63).trim();
+    let condPrefix = '';
 
     if (opCode.startsWith('END')) {
       indexes.push(i);
@@ -51,11 +59,10 @@ export function collectCaseOpcode(allLines: string[], startIndex: number, condIn
       if (!selector) { selector = f1 };
 
       if (comparisons.length === 0) {
-        comparisons.push(`IF (${selector} ${compSymbol} ${f2});`);
+        comparisons.push(`IF ${condStmt}(${selector} ${compSymbol} ${f2});`);
       }
       else {
-        comparisons.push(`elseIf (${selector} ${compSymbol} ${f2})`);
-
+        comparisons.push(`elseIf ${condStmt}(${selector} ${compSymbol} ${f2})`);
       }
       comparisons.push(`${indent}exsr ${result}`);
     }
@@ -70,7 +77,12 @@ export function collectCaseOpcode(allLines: string[], startIndex: number, condIn
 
   if (elseLineIndex !== null) {
     const elseResult = rpgiv.getCol(allLines[elseLineIndex], 50, 63).trim();
-    comparisons.push(`ELSE;`);
+    if (condStmt && condStmt.trim() !== '') {
+      comparisons.push(`elseIf ${condStmt}`);
+    }
+    else {
+      comparisons.push(`ELSE`);
+    }
     comparisons.push(`${indent}exsr ${elseResult}`);
   }
 

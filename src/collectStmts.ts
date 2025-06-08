@@ -162,7 +162,9 @@ export function collectStmt(
         isSQL: false,
         isCollected: true,
       };
-    } else if (rpgiv.isCASEOpcode(startLine)) {
+    }
+    // removed CASE from compound statements, and moved to regular opcode conversion
+    /* else if (rpgiv.isCASEOpcode(startLine)) {
       // Handle CASE/CASxx blocks
       const caseOpcodeResult = collectCaseOpcode(allLines, startIndex, (condIndyStmt) ? condIndyStmt : '');
       return {
@@ -173,7 +175,8 @@ export function collectStmt(
         isSQL: false,
         isCollected: true,
       };
-    } else if (rpgiv.isExtOpcode(rpgiv.getRawOpcode(startLine)) ||
+  } */
+    else if (rpgiv.isExtOpcode(rpgiv.getRawOpcode(startLine)) ||
       rpgiv.getCol(startLine, 8, 35).trim() == '') {
       // if Calc spec and Extended Factor 2 opcode or nothing in Factor 1 or Opcode, then
       // this is a continued Extended Factor 2 spec. So read backwards
