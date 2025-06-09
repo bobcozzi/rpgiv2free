@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 - Fixed issues with Smart Enter and Smart Tab activations, they now ONLY RUN if the line is FIXED Format.
 - Refactored the main body of our code
 - RPGII-style comments in columns 1 to 5 of Calc specs (only Calc specs) are _now retained_ when there are NO comments in columns 81 - 100.
-- This is release candidate 1. If no significant issues are reported, We will move forward with updating it to the 1.0.0 release by 1 July 2025.
+- This is release candidate 1. If no significant issues are reported, I will move forward with updating it to the 1.0.0 release by 1 July 2025.
 - Bug fixes and enhancements
 
 ## [0.7.5] - 2025-06-04
@@ -103,7 +103,7 @@ All notable changes to this project will be documented in this file.
 - Corrected an issue with where the generated end-ds statement is inserted. It now correctly locates the insert point even when bulk (e.g., select-All) conversions are performed.
 - Fixed an issue where during bulk conversion if an unnamed data structure was converted immediately after a named data structure (in the same bulk conversion action) the unnamed data structure's end-ds would contain the prior named data structure's name.
 ## [0.6.24] - 2025-05-27
-- We now convert "empty" or blank spec lines such as `     C` with nothing else on it o a blank line.
+- I now convert "empty" or blank spec lines such as `     C` with nothing else on it o a blank line.
 - Opcode conditioned by **1 conditioning indicator** are now converted.
 - If the Level Break indicator area (columns 7 and 8) is `Lx` or is `OR` or `AN` unpredictable results will occur.
 - It is a future objective to support AN/OR lines (multiple conditioning indicators) for a single opcode.
@@ -142,7 +142,7 @@ All notable changes to this project will be documented in this file.
 ## [0.6.16] - 2025-05-23
 - Added support for column 81+ "comments" to be converted to `// <comments>` in free format (D specs only). Support for C spec column 81 comments may be integrated in a future release.
 - Corrected an issue with File spec conversion that was omitted from the earlier release.
-- Know issue with WHENEQ/ANDEQ and possibly IFEQ/ANDEQ style conditional logic. This was working, but we broke it. It'll be resolved in the next build. The work around right now is to selected those lines independently of others and they should convert.
+- Know issue with WHENEQ/ANDEQ and possibly IFEQ/ANDEQ style conditional logic. This was working, but I broke it. It'll be resolved in the next build. The work around right now is to selected those lines independently of others and they should convert.
 - Correct issues related to stand-alone WHENxx statements (i.e., the secondary WHENxx in a SELECT block). Fixed several issues related to **select all** behaving badly.
 - The File spec was being processed by an old routine that in one case thought it was a D spec, so yikes... yeah that's been fixed.
 - Good solid select-all test of late 1990s style RPG by S/36 developers (so mostly RPGIII looking RPG IV) and it converted great.
@@ -172,13 +172,13 @@ All notable changes to this project will be documented in this file.
 - The Smart Enter key feature is only available for Fixed Format RPG IV code. It is not available for Free Format RPG IV code, nor is it available for non-RPGLE or non-SQLRPGLE source files.
 ## [0.6.4] - 2025-05-19
 - Cleaned up the code for the new RPG Smart Tab toggle on/off feature. It now cleaning removes the columnar boundary rulers when the feature is disabled. It also cleaning redraws them when the feature is toggled back on.
-- We now have custom columr and width setting options for the columnar boundary rulers that apply specifically to Light Mode and Dark Mode editing.
+- I now have custom column and width setting options for the columnar boundary rulers that apply specifically to Light Mode and Dark Mode editing.
 ## [0.6.3] - 2025-05-19
 - Introducing RPG Smart Tabbing! This feature automatically adjusts the cursor when TAB is pressed for your RPG code. It moves from "column to column" based on the RPG IV specification you are on. Both forward tab and backwards tab (shift+TAB) move the cursor on the line without disrupting the existing code position. No more shifting code when tabbing!
 - Introducing a new setting to control the "RPG Smart Tab" feature. This setting is called "rpgiv2free.smartTab" and is set to true by default. You can disable it if you prefer the old default tab behavior. There is also a status bar button to toggle the feature on and off. Note that on non-fixed format RPG IV code as well as non-RPGLE, non-SQLRPGLE source files, the smart tab feature is disabled by default.
 - Introducing a new "RPG Columnar Boundary Ruler" that shows you visually where the RPG IV fixed format columnar areas begin and end. This can help with alignment and faster interpretation of the source statement. For example, Factor 1, Opcode, Factor 2, and Result along with all the indicator fields are now outlined for you. Note the due to VS CODE limitations, boundary rulers are shown only for columns that contain content in the columnar area. That is the empty or void areas of the physical source line will not have these boundary ruler lines drawn.
 - New columnar boundary tab highlight feature. Now when you are on a fixed format statement, the current columnar area is highlighted in a light blue color. This helps you see where you are in the fixed format statement.
-- For the RPGIV2Free extension, the all specifications, H, F, D, P are fully supported to be converted. Howeve the Calc specs while working well, are not converted and should be reviewed as we still do not support all edge cases fully, and do not support conditioning indicators at all (and do not intent to in the future).
+- For the RPGIV2Free extension, the all specifications, H, F, D, P are fully supported to be converted. Howeve the Calc specs while working well, are not converted and should be reviewed as I still do not support all edge cases fully, and do not support conditioning indicators at all (and do not intent to in the future).
 ## [0.6.2] - 2025-05-17
 - Ignore File specs for input Primary/Secondary files (only the initial F spec is ignored, continuations may be problematic for these if they exist)
 - Fixed a small issue with spacing for continuation of long expressions and all the variations that RPG IV allows for such things.
@@ -191,7 +191,7 @@ All notable changes to this project will be documented in this file.
 
 ## [0.6.0] - 2025-05-15
 - A major rewrite of D spec seletion and free format line formatting.
-- Restructured how we process and convert calc spec opcodes to provide more customization for each opcode.
+- Restructured how I process and convert calc spec opcodes to provide more customization for each opcode.
 - Fixed several bugs in how the full D spec statement was selected. In edge cases it was dropping the end of a Long Variable name. This has now been corrected.
 - Fully implemented CAT opcode to free format
 - Correctly a bug in reformat/paginate RPG IV line routine that was causing it to wrap prematurely.
