@@ -748,6 +748,16 @@ export function isValidFixedFormat(line: string): boolean {
   return bIsFixedFormat;
 }
 
+export function isFixedFormatSpec(line: string): boolean {
+  if (!line && line.length < 5) {
+    return false;
+  }
+  const specType = getSpecType(line).trim();
+  // isNotSkipStmt checks for things like comments and directives and empty lines
+  const bIsFixedFormat = (isNotSkipStmt(line) && ['h', 'f', 'd', 'c', 'p', 'i', 'o'].includes(specType));
+  return bIsFixedFormat;
+}
+
 export function isFixedFormatRPG(document: vscode.TextDocument): boolean {
   if (!isRPGDocument(document)) return false;
   if (document.lineCount === 0) return true; // Treat empty document as fixed format

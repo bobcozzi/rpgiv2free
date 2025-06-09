@@ -362,7 +362,8 @@ export function applyColumnarDecorations(editor: vscode.TextEditor, smartTabEnab
     for (let i = 0; i < doc.lineCount; i++) {
       const line = doc.lineAt(i);
       if (rpgiv.isSkipStmt(line.text)) continue;
-      if (rpgiv.isComment(line.text)) continue;
+      // if (rpgiv.isComment(line.text)) continue;
+      // if (!rpgiv.isValidFixedFormat(line.text)) continue;
       const stops = getTabStops(line.text);
       if (!stops || stops.length === 0) continue;
       const ranges: vscode.Range[] = [];
@@ -381,37 +382,5 @@ export function applyColumnarDecorations(editor: vscode.TextEditor, smartTabEnab
     // Clear decorations and remove from map
     editor.setDecorations(verticalLineDecoration, []);
     tabStopRangesPerEditor.delete(uriKey);
-  }
-}
-export function XapplyColumnarDecorations(editor: vscode.TextEditor, smartTabEnabled: boolean) {
-  if (!editor) return;
-
-  const doc = editor.document;
-  const lang = doc.languageId.toLowerCase();
-  if (!["rpgle", "sqlrpgle"].includes(lang)) return;
-
-  if (smartTabEnabled) {
-    const ranges: vscode.Range[] = [];
-
-    // Create "vertical line" decoration by adding a range at specific columns
-    for (let i = 0; i < editor.document.lineCount; i++) {
-      const line = editor.document.lineAt(i);
-      if (rpgiv.isSkipStmt(line.text)) continue; // Skip if line is a skip statement
-      if (rpgiv.isComment(line.text)) continue; // Skip if line is a comment
-      const stops = getTabStops(line.text); // Get tab stops for the current line
-      if (!stops || stops.length === 0) continue; // Skip if no tab stops found
-      stops.forEach(col => {
-        if (line.text.length > col) {
-          const pos = new vscode.Position(i, col);
-          ranges.push(new vscode.Range(pos, pos));
-        }
-      });
-
-    }
-
-    editor.setDecorations(verticalLineDecoration, ranges);
-  } else {
-    // Clear decorations
-    editor.setDecorations(verticalLineDecoration, []);
   }
 }

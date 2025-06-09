@@ -10,6 +10,7 @@ import { convertCSpec } from './CSpec';
 import { convertToFreeFormSQL } from './collectSQLSpec';
 import { formatRPGIV } from './formatRPGIV';
 import * as rpgiv from './rpgedit';
+import { applyColumnarDecorations, drawTabStopLines } from './smartTab';
 
 export function registerConvertToRPGFreeCommand(context: vscode.ExtensionContext, config: any) {
   const disposable = vscode.commands.registerCommand('rpgiv2free.convertToRPGFree', async () => {
@@ -208,6 +209,23 @@ export function registerConvertToRPGFreeCommand(context: vscode.ExtensionContext
         if (!success) {
           rpgiv.log('Failed to apply edits. Edits:', JSON.stringify(edits, null, 2));
           vscode.window.showErrorMessage('Failed to apply conversion edits. Please try again.');
+        }
+        else {
+          //  applyColumnarDecorations(editor, false);
+          // Redraw guides only for lines that are still fixed-format
+          const doc = editor.document;
+          const updatedLines = new Set<number>();
+
+          for (const edit of edits) {
+            for (let line = edit.range.start.line; line <= edit.range.end.line; line++) {
+              updatedLines.add(line);
+            }
+          }
+
+          for (const line of updatedLines) {
+            const text = doc.lineAt(line).text;
+            drawTabStopLines(editor, line);
+          }
         }
       } catch (error) {
         vscode.window.showErrorMessage('Error applying edits: ' + (error as Error).message);

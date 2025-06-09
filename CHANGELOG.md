@@ -3,9 +3,10 @@
 All notable changes to this project will be documented in this file.
 
 
-## [0.7.11] - 2025-06-09:
+## [0.7.12] - 2025-06-09:
 - Corrected an issue with DO result field ("counter") ad hoc definition.
 - Corrected an issue with KeyList not being seen when defined in subprocedures.
+- When Fixed Format is converted to free, the Columnar Guides are now removed from those lines.
 
 ## [0.7.10] - 2025-06-08 Release candidate 1:
 - `Conditioning Indicators` are now fully supported/converted to free format! (you're welcome)
