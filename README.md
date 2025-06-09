@@ -207,8 +207,7 @@ Default: `f2f_tempDO`
 
 ## Known Issues
 
-- **Calc Specs (C Specs)**:
-  Opcodes conditioned by Level-Break Indicators or **more than one conditioning indicator** are not supporter for converison. Converting multiple conditioning indicator opcodes is a future objective.
+- There are no known issues at this time. All features have been implemented.
 
 ## Controlling Inline Suggestions in VS Code
 
@@ -235,11 +234,6 @@ If you want to disable inline suggestions only for RPGLE and/or SQLRPGLE files, 
 }
 ```
 
-
-## Roadmap
-
-- **Implementation of Calc Specs**:
-  We are working on refining handling of Calc Specs and expect on-going improved support with each release.
 
 ## License
 
