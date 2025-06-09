@@ -216,7 +216,8 @@ function isRPGFreeSubfield(line: string): boolean {
   // or immediately followed by '(' or ';'
   for (let i = 0; i < tokens.length; i++) {
     for (const type of rpgDataTypes) {
-      const regex = new RegExp(`^${type}(\\(|;|$)`, 'i');
+      // Only match if the type is immediately followed by '(' (e.g., like(), packed(), etc.)
+      const regex = new RegExp(`^${type}\\(`, 'i');
       if (regex.test(tokens[i])) {
         // If the type is not the first token, ensure the first token is not an opcode
         if (i === 0 || !isValidOpcode(tokens[0].toUpperCase())) {

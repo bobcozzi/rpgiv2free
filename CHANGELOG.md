@@ -2,12 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.7.9] - 2025-06-08 Release candidate 1:
+## [0.7.10] - 2025-06-08 Release candidate 1:
 - `Conditioning Indicators` are now fully supported/converted to free format! (you're welcome)
 - Fixed issues with Smart Enter and Smart Tab activations, they now ONLY RUN if the line is FIXED Format.
 - Refactored the main body of our code
 - RPGII-style comments in columns 1 to 5 of Calc specs (only Calc specs) are _now retained_ when there are NO comments in columns 81 - 100.
 - This is release candidate 1. If no significant issues are reported, We will move forward with updating it to the 1.0.0 release by 1 July 2025.
+- Bug fixes and enhancements
 
 ## [0.7.5] - 2025-06-04
 - Fixed an issue when a data structure and its subfields were converted at the same time as an ad hoc Calc spec result field. The generated work fields' DCL-S statements were incorrectly positioned below the data structure's DCL-DS statement.
