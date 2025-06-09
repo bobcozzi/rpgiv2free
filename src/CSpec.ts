@@ -623,7 +623,7 @@ function convertOpcodeToFreeFormat(
       break;
 
     case 'DO':  // Do is converted to a FOR loop
-      newLines.push(...op.convertDO(fullOpcode, factor1, factor2, result, extraDCL));
+      newLines.push(...op.convertDO(fullOpcode, factor1, factor2, result, length, decimals, extraDCL));
       newOpcode = '';
       break;
     case "DEFN":

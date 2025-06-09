@@ -7,6 +7,8 @@ export function convertDO(
     factor1: string,
     factor2: string,
     result: string,
+    length: string,
+    decimals: string,
     extraDCL: string[]
 ): string[] {
     const lines: string[] = [];
@@ -34,7 +36,13 @@ export function convertDO(
         f3 = config.tempVar2DO;
     }
     if (!rpgiv.isVarDcl(f3)) {
-        extraDCL.push(`DCL-S ${f3} INT(10); // Ad hoc counter used by DO opcode `);
+        let workFieldDefn = 'int(10)';
+        if (length && length.trim() !== '') {
+            if (decimals && decimals !== '') {
+                workFieldDefn = `packed(${length} : ${decimals})`;
+            }
+        }
+        extraDCL.push(`DCL-S ${f3} ${workFieldDefn}; // Ad hoc counter used by DO opcode `);
     }
 
     lines.push(`FOR ${f3} = ${f1} to ${f2} by 1; // DO opcode`);

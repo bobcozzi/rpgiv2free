@@ -32,25 +32,24 @@ export function collectKLIST() {
     const allLines = doc.getText().split(rpgiv.getEOL());
 
     for (let i = 0; i < allLines.length; i++) {
-        const line = allLines[i].padEnd(80, ' ');
-        const specType = rpgiv.getSpecType(line); // Get fixed-format Spec type
-        if (rpgiv.isValidFixedFormat(line)) {
-            if (['p', 'o', 'i', 'd', 'h'].includes(specType)) continue;
-        }
+        const line = allLines[i];
         const len = line.trim().length;
-        if (len >= 2 && len <= 20) {
-            if (len == 2 && line === '**') break;
-            if (len > 2 && line.toUpperCase().startsWith('**CTDATA')) break;
+
+        if (rpgiv.isEOP(line)) {
+            break;
         }
+
         if (rpgiv.isValidFixedFormat(line) && rpgiv.getSpecType(line) === 'c') {
             // Look for a KLIST definition
             const opcode = rpgiv.getRawOpcode(line).toUpperCase();
             if (opcode === 'KLIST') { // Start of a keylist?
                 const klistName = getFactor1(line);
                 const keyFields: string[] = [];
-                // Scan following lines for KFLD entries
+                // Scan lines for KFLD entries
                 for (let j = i + 1; j < allLines.length; j++) {
                     const nextLine = allLines[j].padEnd(80, ' ');
+                    if (rpgiv.isSkipStmt(nextLine)) { continue; }
+                    if (rpgiv.isEOP(nextLine)) { break; }
                     const kfld = rpgiv.getRawOpcode(nextLine).toUpperCase();
                     if (kfld === 'KFLD') {
                         keyFields.push(getResult(nextLine));

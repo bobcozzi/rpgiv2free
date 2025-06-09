@@ -697,31 +697,19 @@ export function logOverlappingEdits(edits: { range: { start: { line: number, cha
  * Checks if "this" line is the End Of Program marker (e.g., '**', '**CTDATA').
  * Optimized for high-frequency calls.
  */
+
 export function isEOP(line: string): boolean {
-  if (!line) return false;
-  // Fast path: check first two chars
-  if (line.length < 2 || line[0] !== '*' || line[1] !== '*') return false;
+  if (!line || line.length < 2) return false;
+  if (line[0] !== '*' || line[1] !== '*') return false;
 
-  // Skip leading '**'
-  let i = 2;
-  const len = line.trimEnd().toLowerCase().length;
+  // Check for just '**'
+  if (line.length === 2) return true;
 
-  if (len === i) return true;
-  if (len < 6) return false;
-
-  // Check for 'ctdata' (case-insensitive), possibly followed by whitespace and optional '('
-  // Compare char-by-char for speed
-  const ctd = 'ctdata';
-  let j = 0;
-
-  while (i < len && j < 6 && (line[i] === ctd[j])) {
-    i++; j++;
-  }
-  if (j === 6) {
-    // Skip whitespace after 'ctdata'
-    while (i < len && (line[i] === ' ' || line[i] === '\t')) i++;
-    // Accept if end of line or next char is '('
-    if (i === len || line[i] === '(') return true;
+  // Check for '**CTDATA' or '**CTDATA(' (case-insensitive)
+  const rest = line.slice(2, 9).toUpperCase();
+  if (rest === 'CTDATA') {
+    // Accept if exactly '**CTDATA' or followed by '('
+    return line.length === 9 || line[9] === '(';
   }
 
   return false;

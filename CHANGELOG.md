@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+
+## [0.7.11] - 2025-06-09:
+- Corrected an issue with DO result field ("counter") ad hoc definition.
+- Corrected an issue with KeyList not being seen when defined in subprocedures.
+
 ## [0.7.10] - 2025-06-08 Release candidate 1:
 - `Conditioning Indicators` are now fully supported/converted to free format! (you're welcome)
 - Fixed issues with Smart Enter and Smart Tab activations, they now ONLY RUN if the line is FIXED Format.
