@@ -78,7 +78,7 @@ function getNextStop(current: number, stops: number[], reverse: boolean): number
 
   if (!reverse) {
     // If current is at or beyond the last stop, return undefined
-    if (current >= stops[stops.length - 1]-1) {
+    if (current >= stops[stops.length - 1] - 1) {
       return undefined;
     }
     for (const stop of stops) {
@@ -134,7 +134,10 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
   }
 
   const doc = editor.document;
-  if (rpgiv.isNOTFixedFormatRPG(doc)) return;
+  if (rpgiv.isNOTFixedFormatRPG(doc)) {
+    await vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
+    return;
+  }
 
   const config = vscode.workspace.getConfiguration('rpgiv2free');
   const maxRPGLen = config.get<number>('maxRPGSourceLength', 100);  // Default to 80
@@ -142,14 +145,9 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
   const line = doc.lineAt(cursor.line);
   const lineText = line.text;
 
-  if (lineText.length < 6) {
-    // Fall back to normal Tab or Shift+Tab
-    vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
-    return;
-  }
-
+    // Is it a Fixed Format statement?
   const specChar = getStmtRule(lineText);
-  if (!specChar || !RPG_TAB_STOPS[specChar]) {
+  if (lineText.length < 6 || !specChar || !RPG_TAB_STOPS[specChar]) {
     vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
     return;
   }
@@ -205,50 +203,50 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
   }
 
   if (typeof newCol === "number") {
-  // Pad if needed (for forward tab only)
-  if (!reverse && newCol > cursor.character && newCol >= lineText.length) {
-    const padding = " ".repeat(newCol - lineText.length);
-    await editor.edit(editBuilder => {
-      editBuilder.insert(
-        new vscode.Position(cursor.line, lineText.length),
-        padding
-      );
-    }, { undoStopBefore: false, undoStopAfter: false });
-  }
+    // Pad if needed (for forward tab only)
+    if (!reverse && newCol > cursor.character && newCol >= lineText.length) {
+      const padding = " ".repeat(newCol - lineText.length);
+      await editor.edit(editBuilder => {
+        editBuilder.insert(
+          new vscode.Position(cursor.line, lineText.length),
+          padding
+        );
+      }, { undoStopBefore: false, undoStopAfter: false });
+    }
 
-  // Move cursor
-  const safeColumn = Math.min(newCol, maxRPGLen - 1);
-  const newPos = new vscode.Position(cursor.line, safeColumn);
-  editor.selection = new vscode.Selection(newPos, newPos);
-  editor.revealRange(new vscode.Range(newPos, newPos));
-  return;
+    // Move cursor
+    const safeColumn = Math.min(newCol, maxRPGLen - 1);
+    const newPos = new vscode.Position(cursor.line, safeColumn);
+    editor.selection = new vscode.Selection(newPos, newPos);
+    editor.revealRange(new vscode.Range(newPos, newPos));
+    return;
   }
 
   // 2. If there is no next tab stop, move to the next line (only for Tab, not Shift+Tab)
-if (!reverse) {
-  const nextLine = cursor.line + 1;
-  if (nextLine >= doc.lineCount) {
-    // Create a new line if we're at EOF
-    await editor.edit(editBuilder => {
-      editBuilder.insert(new vscode.Position(cursor.line, lineText.length), '\n');
-    });
-  }
-  const nextLineText = doc.lineAt(Math.min(nextLine, doc.lineCount - 1)).text;
-  const nextStops = getTabStops(nextLineText);
-  const firstTab = nextStops.length > 1 ? nextStops[1] : 5;  // get 2nd tab (first is alway column 1)
+  if (!reverse) {
+    const nextLine = cursor.line + 1;
+    if (nextLine >= doc.lineCount) {
+      // Create a new line if we're at EOF
+      await editor.edit(editBuilder => {
+        editBuilder.insert(new vscode.Position(cursor.line, lineText.length), '\n');
+      });
+    }
+    const nextLineText = doc.lineAt(Math.min(nextLine, doc.lineCount - 1)).text;
+    const nextStops = getTabStops(nextLineText);
+    const firstTab = nextStops.length > 1 ? nextStops[1] : 5;  // get 2nd tab (first is alway column 1)
 
-  // Pad next line if needed
-  if (nextLineText.length < firstTab) {
-    const padAmount = firstTab - nextLineText.length;
-    await editor.edit(editBuilder => {
-      editBuilder.insert(new vscode.Position(nextLine, nextLineText.length), ' '.repeat(padAmount));
-    }, { undoStopBefore: false, undoStopAfter: false });
-  }
+    // Pad next line if needed
+    if (nextLineText.length < firstTab) {
+      const padAmount = firstTab - nextLineText.length;
+      await editor.edit(editBuilder => {
+        editBuilder.insert(new vscode.Position(nextLine, nextLineText.length), ' '.repeat(padAmount));
+      }, { undoStopBefore: false, undoStopAfter: false });
+    }
 
-  const wrappedPos = new vscode.Position(nextLine, firstTab);
-  editor.selection = new vscode.Selection(wrappedPos, wrappedPos);
-  editor.revealRange(new vscode.Range(wrappedPos, wrappedPos));
-}
+    const wrappedPos = new vscode.Position(nextLine, firstTab);
+    editor.selection = new vscode.Selection(wrappedPos, wrappedPos);
+    editor.revealRange(new vscode.Range(wrappedPos, wrappedPos));
+  }
 
   // --- Optional: Shift+Tab trailing space trim ---
   if (

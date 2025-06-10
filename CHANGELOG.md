@@ -3,6 +3,9 @@
 All notable changes to this project will be documented in this file.
 
 
+## [0.7.14] - 2025-06-10:
+- Corrected an issue with the TAB key when the source file is **FREE.
+-
 ## [0.7.12] - 2025-06-09:
 - Corrected an issue with DO result field ("counter") ad hoc definition.
 - Corrected an issue with KeyList not being seen when defined in subprocedures.
