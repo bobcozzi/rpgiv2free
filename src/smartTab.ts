@@ -145,7 +145,7 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
   const line = doc.lineAt(cursor.line);
   const lineText = line.text;
 
-    // Is it a Fixed Format statement?
+  // Is it a Fixed Format statement?
   const specChar = getStmtRule(lineText);
   if (lineText.length < 6 || !specChar || !RPG_TAB_STOPS[specChar]) {
     vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
@@ -331,7 +331,6 @@ export function drawTabStopLines(editor: vscode.TextEditor, lineNbr: number): vo
   const decorations: vscode.Range[] = [];
   if (lineNbr < doc.lineCount) {
     const line = doc.lineAt(lineNbr);
-    const specChar = getStmtRule(line.text);
     const stops = getTabStops(line.text);
 
     for (const stop of stops) {
@@ -343,12 +342,21 @@ export function drawTabStopLines(editor: vscode.TextEditor, lineNbr: number): vo
   }
 
   // Update only this line's ranges
-  perLineRanges[lineNbr] = decorations;
+  perLineRanges![lineNbr] = decorations; // Non-null assertion ensures TypeScript knows it's defined
 
-  // Flatten all ranges for this editor and apply
-  const allRanges = perLineRanges.flat();
-  editor.setDecorations(verticalLineDecoration, allRanges);
+  // Apply decorations only for visible ranges
+  const visibleRanges = editor.visibleRanges;
+  const visibleDecorations = visibleRanges.flatMap(range => {
+    const visibleLines = [];
+    for (let i = range.start.line; i <= range.end.line; i++) {
+      visibleLines.push(...(perLineRanges![i] || [])); // Non-null assertion ensures TypeScript knows it's defined
+    }
+    return visibleLines;
+  });
+
+  editor.setDecorations(verticalLineDecoration, visibleDecorations);
 }
+
 export function applyColumnarDecorations(editor: vscode.TextEditor, smartTabEnabled: boolean) {
   if (!editor) return;
 
@@ -357,22 +365,27 @@ export function applyColumnarDecorations(editor: vscode.TextEditor, smartTabEnab
 
   if (smartTabEnabled) {
     const perLineRanges: vscode.Range[][] = [];
-    for (let i = 0; i < doc.lineCount; i++) {
-      const line = doc.lineAt(i);
-      if (rpgiv.isSkipStmt(line.text)) continue;
-      // if (rpgiv.isComment(line.text)) continue;
-      // if (!rpgiv.isValidFixedFormat(line.text)) continue;
-      const stops = getTabStops(line.text);
-      if (!stops || stops.length === 0) continue;
-      const ranges: vscode.Range[] = [];
-      stops.forEach(col => {
-        if (line.text.length > col) {
-          const pos = new vscode.Position(i, col);
-          ranges.push(new vscode.Range(pos, pos));
-        }
-      });
-      perLineRanges[i] = ranges;
+    const visibleRanges = editor.visibleRanges; // Get visible ranges
+
+    for (const range of visibleRanges) {
+      for (let i = range.start.line; i <= range.end.line; i++) {
+        const line = doc.lineAt(i);
+        if (rpgiv.isSkipStmt(line.text)) continue;
+
+        const stops = getTabStops(line.text);
+        if (!stops || stops.length === 0) continue;
+
+        const ranges: vscode.Range[] = [];
+        stops.forEach(col => {
+          if (line.text.length > col) {
+            const pos = new vscode.Position(i, col);
+            ranges.push(new vscode.Range(pos, pos));
+          }
+        });
+        perLineRanges[i] = ranges;
+      }
     }
+
     tabStopRangesPerEditor.set(uriKey, perLineRanges);
     const allRanges = perLineRanges.flat();
     editor.setDecorations(verticalLineDecoration, allRanges);

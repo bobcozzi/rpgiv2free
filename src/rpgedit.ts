@@ -229,6 +229,11 @@ function isRPGFreeSubfield(line: string): boolean {
   return false;
 }
 
+// Precompile regex patterns
+const freeFormDirectiveRegex = /^\/[A-Za-z0-9]+(\s|$)/; // Matches /COPY, /INCLUDE, etc.
+const singleCharDirectiveRegex = /^\/[A-Za-z0-9]\s?/;   // Matches /X or /X[whitespace]
+const validCharRegex = /^[A-Za-z0-9]/;                  // Matches valid characters after '/'
+
 export function isDirective(line: string, bFreeFormOnly?: boolean): boolean {
   // Classic RPG directive: column 7 is '/' and column 8 is not '/'
   const bDirective = (
@@ -240,19 +245,19 @@ export function isDirective(line: string, bFreeFormOnly?: boolean): boolean {
     if (bDirective) return true;
   }
 
-  // Free-form or modern: line starts with '/' followed by A-Za-z0-9 and nothing or whitespace
-  const trimmed = getCol(line, 7, 80).trim().toUpperCase();
+  // Free-form or modern: line starts with '/' followed by A-Za-z0-9
+  const trimmed = getCol(line, 7, 80).trim(); // Avoid converting to uppercase unnecessarily
   if (!trimmed.startsWith('//') &&
     trimmed.startsWith('/') &&
     trimmed.length > 1 &&
-    /^[A-Za-z0-9]/.test(trimmed[1])
+    validCharRegex.test(trimmed[1])
   ) {
-    // Accept if only /X or /X... or /X[whitespace...]
-    if (trimmed.length === 2 || /\s/.test(trimmed[2])) {
+    // Accept if only /X or /X[whitespace...]
+    if (singleCharDirectiveRegex.test(trimmed)) {
       return true;
     }
     // Accept if /COPY, /INCLUDE, etc.
-    if (/^\/[A-Za-z0-9]+(\s|$)/.test(trimmed)) {
+    if (freeFormDirectiveRegex.test(trimmed)) {
       return true;
     }
   }
@@ -698,23 +703,16 @@ export function logOverlappingEdits(edits: { range: { start: { line: number, cha
  * Optimized for high-frequency calls.
  */
 
+// Precompile regex for directive matching
+const directiveRegex = /^\*\*CTDATA(?:\(|$)/i;
+
 export function isEOP(line: string): boolean {
-  if (!line || line.length < 2) return false;
-  if (line[0] !== '*' || line[1] !== '*') return false;
+  if (!line || line.trimEnd().length < 2) return false;
+  if (line.trimEnd().length === 2 && line[0] === '*' && line[1] === '*') return false;
 
-  // Check for just '**'
-  if (line.length === 2) return true;
-
-  // Check for '**CTDATA' or '**CTDATA(' (case-insensitive)
-  const rest = line.slice(2, 9).toUpperCase();
-  if (rest === 'CTDATA') {
-    // Accept if exactly '**CTDATA' or followed by '('
-    return line.length === 9 || line[9] === '(';
-  }
-
-  return false;
+  // Use precompiled regex for '**CTDATA' or '**CTDATA('
+  return directiveRegex.test(line);
 }
-
 
 export function getSmartEnterMode(): SmartEnterMode {
   const config = vscode.workspace.getConfiguration('rpgiv2free');

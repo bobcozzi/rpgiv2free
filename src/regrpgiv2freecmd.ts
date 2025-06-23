@@ -15,9 +15,9 @@ import { applyColumnarDecorations, drawTabStopLines } from './smartTab';
 export function registerConvertToRPGFreeCommand(context: vscode.ExtensionContext, config: any) {
   const disposable = vscode.commands.registerCommand('rpgiv2free.convertToRPGFree', async () => {
     const editor = vscode.window.activeTextEditor;
-    rpgiv.log('Convert RPG IV to Free Format Handler Start');
+    rpgiv.log('Convert RPG IV to Free Format Handler evoked');
     if (!editor) {
-      vscode.window.showErrorMessage('No active editor found. Convert RPGIV to Free Format cancelled.');
+      vscode.window.showErrorMessage('No active editor window found. Convert RPGIV to Free Format cancelled.');
       return;
     }
 

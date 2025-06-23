@@ -72,6 +72,15 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
+  const visibleRangesListener = vscode.window.onDidChangeTextEditorVisibleRanges((event) => {
+    if (rpgSmartTabEnabled) {
+      applyColumnarDecorations(event.textEditor, true);
+    }
+  });
+
+   // Add the listener to your context subscriptions
+  context.subscriptions.push(visibleRangesListener);
+
   // add listener for character/non-tab cursor movement
   context.subscriptions.push(
     vscode.window.onDidChangeTextEditorSelection((e) => {
