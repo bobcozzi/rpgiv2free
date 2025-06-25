@@ -126,7 +126,11 @@ function getStmtRule(line: string): string {
 export async function handleSmartTab(reverse: boolean): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor) return;
-
+  const langId = editor.document.languageId;
+  if (langId !== 'rpgle' && langId !== 'sqlrpgle') {
+    // Optionally: clear decorations here
+    return;
+  }
   // Early exit: If suggestion widget is visible, let VS Code handle Tab
   if ((vscode as any).window.activeTextEditor?.options.suggestWidgetVisible) {
     await vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
@@ -269,6 +273,12 @@ export async function highlightCurrentTabZone(editor: vscode.TextEditor): Promis
   const cursor = editor.selection.active;
   const doc = editor.document;
 
+  if (!editor) return;
+  const langId = editor.document.languageId;
+  if (langId !== 'rpgle' && langId !== 'sqlrpgle') {
+    // Optionally: clear decorations here
+    return;
+  }
   const lang = doc.languageId.toLowerCase();
   if (!rpgiv.isFixedFormatRPG(doc)) return;
 
@@ -317,6 +327,16 @@ export async function highlightCurrentTabZone(editor: vscode.TextEditor): Promis
 }
 
 export function drawTabStopLines(editor: vscode.TextEditor, lineNbr: number): void {
+
+  if (!editor) {
+    return;
+  }
+  const langId = editor.document.languageId;
+  if (langId !== 'rpgle' && langId !== 'sqlrpgle') {
+    // Optionally: clear decorations here
+    return;
+  }
+
   const doc = editor.document;
   const uriKey = doc.uri.toString();
 
@@ -359,6 +379,11 @@ export function drawTabStopLines(editor: vscode.TextEditor, lineNbr: number): vo
 
 export function applyColumnarDecorations(editor: vscode.TextEditor, smartTabEnabled: boolean) {
   if (!editor) return;
+  const langId = editor.document.languageId;
+  if (langId !== 'rpgle' && langId !== 'sqlrpgle') {
+    // Optionally: clear decorations here
+    return;
+  }
 
   const doc = editor.document;
   const uriKey = doc.uri.toString();

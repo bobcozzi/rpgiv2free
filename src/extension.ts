@@ -39,6 +39,17 @@ export async function activate(context: vscode.ExtensionContext) {
 
   registerSmartEnterCommand(context);
 
+  context.subscriptions.push(
+    vscode.window.onDidChangeActiveTextEditor(editor => {
+      if (!editor) return;
+      const langId = editor.document.languageId;
+      if (langId !== 'rpgle' && langId !== 'sqlrpgle') {
+        // Remove RPG decorations from this editor
+        applyColumnarDecorations(editor, false);
+      }
+    })
+  );
+
   // Listen for newly opened documents
   context.subscriptions.push(
     vscode.workspace.onDidOpenTextDocument((document) => {
@@ -78,7 +89,7 @@ export async function activate(context: vscode.ExtensionContext) {
     }
   });
 
-   // Add the listener to your context subscriptions
+  // Add the listener to your context subscriptions
   context.subscriptions.push(visibleRangesListener);
 
   // add listener for character/non-tab cursor movement

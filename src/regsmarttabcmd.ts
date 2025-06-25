@@ -7,11 +7,20 @@ export function registerSmartTabCommands(
   getSmartTabEnabled: () => boolean,
   setSmartTabEnabled: (val: boolean) => void
 ) {
+
   // Status bar item
-  const smartTabStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+  let smartTabStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   smartTabStatusBarItem.command = 'rpgiv2free.toggleRPGSmartTab';
   smartTabStatusBarItem.tooltip = 'Click to toggle RPG Smart Tab (no reload)';
   context.subscriptions.push(smartTabStatusBarItem);
+
+  vscode.window.onDidChangeActiveTextEditor(editor => {
+    if (editor && (editor.document.languageId === 'rpgle' || editor.document.languageId === 'sqlrpgle')) {
+      smartTabStatusBarItem.show();
+    } else {
+      smartTabStatusBarItem.hide();
+    }
+  });
 
   function updateSmartTabStatusBar() {
     smartTabStatusBarItem.text = `RPG Smart Tab: ${getSmartTabEnabled() ? 'On' : 'Off'}`;

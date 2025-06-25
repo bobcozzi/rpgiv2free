@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.16] - 2025-06-25:
+- Corrected an issue where once RPG SmartTab/SmartEnter were activated, they stayed active for all source files in that VS Code session, regardless of language ID/type.
+
 ## [0.7.15] - 2025-06-22:
 - Performance improvements when loading large RPG source file and RPG Smart Tab is enabled.
 - Generate performance enhancments.
