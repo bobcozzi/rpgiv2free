@@ -65,7 +65,9 @@ function convertDirective(line: string, extension: string, settings: rpgiv.confi
 
   }
   // Replace everything before the first '/' (including the '/') with exactly 7 spaces and a '/'
-  enhancedDir = enhancedDir.replace(/^.{0,7}\/\s*/i, '       /');
+  if (!enhancedDir.trimStart().startsWith('//')) {
+    enhancedDir = enhancedDir.replace(/^.{0,7}\/\s*/i, '       /');
+  }
 
   return enhancedDir;
 }

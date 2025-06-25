@@ -149,7 +149,7 @@ function evaluateAndApplyFeatures(document: vscode.TextDocument) {
 
   if (!editor) return;
 
-  if (rpgiv.isNOTFixedFormatRPG(document)) {
+  if (rpgiv.isRPGFree()) {
     // Clear decorations if not fixed format
     applyColumnarDecorations(editor, false);
     return;

@@ -733,11 +733,6 @@ export function getSmartEnterMode(): SmartEnterMode {
   }
 }
 
-export function isRPGDocument(document: vscode.TextDocument): boolean {
-  if (!document) return false;
-  const langId = document.languageId.toLowerCase();
-  return langId === 'rpgle' || langId.startsWith('sqlrpg');
-}
 
 export function isValidFixedFormat(line: string): boolean {
   const specType = getSpecType(line).trim();
@@ -756,22 +751,57 @@ export function isFixedFormatSpec(line: string): boolean {
   return bIsFixedFormat;
 }
 
-export function isFixedFormatRPG(document: vscode.TextDocument): boolean {
-  if (!isRPGDocument(document)) return false;
-  if (document.lineCount === 0) return true; // Treat empty document as fixed format
-  const firstLine = document.lineAt(0).text;
+export function isRPGDocument(document?: vscode.TextDocument): boolean {
+  let doc: vscode.TextDocument | undefined = document;
+  if (!doc) {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) return false;
+    doc = editor.document;
+  }
+  const langId = doc.languageId.toLowerCase();
+  return langId === 'rpgle' || langId.startsWith('sqlrpg');
+}
 
+export function isFixedFormatRPG(document?: vscode.TextDocument): boolean {
+  let doc: vscode.TextDocument | undefined = document;
+  if (!doc) {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) return false;
+    doc = editor.document;
+  }
+  if (doc.lineCount === 0) return true; // Treat empty document as fixed format
+  const firstLine = doc.lineAt(0).text;
   // Must be at least 6 chars, no leading whitespace, exactly **FREE in columns 1-6
   // Only allow whitespace after column 6
   const hasFree = firstLine.length >= 6 &&
     firstLine.substring(0, 6).toUpperCase() === '**FREE' &&
     (firstLine.length === 6 || /^[ \t]*$/.test(firstLine.substring(6)));
-
   return !hasFree;
 }
 
-export function isNOTFixedFormatRPG(document: vscode.TextDocument): boolean {
-  return !isFixedFormatRPG(document);
+
+export function isNOTFixedFormatRPG(document?: vscode.TextDocument): boolean {
+  let doc: vscode.TextDocument | undefined = document;
+  if (!doc) {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) return false;
+    doc = editor.document;
+  }
+  return !isFixedFormatRPG(doc);
+}
+
+export function isRPGFree(): boolean {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) return false;
+  const document = editor.document;
+  if (document.lineCount === 0) return true; // Treat empty document as fixed format
+  const firstLine = document.lineAt(0).text;
+  // Must be at least 6 chars, no leading whitespace, exactly **FREE in columns 1-6
+  // Only allow whitespace after column 6
+  const hasFree = firstLine.length >= 6 &&
+    firstLine.substring(0, 6).toUpperCase() === '**FREE' &&
+    (firstLine.length === 6 || /^[ \t]*$/.test(firstLine.substring(6)));
+  return hasFree;
 }
 
 export function isOpcodeEnd(line: string): boolean {

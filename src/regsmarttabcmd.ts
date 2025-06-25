@@ -15,7 +15,7 @@ export function registerSmartTabCommands(
   context.subscriptions.push(smartTabStatusBarItem);
 
   vscode.window.onDidChangeActiveTextEditor(editor => {
-    if (editor && (editor.document.languageId === 'rpgle' || editor.document.languageId === 'sqlrpgle')) {
+    if (editor && (editor.document.languageId === 'rpgle' || editor.document.languageId === 'sqlrpgle') && rpgiv.isFixedFormatRPG()) {
       smartTabStatusBarItem.show();
     } else {
       smartTabStatusBarItem.hide();
@@ -46,7 +46,7 @@ export function registerSmartTabCommands(
     const editor = vscode.window.activeTextEditor;
     const doc = editor?.document;
 
-    if (!editor || !doc || rpgiv.isNOTFixedFormatRPG(doc)) {
+    if (!editor || !doc || rpgiv.isRPGFree()) {
       return;
     }
 
@@ -59,7 +59,7 @@ export function registerSmartTabCommands(
       return;
     }
 
-    if (!getSmartTabEnabled() || rpgiv.isNOTFixedFormatRPG(doc)) {
+    if (!getSmartTabEnabled() || !rpgiv.isRPGFree()) {
       await vscode.commands.executeCommand('tab');
       return;
     }
@@ -71,7 +71,7 @@ export function registerSmartTabCommands(
   const shiftTabCmd = vscode.commands.registerCommand('rpgsmarttab.shiftTab', async () => {
     const editor = vscode.window.activeTextEditor;
     const doc = editor?.document;
-    if (!doc || !getSmartTabEnabled() || rpgiv.isNOTFixedFormatRPG(doc)) {
+    if (!doc || !getSmartTabEnabled() || rpgiv.isRPGFree()) {
       await vscode.commands.executeCommand('outdent');
       return;
     }

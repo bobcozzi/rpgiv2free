@@ -138,7 +138,7 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
   }
 
   const doc = editor.document;
-  if (rpgiv.isNOTFixedFormatRPG(doc)) {
+  if (rpgiv.isNOTFixedFormatRPG()) {
     await vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
     return;
   }
@@ -280,7 +280,7 @@ export async function highlightCurrentTabZone(editor: vscode.TextEditor): Promis
     return;
   }
   const lang = doc.languageId.toLowerCase();
-  if (!rpgiv.isFixedFormatRPG(doc)) return;
+  if (!rpgiv.isFixedFormatRPG()) return;
 
   const lineText = doc.lineAt(cursor.line).text;
   if (lineText.length < 6 || rpgiv.isSkipStmt(lineText)) {

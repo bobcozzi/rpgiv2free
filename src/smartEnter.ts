@@ -14,7 +14,7 @@ export async function handleSmartEnter(editor: vscode.TextEditor, position: vsco
   }
 
   const doc = editor.document;
-  if (rpgiv.isNOTFixedFormatRPG(doc)) {
+  if (rpgiv.isNOTFixedFormatRPG()) {
     await vscode.commands.executeCommand('default:type', { text: rpgiv.getEOL() });
     return;
   }

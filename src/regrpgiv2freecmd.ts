@@ -223,8 +223,10 @@ export function registerConvertToRPGFreeCommand(context: vscode.ExtensionContext
           }
 
           for (const line of updatedLines) {
-            const text = doc.lineAt(line).text;
-            drawTabStopLines(editor, line);
+            if (line >= 0 && line < doc.lineCount) {
+              const text = doc.lineAt(line).text;
+              drawTabStopLines(editor, line);
+            }
           }
         }
       } catch (error) {
