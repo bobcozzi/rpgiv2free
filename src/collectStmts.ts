@@ -40,6 +40,9 @@ export function collectStmt(
   const comments: string[] = [];
   const startLine = allLines[startIndex].padEnd(80, ' ');
 
+
+  const nextLine = rpgiv.getNextSrcStmt(allLines, startIndex) ?? '';
+
   // Check if the line is part of an embedded SQL block
   const isSQLStart = EXEC_SQL_RX.test(startLine);
   const isSQLCont = SQL_CONT_RX.test(startLine);
@@ -151,33 +154,7 @@ export function collectStmt(
   }
 
   if (curSpec === 'c' && !rpgiv.isUnSupportedOpcode(rpgiv.getRawOpcode(startLine))) {
-    if (rpgiv.isBooleanOpcode(startLine) || rpgiv.isOpcodeSELECT(startLine)) {
-      // Handle boolean opcode lines separately
-      const booleanOpcodeResult = collectBooleanOpcode(allLines, startIndex, (condIndyStmt) ? condIndyStmt : '');
-      return {
-        entityName: null,
-        lines: booleanOpcodeResult.lines,
-        indexes: booleanOpcodeResult.indexes,
-        comments: booleanOpcodeResult.comments,
-        isSQL: false,
-        isCollected: true,
-      };
-    }
-    // removed CASE from compound statements, and moved to regular opcode conversion
-    /* else if (rpgiv.isCASEOpcode(startLine)) {
-      // Handle CASE/CASxx blocks
-      const caseOpcodeResult = collectCaseOpcode(allLines, startIndex, (condIndyStmt) ? condIndyStmt : '');
-      return {
-        entityName: null,
-        lines: caseOpcodeResult.lines,
-        indexes: caseOpcodeResult.indexes,
-        comments: comments.length > 0 ? comments : null,
-        isSQL: false,
-        isCollected: true,
-      };
-  } */
-    else if (rpgiv.isExtOpcode(rpgiv.getRawOpcode(startLine)) ||
-      rpgiv.getCol(startLine, 8, 35).trim() == '') {
+    if (rpgiv.isExtOpcode(rpgiv.getRawOpcode(startLine)) || rpgiv.getCol(startLine, 8, 35).trim() == '') {
       // if Calc spec and Extended Factor 2 opcode or nothing in Factor 1 or Opcode, then
       // this is a continued Extended Factor 2 spec. So read backwards
       // until we find an opcode or any free format statement.
@@ -192,6 +169,19 @@ export function collectStmt(
         isCollected: true,
       };
     }
+    else if (rpgiv.isBooleanOpcode(startLine)) {
+      // Handle boolean opcode lines separately
+      const booleanOpcodeResult = collectBooleanOpcode(allLines, startIndex, (condIndyStmt) ? condIndyStmt : '');
+      return {
+        entityName: null,
+        lines: booleanOpcodeResult.lines,
+        indexes: booleanOpcodeResult.indexes,
+        comments: booleanOpcodeResult.comments,
+        isSQL: false,
+        isCollected: true,
+      };
+    }
+
   }
   else if (curSpec === 'h') {
     const headerSpecs = collectHSpecs(allLines, startIndex); // Collect H specs if needed

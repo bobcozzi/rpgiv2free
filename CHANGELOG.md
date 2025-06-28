@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.18] - 2025-06-28:
+- Corrected an issue with embedded comments within Extended Factor 2 opcodes that span multiple lines.
+
 ## [0.7.17] - 2025-06-25:
 - Corrected an issue where once RPG SmartTab/SmartEnter were activated, they stayed active for all source files in that VS Code session, regardless of language ID/type.
 - Corrected a painting issue with columnar boundaries and **FREE source files.

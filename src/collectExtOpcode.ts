@@ -11,7 +11,13 @@ type CollectResult = {
   namedOpcode: string;
 };
 
-export function collectExtOpcode(allLines: string[], startIndex: number, condIndyStmt: string): { lines: string[], indexes: number[], comments: string[] } {
+export function collectExtOpcode(allLines: string[],
+  startIndex: number,
+  condIndyStmt: string): {
+    lines: string[],
+    indexes: number[],
+    comments: string[]
+  } {
   const lines: string[] = [];
   const indexes: number[] = [];
   const comments: string[] = [];
@@ -67,7 +73,7 @@ export function collectExtOpcode(allLines: string[], startIndex: number, condInd
     ) ? true : false;
     if (!isEvalOrCallP || (isEvalOrCallP && keepOpcode)) {
       lines.push(`${namedOpcode}`);
-      lines.push(`${ extF2 }`)
+      lines.push(`${extF2}`)
     }
     else {
       lines.push(`${extF2}`)
@@ -106,7 +112,11 @@ export function collectExtF2(
     const line = allLines[i];
     if (rpgiv.isDirective(line)) break;  // Done
     if (rpgiv.isEmptyStmt(line)) continue; // Skip it
-    if (rpgiv.isComment(line)) continue;  // Skip it
+    if (rpgiv.isComment(line)) {
+      comments.push(line);
+      indexes.push(i); // Include comment line index!
+      continue;
+    }
     if (rpgiv.getSpecType(line) !== 'c') break;
 
     let opCode = rpgiv.getFullOpcode(line);

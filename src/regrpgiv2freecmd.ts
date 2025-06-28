@@ -57,6 +57,7 @@ export function registerConvertToRPGFreeCommand(context: vscode.ExtensionContext
           expandedLineIndexes.add(idx);
         }
       }
+
       // leave the call to collectCondCalcs here because
       // we need it for conditional statement such as IFxx/WHENxx
       let firstLineNbr = Infinity;
@@ -87,10 +88,7 @@ export function registerConvertToRPGFreeCommand(context: vscode.ExtensionContext
       const collectedStmts = collectStmt(allLines, i, condIndy?.condStmt ?? null);
       if (!collectedStmts) continue;
 
-      const { indexes } = collectedStmts;
-      if (indexes.some(idx => processedLines.has(idx))) continue;
-
-      const { lines: specLines, comments: rawComments, isSQL, isCollected, entityName } = collectedStmts;
+      const {indexes: indexes, lines: specLines, comments: rawComments, isSQL, isCollected, entityName } = collectedStmts;
       let comments = rawComments ?? [];
       if (!specLines.length) continue;
       if (indexes.some(idx => processedLines.has(idx))) continue;
@@ -198,10 +196,27 @@ export function registerConvertToRPGFreeCommand(context: vscode.ExtensionContext
         rpgiv.log('CMD Handler Applying edits');
         rpgiv.logOverlappingEdits(edits);
 
-        edits.sort((a, b) => b.range.start.line - a.range.start.line);
+        // Sort edits by start position (descending)
+
+        edits.sort((a, b) => {
+          if (a.range.start.line !== b.range.start.line) {
+            return b.range.start.line - a.range.start.line;
+          }
+          return b.range.start.character - a.range.start.character;
+        });
+
+        // Filter out overlapping edits
+        const nonOverlappingEdits: typeof edits = [];
+        for (const edit of edits) {
+          if (!nonOverlappingEdits.some(e => e.range.intersection(edit.range))) {
+            nonOverlappingEdits.push(edit);
+          } else {
+            rpgiv.log(`Skipped overlapping edit at line ${edit.range.start.line}`);
+          }
+        }
 
         const success = await editor.edit(editBuilder => {
-          for (const edit of edits) {
+          for (const edit of nonOverlappingEdits) {
             editBuilder.replace(edit.range, edit.text);
           }
         });

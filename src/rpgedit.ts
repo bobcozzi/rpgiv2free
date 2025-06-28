@@ -265,6 +265,18 @@ export function isDirective(line: string, bFreeFormOnly?: boolean): boolean {
   return false;
 }
 
+export function getNextSrcStmt(allLines: string[], startIndex: number): string | null {
+  let idx = startIndex + 1;
+  while (idx < allLines.length) {
+    const line = allLines[idx];
+    if (!isSkipStmt(line) && !isEOP(line)) {
+      return line;
+    }
+    idx++;
+  }
+  return null; // No valid source statement found
+}
+
 // for non-executable source lines, like comments, blanks line, or compiler directives
 export function isSkipStmt(line: string): boolean {
   const bComment = isComment(line);  // Assumes isComment() handles RPG IV logic
@@ -623,8 +635,14 @@ export function isOpcodeDOWxx(line: string): boolean {
 export function isOpcodeWHENxx(line: string): boolean {
   const opcode = getRawOpcode(line);
   if (isComment(line)) return false;
-  // removed  || opcode === 'OTHER' from return conditional logic
+
   return /^WHEN(EQ|NE|GT|LT|GE|LE)$/.test(opcode);
+}
+
+export function isOpcodeWHEN(line: string): boolean {
+  const opcode = getRawOpcode(line);
+  if (isSkipStmt(line)) return false;
+  return opcode.toUpperCase() === 'WHEN';
 }
 
 export function isOpcodeSELECT(line: string): boolean {
@@ -632,7 +650,6 @@ export function isOpcodeSELECT(line: string): boolean {
 }
 export function isOpcodeWHENStart(line: string): boolean {
   const opcode = getRawOpcode(line);
-  // Only matches WHEN followed by a valid boolean operator
   return (opcode === 'SELECT');
 }
 export function isCASEOpcode(line: string): boolean {
@@ -704,14 +721,18 @@ export function logOverlappingEdits(edits: { range: { start: { line: number, cha
  */
 
 // Precompile regex for directive matching
-const directiveRegex = /^\*\*CTDATA(?:\(|$)/i;
+// Matches "**CTDATA" in positions 1-8, optionally followed by a space and a valid RPG variable name,
+// or by a valid name in parentheses (e.g., **CTDATA ARR1, **CTDATA(ARR2))
+const directiveRegex = /^(\*{2}CTDATA)(?:\s+([A-Z_][A-Z0-9_#$@]*)|\s*\(([A-Z_][A-Z0-9_#$@]*)\))?/i;
 
+// Check if "this" line is the end of source code/end-of-program (i.e., EOP)
 export function isEOP(line: string): boolean {
   if (!line || line.trimEnd().length < 2) return false;
-  if (line.trimEnd().length === 2 && line[0] === '*' && line[1] === '*') return false;
+  // Do not treat "**" (just two asterisks) as EOP
+  if (line.trimEnd() === '**') return false;
 
-  // Use precompiled regex for '**CTDATA' or '**CTDATA('
-  return directiveRegex.test(line);
+  // Use precompiled regex for '**CTDATA', '**CTDATA name', or '**CTDATA(name)'
+  return directiveRegex.test(line.trim());
 }
 
 export function getSmartEnterMode(): SmartEnterMode {
