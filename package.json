@@ -1,12 +1,16 @@
 {
   "name": "rpgiv2free",
-  "displayName": "Bob Cozzi's RPG IV to RPG Free Conversion extension for VS CODE for i",
-  "description": "Bob Cozzi's Convert RPG IV fixed-format code to free-format code. Extension for Visual Studio CODE for i.",
+  "displayName": "Bob Cozzi's RPG IV to RPG Free Conversion",
+  "description": "Bob Cozzi's Convert RPG IV fixed-format code to free-format code.",
+  "author": {
+    "name": "Bob Cozzi",
+    "url": "https://github.com/bobcozzi"
+  },
+  "publisher": "CozziResearch",
   "icon": "images/rpgiv2free.png",
   "preview": false,
   "private": false,
-  "publisher": "CozziResearch",
-  "version": "0.7.18",
+  "version": "1.0.0",
   "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0",
