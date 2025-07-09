@@ -48,6 +48,11 @@ export function collectStmt(
   const isSQLCont = SQL_CONT_RX.test(startLine);
   const isSQLEnd = END_EXEC_RX.test(startLine);
 
+  // RC: 9-JUL-2025 - Added check for End of Program source code here
+  if (rpgiv.isEOP(startLine)) {
+    return null;
+  }
+
   if (isSQLStart || isSQLCont || isSQLEnd) {
     // Handle SQL block separately and return its result
     const sqlBlockResult = collectSQLBlock(allLines, startIndex);

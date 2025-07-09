@@ -2,9 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.1] - 2025-07-09:
+- Corrected and issue with compile-time data not being recognize properly when unsupported "comments" are included on the same line as `**`.
+
 ## [1.0.0] - 2025-07-01:
 - Formal release of RPGIV2FREE VS Code for IBM i Extension. Converts RPG IV Fixed Format to Free Format.
--
+
 ## [0.7.18] - 2025-06-28:
 - Corrected an issue with embedded comments within Extended Factor 2 opcodes that span multiple lines.
 

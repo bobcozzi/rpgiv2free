@@ -267,9 +267,14 @@ export function isDirective(line: string, bFreeFormOnly?: boolean): boolean {
 
 export function getNextSrcStmt(allLines: string[], startIndex: number): string | null {
   let idx = startIndex + 1;
+  let pEndPgmSrc = false;
   while (idx < allLines.length) {
     const line = allLines[idx];
-    if (!isSkipStmt(line) && !isEOP(line)) {
+    pEndPgmSrc = isEOP(line);
+    if (pEndPgmSrc) {
+      return null;
+    }
+    if (!isSkipStmt(line)) {
       return line;
     }
     idx++;
@@ -666,7 +671,7 @@ export function isOpcodeANDxxORxx(line: string): boolean {
 
 export function isStartBooleanOpcode(line: string): boolean {
   return (
-     (isOpcodeIFxx(line) ||
+    (isOpcodeIFxx(line) ||
       isOpcodeDOWxx(line) ||
       isOpcodeDOUxx(line) ||
       isOpcodeWHENxx(line) ||
@@ -676,7 +681,7 @@ export function isStartBooleanOpcode(line: string): boolean {
 
 export function isBooleanOpcode(line: string): boolean {
   return (
-     (isOpcodeIFxx(line) ||
+    (isOpcodeIFxx(line) ||
       isOpcodeDOWxx(line) ||
       isOpcodeDOUxx(line) ||
       isOpcodeWHENxx(line) ||
@@ -723,16 +728,14 @@ export function logOverlappingEdits(edits: { range: { start: { line: number, cha
 // Precompile regex for directive matching
 // Matches "**CTDATA" in positions 1-8, optionally followed by a space and a valid RPG variable name,
 // or by a valid name in parentheses (e.g., **CTDATA ARR1, **CTDATA(ARR2))
-const directiveRegex = /^(\*{2}CTDATA)(?:\s+([A-Z_][A-Z0-9_#$@]*)|\s*\(([A-Z_][A-Z0-9_#$@]*)\))?/i;
-
 // Check if "this" line is the end of source code/end-of-program (i.e., EOP)
+const eopDirectiveRegex = /^(\*\*CTDATA|\*\*FTRANS|\*\*ALTSEQ)(\s|\(|$)/i;
+
 export function isEOP(line: string): boolean {
   if (!line || line.trimEnd().length < 2) return false;
-  // Do not treat "**" (just two asterisks) as EOP
   if (line.trimEnd() === '**') return false;
-
-  // Use precompiled regex for '**CTDATA', '**CTDATA name', or '**CTDATA(name)'
-  return directiveRegex.test(line.trim());
+  if (line.startsWith('**') && line.length > 2 && line[2] === ' ') return true;
+  return eopDirectiveRegex.test(line.trim());
 }
 
 export function getSmartEnterMode(): SmartEnterMode {
