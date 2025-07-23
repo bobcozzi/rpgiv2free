@@ -382,8 +382,13 @@ export function insertExtraDCLLinesBatch(
     }
   }
 
+  // the "unique" routine is filtering out the
+  // end-ds when the parent dcl-ds is an unnamed data structure.
   const seen = new Set<string>();
   const uniqueData = insertData.filter(item => {
+    if (item.text.trimStart().toLowerCase().startsWith("end-ds;")) {
+      return true;
+    }
     if (seen.has(item.text)) return false;
     seen.add(item.text);
     return true;

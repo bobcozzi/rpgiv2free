@@ -89,7 +89,7 @@ export function convertChildVar(
     }
     // if the parent type is a data structure,
     // then convert the overlay(dsName:x) keyword to pos(x);
-    // otherwise, if the parent type is a proce, pr, or pi,
+    // otherwise, if the parent type is a proc, pr, or pi,
     // then convert any leading 'dcl-subf' to 'dcl-parm'
     if (dclType === 'ds' && nameToken === targetName) {
         const posValue = overlayOffset || '1';
