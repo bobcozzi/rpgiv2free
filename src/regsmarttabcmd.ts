@@ -46,6 +46,7 @@ export function registerSmartTabCommands(
     const editor = vscode.window.activeTextEditor;
     const doc = editor?.document;
 
+    // Only enable Smart Tab for fixed-format RPG
     if (!editor || !doc || rpgiv.isRPGFree()) {
       return;
     }
@@ -59,7 +60,7 @@ export function registerSmartTabCommands(
       return;
     }
 
-    if (!getSmartTabEnabled() || !rpgiv.isRPGFree()) {
+    if (!getSmartTabEnabled()) {
       await vscode.commands.executeCommand('tab');
       return;
     }

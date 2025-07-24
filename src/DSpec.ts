@@ -57,6 +57,8 @@ export function convertDSpec(lines: string[],
     length = calcLength(dataType, fromPos, toPosOrLen);
   }
 
+
+
   if (fromPos.charAt(0) === '*') {
     const specPos = fromPos + toPosOrLen;
     fieldType = specPos.trim();
@@ -95,6 +97,8 @@ export function convertDSpec(lines: string[],
     fieldType = `${fieldType} ${fieldStartPos}`;
   }
 
+
+
   if (lenMatch && lenMatch[1]) {
     const lenValue = lenMatch[1];
 
@@ -106,6 +110,14 @@ export function convertDSpec(lines: string[],
     if (dclType !== 'DS') {
       // Remove the LEN(n) keyword
       kwdArea = kwdArea.replace(/,\s*LEN\([^)]+\)|LEN\([^)]+\),?\s*/i, '').trim();
+    }
+  }
+
+  if (isDigits(fromPos)) {
+    const adjResult = AdjLenForDIM(length, kwdArea, fieldType, decPos);
+    if (adjResult.fieldType) {
+      fieldType = adjResult.fieldType;
+      length = adjResult.length;
     }
   }
 
@@ -169,6 +181,46 @@ export function convertDSpec(lines: string[],
   }
 
   return [decl];
+}
+
+function AdjLenForDIM(length: number, kwdArea: string, dataType: string, decPos: string): { length: number, fieldType?: string } {
+  const dimMatch = kwdArea.match(/DIM\s*\(\s*(\d+)\s*\)/i);
+  if (!dimMatch) return { length };
+
+  const dimValue = parseInt(dimMatch[1], 10);
+  if (!dimValue || dimValue <= 0) return { length };
+
+  let newLength = length;
+  let fieldType;
+
+  if (/char/i.test(dataType)) {
+    newLength = Math.floor(length / dimValue);
+    fieldType = `char(${newLength})`;
+  } else if (/packed/i.test(dataType)) {
+    const packedBytes = Math.floor(length / dimValue);
+    const digits = packedBytes * 2 - 1;
+    fieldType = `packed(${digits}:${decPos || '0'})`;
+    newLength = packedBytes;
+  } else if (/int/i.test(dataType) || /uns/i.test(dataType)) {
+    // RPG IV INT/UNS rules: INT(3)=1, INT(5)=2, INT(10)=4, INT(20)=8
+    // Find the per-entry length by dividing total length by DIM value
+    const perEntryLen = Math.floor(length / dimValue);
+    let intLen = perEntryLen;
+    let intType = /uns/i.test(dataType) ? 'uns' : 'int';
+    // Map to RPG IV INT/UNS byte sizes
+    switch (perEntryLen) {
+      case 1: intLen = 3; break;  // 1 byte
+      case 2: intLen = 5; break;  // 2 bytes
+      case 4: intLen = 10; break; // 4 bytes
+      case 8: intLen = 20; break; // 8 bytes
+      default: intLen = perEntryLen;
+    }
+    fieldType = `${intType}(${intLen})`;
+    newLength = intLen;
+  }
+  // Add more types as needed
+
+  return { length: newLength, fieldType };
 }
 
 //  Search this kind of stuff for keywords

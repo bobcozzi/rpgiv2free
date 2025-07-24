@@ -11,7 +11,8 @@ export function getFieldAttr(
     fieldLen: number;
     decPos: number;
     extraAttr: string;
-} {
+    } {
+    // Deprecated NOT USED
     let fieldType = '';
     let fieldLen = 0;
     let decPos = 0;

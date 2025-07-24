@@ -31,6 +31,7 @@ export async function activate(context: vscode.ExtensionContext) {
   rpgSmartTabEnabled = context.globalState.get<boolean>('rpgSmartTabEnabled', true);
 
   const config = rpgiv.getRPGIVFreeSettings();
+
   registerSmartTabCommands(
     context,
     () => rpgSmartTabEnabled,
