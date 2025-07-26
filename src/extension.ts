@@ -44,7 +44,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.window.onDidChangeActiveTextEditor(editor => {
       if (!editor) return;
       const langId = editor.document.languageId;
-      if (langId !== 'rpgle' && langId !== 'sqlrpgle') {
+      if (langId !== 'rpgle' && langId !== 'sqlrpgle' && langId !== 'rpginc') {
         // Remove RPG decorations from this editor
         applyColumnarDecorations(editor, false);
       }
@@ -144,7 +144,7 @@ export function deactivate() {
 }
 
 function evaluateAndApplyFeatures(document: vscode.TextDocument) {
-  if (!['rpgle', 'sqlrpgle'].includes(document.languageId)) return;
+  if (!['rpgle', 'sqlrpgle','rpginc'].includes(document.languageId)) return;
 
   const editor = vscode.window.visibleTextEditors.find(e => e.document === document);
 

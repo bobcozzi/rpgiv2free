@@ -127,7 +127,7 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor) return;
   const langId = editor.document.languageId;
-  if (langId !== 'rpgle' && langId !== 'sqlrpgle') {
+  if (langId !== 'rpgle' && langId !== 'sqlrpgle' && langId !== 'rpginc') {
     // Optionally: clear decorations here
     return;
   }
@@ -275,7 +275,7 @@ export async function highlightCurrentTabZone(editor: vscode.TextEditor): Promis
 
   if (!editor) return;
   const langId = editor.document.languageId;
-  if (langId !== 'rpgle' && langId !== 'sqlrpgle') {
+  if (langId !== 'rpgle' && langId !== 'sqlrpgle' && langId !== 'rpginc') {
     // Optionally: clear decorations here
     return;
   }
@@ -332,7 +332,7 @@ export function drawTabStopLines(editor: vscode.TextEditor, lineNbr: number): vo
     return;
   }
   const langId = editor.document.languageId;
-  if (langId !== 'rpgle' && langId !== 'sqlrpgle') {
+  if (langId !== 'rpgle' && langId !== 'sqlrpgle' && langId !== 'rpginc') {
     // Optionally: clear decorations here
     return;
   }
@@ -380,7 +380,7 @@ export function drawTabStopLines(editor: vscode.TextEditor, lineNbr: number): vo
 export function applyColumnarDecorations(editor: vscode.TextEditor, smartTabEnabled: boolean) {
   if (!editor) return;
   const langId = editor.document.languageId;
-  if (langId !== 'rpgle' && langId !== 'sqlrpgle') {
+  if (langId !== 'rpgle' && langId !== 'sqlrpgle' && langId !== 'rpginc') {
     // Optionally: clear decorations here
     return;
   }

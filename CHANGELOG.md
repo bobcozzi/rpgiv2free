@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.4] - 2025-07-26:
+- Added support for `.rpginc` source members to the extension. Now if a source file has .rpginc as its extension the extenion is enable and you can convert it to RPG IV free format.
+
 ## [1.0.3] - 2025-07-23:
 - Corrected an issue with legacy style subfields with long from/to columns and a DIM keyword. For example Len=100, Dim(100) the new length should be 1 in this example, where it was leaving it at Char(100) DIM(100). Now it will be CHAR(1) DIM(100). The other datatypes also conform to this change.
 - Corrected a small issue with the keybindings for the Smart RPG Tab key feature.

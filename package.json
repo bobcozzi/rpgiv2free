@@ -10,7 +10,7 @@
   "icon": "images/rpgiv2free.png",
   "preview": false,
   "private": false,
-  "version": "1.0.3",
+  "version": "1.0.4",
   "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0",
@@ -51,26 +51,26 @@
     ],
     "keybindings": [
       {
-        "key": "enter",
-        "command": "rpgiv2free.smartEnter",
-        "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle') && !suggestWidgetVisible && !inSnippetMode"
+      "key": "enter",
+      "command": "rpgiv2free.smartEnter",
+      "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && !suggestWidgetVisible && !inSnippetMode"
       },
       {
-        "key": "tab",
-        "command": "rpgsmarttab.tab",
-        "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle') && !suggestWidgetVisible && !inSnippetMode"
+      "key": "tab",
+      "command": "rpgsmarttab.tab",
+      "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && !suggestWidgetVisible && !inSnippetMode"
       },
       {
-        "key": "shift+tab",
-        "command": "rpgsmarttab.shiftTab",
-        "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle') && !suggestWidgetVisible && !inSnippetMode"
+      "key": "shift+tab",
+      "command": "rpgsmarttab.shiftTab",
+      "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && !suggestWidgetVisible && !inSnippetMode"
       }
     ],
     "menus": {
       "editor/context": [
         {
           "command": "rpgiv2free.convertToRPGFree",
-          "when": "resourceExtname =~ /\\.rpg(le)?|\\.sqlrpgle/i",
+          "when": "resourceExtname =~ /\\.rpg(le)?|\\.sqlrpgle|\\.rpgleinc/i",
           "group": "navigation"
         }
       ]

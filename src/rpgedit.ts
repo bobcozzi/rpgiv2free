@@ -788,7 +788,7 @@ export function isRPGDocument(document?: vscode.TextDocument): boolean {
     doc = editor.document;
   }
   const langId = doc.languageId.toLowerCase();
-  return langId === 'rpgle' || langId.startsWith('sqlrpg');
+  return langId === 'rpgle' || langId.startsWith('sqlrpg') || langId.startsWith('rpginc');
 }
 
 export function isFixedFormatRPG(document?: vscode.TextDocument): boolean {

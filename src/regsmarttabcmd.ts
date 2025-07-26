@@ -15,7 +15,15 @@ export function registerSmartTabCommands(
   context.subscriptions.push(smartTabStatusBarItem);
 
   vscode.window.onDidChangeActiveTextEditor(editor => {
-    if (editor && (editor.document.languageId === 'rpgle' || editor.document.languageId === 'sqlrpgle') && rpgiv.isFixedFormatRPG()) {
+    if (
+      editor &&
+      (
+      editor.document.languageId === 'rpgle' ||
+      editor.document.languageId === 'sqlrpgle' ||
+      editor.document.languageId === 'rpginc'
+      ) &&
+      rpgiv.isFixedFormatRPG()
+    ) {
       smartTabStatusBarItem.show();
     } else {
       smartTabStatusBarItem.hide();
