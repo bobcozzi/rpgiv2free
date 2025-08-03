@@ -477,9 +477,14 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
 
   return insertPoint;
 }
-
 export function isBitLiteral(factor2: string): boolean {
-  return /^'[0-7]{1,8}'$/.test(factor2);
+  const match = /^'([0-7]{1,8})'$/.exec(factor2);
+  if (!match) return false;
+  const digits = match[1].split('').map(Number);
+  for (let i = 1; i < digits.length; i++) {
+    if (digits[i] <= digits[i - 1]) return false;
+  }
+  return true;
 }
 
 /**
@@ -802,12 +807,10 @@ export function isFixedFormatRPG(document?: vscode.TextDocument): boolean {
   const firstLine = doc.lineAt(0).text;
   // Must be at least 6 chars, no leading whitespace, exactly **FREE in columns 1-6
   // Only allow whitespace after column 6
-  const hasFree = firstLine.length >= 6 &&
-    firstLine.substring(0, 6).toUpperCase() === '**FREE' &&
-    (firstLine.length === 6 || /^[ \t]*$/.test(firstLine.substring(6)));
+  const hasFree = (firstLine.length >= 6 &&
+    firstLine.trimEnd().toUpperCase() === '**FREE');
   return !hasFree;
 }
-
 
 export function isNOTFixedFormatRPG(document?: vscode.TextDocument): boolean {
   let doc: vscode.TextDocument | undefined = document;
@@ -823,14 +826,13 @@ export function isRPGFree(): boolean {
   const editor = vscode.window.activeTextEditor;
   if (!editor) return false;
   const document = editor.document;
-  if (document.lineCount === 0) return true; // Treat empty document as fixed format
+  if (document.lineCount === 0) return false; // Treat empty document as fixed format
   const firstLine = document.lineAt(0).text;
   // Must be at least 6 chars, no leading whitespace, exactly **FREE in columns 1-6
   // Only allow whitespace after column 6
-  const hasFree = firstLine.length >= 6 &&
-    firstLine.substring(0, 6).toUpperCase() === '**FREE' &&
-    (firstLine.length === 6 || /^[ \t]*$/.test(firstLine.substring(6)));
-  return hasFree;
+   const bIsFree = (firstLine.length >= 6 &&
+    firstLine.trimEnd().toUpperCase() === '**FREE');
+  return bIsFree;
 }
 
 export function isOpcodeEnd(line: string): boolean {

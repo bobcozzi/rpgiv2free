@@ -55,7 +55,7 @@ export function registerSmartTabCommands(
     const doc = editor?.document;
 
     // Only enable Smart Tab for fixed-format RPG
-    if (!editor || !doc || rpgiv.isRPGFree()) {
+    if (!editor || !doc) {
       return;
     }
 
@@ -76,11 +76,11 @@ export function registerSmartTabCommands(
     handleSmartTab(false);
   });
 
-  // Shift+Tab command
+  // Shift+Tab command|| rpgiv.isRPGFree()
   const shiftTabCmd = vscode.commands.registerCommand('rpgsmarttab.shiftTab', async () => {
     const editor = vscode.window.activeTextEditor;
     const doc = editor?.document;
-    if (!doc || !getSmartTabEnabled() || rpgiv.isRPGFree()) {
+    if (!doc || !getSmartTabEnabled() ) {
       await vscode.commands.executeCommand('outdent');
       return;
     }

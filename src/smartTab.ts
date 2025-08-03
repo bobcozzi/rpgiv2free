@@ -74,7 +74,7 @@ function getTabStops(line: string): number[] {
 }
 
 function getNextStop(current: number, stops: number[], reverse: boolean): number | undefined {
-  if (!stops.length) return undefined;
+  if (!stops.length || rpgiv.isRPGFree()) return undefined;
 
   if (!reverse) {
     // If current is at or beyond the last stop, return undefined
@@ -138,7 +138,7 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
   }
 
   const doc = editor.document;
-  if (rpgiv.isNOTFixedFormatRPG()) {
+  if (rpgiv.isRPGFree()) {
     await vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
     return;
   }
@@ -328,7 +328,7 @@ export async function highlightCurrentTabZone(editor: vscode.TextEditor): Promis
 
 export function drawTabStopLines(editor: vscode.TextEditor, lineNbr: number): void {
 
-  if (!editor) {
+  if (!editor || rpgiv.isRPGFree()) {
     return;
   }
   const langId = editor.document.languageId;
@@ -378,7 +378,7 @@ export function drawTabStopLines(editor: vscode.TextEditor, lineNbr: number): vo
 }
 
 export function applyColumnarDecorations(editor: vscode.TextEditor, smartTabEnabled: boolean) {
-  if (!editor) return;
+  if (!editor || rpgiv.isRPGFree()) return;
   const langId = editor.document.languageId;
   if (langId !== 'rpgle' && langId !== 'sqlrpgle' && langId !== 'rpginc') {
     // Optionally: clear decorations here
