@@ -13,14 +13,14 @@ type OpcodeEnhancement = {
   result: string;
 };
 
-export function convertCSpec(
+export async function convertCSpec(
   lines: string[],
   comments: string[] | null, // Comments parm is optional
   condIndyStmt: string,
   extraDCL: string[],
   allLines: string[],
   curLineIndex: number
-): string[] {
+): Promise<string[]> {
   if (!Array.isArray(lines) || lines.length === 0) return [];
 
   const line = lines[0].padEnd(80, ' '); // RPG fixed-format always assumes 80-char line
@@ -42,7 +42,7 @@ export function convertCSpec(
   const resInd2 = rpgiv.getCol(line, 73, 74).trim();
   const resInd3 = rpgiv.getCol(line, 75, 76).trim();
   const comment = rpgiv.getCol(line, 81, 100).trim();
-  const altCmt  = rpgiv.getCol(line, 1, 5).trim();
+  const altCmt = rpgiv.getCol(line, 1, 5).trim();
   let extFactor2 = rpgiv.getCol(line, 36, 80).trim();
 
   let freeFormLine: string[] = [];
@@ -84,7 +84,7 @@ export function convertCSpec(
     const effectiveComment = (!comment || comment.trim() === '') && altCmt && altCmt.trim() !== '' ? altCmt : comment;
 
     ({ newLines: convertedLines, newOpcode: enhValues.opcode } =
-      convertOpcodeToFreeFormat(
+      await convertOpcodeToFreeFormat(
         opcode,
         factor1,
         factor2,
@@ -211,7 +211,7 @@ export function enhanceOpcode(
   };
 }
 
-function convertOpcodeToFreeFormat(
+async function convertOpcodeToFreeFormat(
   opcode: string,
   factor1: string,
   factor2: string,
@@ -225,7 +225,7 @@ function convertOpcodeToFreeFormat(
   condIndyStmt: string | null,
   comments: string[] | null, // Comments parm is optional
   extraDCL: string[]
-): { newLines: string[], newOpcode: string } {
+): Promise<{ newLines: string[], newOpcode: string }> {
 
   const config = rpgiv.getRPGIVFreeSettings();
   // First try the conditional opcode logic
@@ -615,7 +615,8 @@ function convertOpcodeToFreeFormat(
       break;
     case "MOVEL":
     case "MOVE":
-      const { lines: moveLines, action: moveAction } = op.convertMOVE(fullOpcode, factor1, factor2, result, extraDCL);
+    //  const { lines: moveLines, action: moveAction } = op.convertMOVE(fullOpcode, factor1, factor2, result, extraDCL);
+      const { lines: moveLines, action: moveAction } = await op.convertMOVE(fullOpcode, factor1, factor2, result, extraDCL);
       if (moveAction === '*KEEP') {
         return { newLines: moveLines, newOpcode: moveAction };
       }

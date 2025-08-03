@@ -132,7 +132,7 @@ export function registerConvertToRPGFreeCommand(context: vscode.ExtensionContext
           // Only call collectCondCalc for C-specs
           const condIndyForC = collectCondCalc(allLines, i);
           const condStmt = condIndyForC?.condStmt ?? '';
-          converted = convertCSpec(specLines, comments, condStmt, extraDCL, allLines, i);
+          converted = await convertCSpec(specLines, comments, condStmt, extraDCL, allLines, i);
         } else {
           converted = specLines;
         }

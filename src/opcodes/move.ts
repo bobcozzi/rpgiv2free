@@ -207,7 +207,7 @@ export async function convertMOVE(
             }
             rval = `%CHAR(${f2} : ${dateFmt})`;
         }
-        else if (['INT', 'UNS', 'ZONED', 'PACKED', 'BININT'].includes(rfa?.type || '')) {
+        else if (['INT', 'UNS', 'ZONED', 'PACKED', 'BINDEC'].includes(rfa?.type || '')) {
             rval = `%DEC(${f2} : ${dateFmt})`;
             lval = result;
         }
@@ -218,6 +218,7 @@ export async function convertMOVE(
         switch (rawOpcode) {
             case "MOVEL":
                 if (!hasP && config.altMOVEL && !factor2.startsWith('*')) {
+
                     const altMove = `%SUBST(${result} : 1 : %MIN(%LEN(${factor2}):%LEN(${result}))) = ${factor2};`;
                     lines.push(`// Alt conversion option, if replacing target: ${result} = ${factor2}`)
                     lines.push(altMove);
