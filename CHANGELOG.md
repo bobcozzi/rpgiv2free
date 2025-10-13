@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.8] - 2025-10-12
+- **MAJOR FIX**: Resolved issue where Smart Enter and Smart Tab were activating in free-format RPG files (files starting with **FREE)
+- Enhanced format detection logic to properly distinguish between fixed-format and free-format RPG source
+- Smart Enter and Smart Tab now only activate for true fixed-format RPG IV code
+- Improved extension activation and context management for better performance
+- Made the testing functions' parameters for "Is Fixed Format" and "Is Free Format" consistent.
+
+## [1.0.7] - 2025-08-21
+- Corrected an issue when converting fixed-format Data Structres that are the Program Status Data Structure (SDS) and specify *PROC or *STATUS or similar position on the last subfield in the data structure. The location/placement of the end-ds would be corrupted. This has been corrected.
+- Another issue related is that long subfield names would in some cases blend with the following subfield when the ellipse (...) is used to continue the long name. This too was fixed.
+
+## [1.0.6] - 2025-08-01:
+- Issue with properly recognizing **FREE in some RPG IV source code that indicates this is a "fully free format" source file has been corrected. This also impacted the Smart RPG Tab key and Grid painting.
+- Integrated field attributes into the MOVE/MOVEL opcode for conversion to free format. For dates and straight char-to-char MOVEx this should greatly enhance the conversion experience. Other datatypes shall be incorporated into a future release.
+
 ## [1.0.4] - 2025-07-26:
 - Added support for `.rpginc` source members to the extension. Now if a source file has .rpginc as its extension the extenion is enable and you can convert it to RPG IV free format.
 

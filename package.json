@@ -10,7 +10,7 @@
   "icon": "images/rpgiv2free.png",
   "preview": false,
   "private": false,
-  "version": "1.0.6",
+  "version": "1.0.8",
   "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0",
@@ -47,23 +47,27 @@
       {
         "command": "rpgiv2free.toggleRPGSmartTab",
         "title": "Toggle Smart Tab"
+      },
+      {
+        "command": "rpgiv2free.debugContext",
+        "title": "Debug RPG Context"
       }
     ],
     "keybindings": [
       {
-      "key": "enter",
-      "command": "rpgiv2free.smartEnter",
-      "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && !suggestWidgetVisible && !inSnippetMode"
+        "key": "enter",
+        "command": "rpgiv2free.smartEnter",
+        "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && !suggestWidgetVisible && !inSnippetMode && rpgiv2free.isFixedFormat"
       },
       {
-      "key": "tab",
-      "command": "rpgsmarttab.tab",
-      "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && !suggestWidgetVisible && !inSnippetMode"
+        "key": "tab",
+        "command": "rpgsmarttab.tab",
+        "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && !suggestWidgetVisible && !inSnippetMode && rpgiv2free.isFixedFormat"
       },
       {
-      "key": "shift+tab",
-      "command": "rpgsmarttab.shiftTab",
-      "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && !suggestWidgetVisible && !inSnippetMode"
+        "key": "shift+tab",
+        "command": "rpgsmarttab.shiftTab",
+        "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && !suggestWidgetVisible && !inSnippetMode && rpgiv2free.isFixedFormat"
       }
     ],
     "menus": {
@@ -300,5 +304,8 @@
     "@halcyontech/vscode-ibmi-types": "^2.15.3",
     "odbc": "^2.4.9",
     "sql-formatter": "^15.5.2"
-  }
+  },
+  "extensionDependencies": [
+    "halcyontechltd.code-for-ibmi"
+  ]
 }

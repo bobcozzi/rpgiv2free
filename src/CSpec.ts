@@ -606,18 +606,19 @@ async function convertOpcodeToFreeFormat(
       }
       newLines.push(freeFormat);
       break;
+
     case "MOVEA":
-      const { lines: moveaLines, action: action } = op.convertMOVEA(fullOpcode, factor1, factor2, result, extraDCL);
-      if (action === '*KEEP') {
-        return { newLines: newLines, newOpcode: action };
+      const { lines: moveALines, action: moveAAction } = await op.convertMOVEA(fullOpcode, factor1, factor2, result, extraDCL);
+      if (moveAAction && moveAAction === '*KEEP') {
+        return { newLines: moveALines, newOpcode: moveAAction };
       }
-      newLines.push(...moveaLines);
+      newLines.push(...moveALines);
       break;
     case "MOVEL":
     case "MOVE":
-    //  const { lines: moveLines, action: moveAction } = op.convertMOVE(fullOpcode, factor1, factor2, result, extraDCL);
+      //  const { lines: moveLines, action: moveAction } = op.convertMOVE(fullOpcode, factor1, factor2, result, extraDCL);
       const { lines: moveLines, action: moveAction } = await op.convertMOVE(fullOpcode, factor1, factor2, result, extraDCL);
-      if (moveAction === '*KEEP') {
+      if (moveAction && moveAction === '*KEEP') {
         return { newLines: moveLines, newOpcode: moveAction };
       }
       newLines.push(...moveLines);

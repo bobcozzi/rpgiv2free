@@ -1,4 +1,3 @@
-
 import * as vscode from 'vscode';
 import * as path from 'path';
 
@@ -376,8 +375,16 @@ export function insertExtraDCLLinesBatch(
     });
 
     if (filteredDCL.length > 0) {
+      const isLastLine = insertAfterLine === editor.document.lineCount - 1;
+      const lastLineText = isLastLine ? editor.document.lineAt(insertAfterLine).text : '';
+      const needLeadingEOL = isLastLine && lastLineText.length > 0;
+
       const position = new vscode.Position(insertAfterLine + 1, 0);
-      const text = filteredDCL.join(getEOL()) + getEOL();
+      const text =
+        (needLeadingEOL ? getEOL() : '') +
+        filteredDCL.join(getEOL()) +
+        getEOL();
+
       insertData.push({ position, text });
     }
   }
@@ -405,7 +412,8 @@ export function insertExtraDCLLinesBatch(
 
 function findLocationForEndStmt(startIndex: number, allLines: string[]): number {
   let insertPoint = startIndex;
-  for (let i = startIndex + 1; i < allLines.length; i++) {
+  let i = 0;
+  for (i = startIndex + 1; i < allLines.length; i++) {
     const line = allLines[i].toUpperCase();
 
     if (!line || line.trim() === '') continue;
@@ -440,10 +448,11 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
       const tokens = trimmed.split(/\s+|\(/);
       const firstToken = tokens[0].toUpperCase();
 
-      // is a free format opcode?
-      if (isValidOpcode(firstToken)) {
+      // is a free format calc spec?
+      if (isFreeFormCalcStmt(line)) {
         break;
       }
+
       // Procedure call: myFoo('Hello') or myFoo ('Hello')
       if (/^[A-Z0-9_#$@]+\s*\(/i.test(trimmed)) {
         break;
@@ -470,7 +479,10 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
         break;
       }
     }
-
+    if (i >= allLines.length)
+    {
+      return -1;  // End of file?
+    }
     insertPoint = i;
 
   }
@@ -552,37 +564,7 @@ export function isExtFactor2(line: string): boolean {
   return false;
 }
 
-export function isFreeFormCalcStmt(line: string): boolean {
-  const trimmedLine = line.trim();
 
-  // If the line is empty, return false
-  if (isSkipStmt(trimmedLine)) return false;
-
-  // Split the line into tokens by space or (
-  const tokens = trimmedLine.split(/\s+|\(/);
-  const firstToken = tokens[0].toUpperCase().replace(/[^A-Z0-9]/g, '');
-
-  // Check if the first token is a valid opcode or %SUBST() built-in function (l-value)
-  if (isValidOpcode(firstToken) || firstToken.startsWith('%SUB')) {
-    return true;
-  }
-
-  // Check for assignment operators (=, +=, -=, *=, /=)
-  const assignmentMatch = trimmedLine.match(/(\+?=|\-?=|\*?=|\/?=)/);
-  if (assignmentMatch) {
-    // Check if the left-hand side is a valid variable or built-in function
-    // (You may want to enhance this logic for your needs)
-    return true;
-  }
-
-  // Check for a function/procedure call
-  const openParenIndex = trimmedLine.indexOf('(');
-  if (openParenIndex !== -1) {
-    if (isValidOpcode(firstToken)) return true; // Procedure call
-  }
-
-  return false;
-}
 
 
 // Extracts the opcode from a C-spec line
@@ -767,23 +749,55 @@ export function getSmartEnterMode(): SmartEnterMode {
   }
 }
 
-
 export function isValidFixedFormat(line: string): boolean {
   const specType = getSpecType(line).trim();
+  if (line.length > 6 && line[6] === '*') return false;
   // isNotSkipStmt checks for things like comments and directives and empty lines
   const bIsFixedFormat = (isNotSkipStmt(line) && ['h', 'f', 'd', 'c', 'p', 'i', 'o'].includes(specType));
   return bIsFixedFormat;
 }
 
-export function isFixedFormatSpec(line: string): boolean {
-  if (!line && line.length < 5) {
-    return false;
+
+export function isFreeFormCalcStmt(line: string): boolean {
+  if (typeof line !== 'string') return false;
+  if (isSkipStmt(line)) return false;
+
+  const s = line.trim();
+  if (!s) return false;
+
+  // Treat assignment starts (even multi-line) as calc
+  if (isAssignmentStmt(s)) return true;
+
+  // Simple procedure call: myProc(...);
+  // Built-in only call: %SUBST(...); etc.
+  // Require top-level ';' so we don’t misfire on declarations
+  let inQuote = false, depth = 0, hasTopLevelSemi = false;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (ch === "'") {
+      if (inQuote && s[i + 1] === "'") { i++; continue; }
+      inQuote = !inQuote; continue;
+    }
+    if (inQuote) continue;
+    if (ch === '(') { depth++; continue; }
+    if (ch === ')') { if (depth > 0) depth--; continue; }
+    if (ch === ';' && depth === 0) { hasTopLevelSemi = true; break; }
   }
-  const specType = getSpecType(line).trim();
-  // isNotSkipStmt checks for things like comments and directives and empty lines
-  const bIsFixedFormat = (isNotSkipStmt(line) && ['h', 'f', 'd', 'c', 'p', 'i', 'o'].includes(specType));
-  return bIsFixedFormat;
+  if (!hasTopLevelSemi) return false;
+
+  // Ignore DCL/END/CTL directives on free-form lines
+  const startsWithDirective = /^(DCL-|END-|CTL-)/i.test(s);
+  if (startsWithDirective) return false;
+
+  // Proc call: identifier(...);
+  if (/^[A-Za-z_][A-Za-z0-9_#$@]*\s*\(.*\)\s*;?$/.test(s)) return true;
+
+  // Built-in call: %NAME(...);
+  if (/^%[A-Za-z0-9_]+\s*\(.*\)\s*;?$/.test(s)) return true;
+
+  return false;
 }
+
 
 export function isRPGDocument(document?: vscode.TextDocument): boolean {
   let doc: vscode.TextDocument | undefined = document;
@@ -805,40 +819,95 @@ export function isFixedFormatRPG(document?: vscode.TextDocument): boolean {
   }
   if (doc.lineCount === 0) return true; // Treat empty document as fixed format
   const firstLine = doc.lineAt(0).text;
-  // Must be at least 6 chars, no leading whitespace, exactly **FREE in columns 1-6
-  // Only allow whitespace after column 6
-  const hasFree = (firstLine.length >= 6 &&
-    firstLine.trimEnd().toUpperCase() === '**FREE');
-  return !hasFree;
+
+  // Check if **FREE appears in columns 1-6 (case-insensitive)
+  // Per IBM rules, **FREE must be the only content (plus trailing blanks)
+  const bIsFreeFormat = (firstLine.length >= 6 &&
+    firstLine.substring(0, 6).toUpperCase() === '**FREE');
+
+  return !bIsFreeFormat;
 }
 
 export function isNOTFixedFormatRPG(document?: vscode.TextDocument): boolean {
+  return isFreeFormatRPG(document);
+}
+
+export function isFreeFormatRPG(document?: vscode.TextDocument): boolean {
   let doc: vscode.TextDocument | undefined = document;
   if (!doc) {
     const editor = vscode.window.activeTextEditor;
     if (!editor) return false;
     doc = editor.document;
   }
-  return !isFixedFormatRPG(doc);
-}
 
-export function isRPGFree(): boolean {
-  const editor = vscode.window.activeTextEditor;
-  if (!editor) return false;
-  const document = editor.document;
-  if (document.lineCount === 0) return false; // Treat empty document as fixed format
-  const firstLine = document.lineAt(0).text;
-  // Must be at least 6 chars, no leading whitespace, exactly **FREE in columns 1-6
-  // Only allow whitespace after column 6
-   const bIsFree = (firstLine.length >= 6 &&
-    firstLine.trimEnd().toUpperCase() === '**FREE');
-  return bIsFree;
+  if (doc.lineCount === 0) return false; // Treat empty document as fixed format
+  const firstLine = doc.lineAt(0).text;
+
+  // Check if **FREE appears in columns 1-6 (case-insensitive)
+  // Per IBM rules, **FREE must be the only content (plus trailing blanks)
+  const bIsFreeFormat = (firstLine.length >= 6 &&
+    firstLine.substring(0, 6).toUpperCase() === '**FREE');
+
+  return bIsFreeFormat;
 }
 
 export function isOpcodeEnd(line: string): boolean {
   const opcode = getRawOpcode(line);
   return /^END(?:IF|DO|FOR|MON|SL|CS|SR)?$/.test(opcode);
 }
+
+// This function tests the statement line to see if it
+// is a valid free format assignment statement.
+// This is needed when no opcode is specified, such as A = B * C;
+export function isAssignmentStmt(line: string): boolean {
+  if (typeof line !== 'string') return false;
+  const s = line.trim();
+  if (!s || s.startsWith('//')) return false;
+
+  // Find a top-level =, +=, or -= (not inside quotes/parentheses)
+  let inQuote = false, depth = 0;
+  let opStart = -1;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+
+    if (ch === "'") {
+      if (inQuote) {
+        if (s[i + 1] === "'") { i++; continue; } // RPG '' escape
+        inQuote = false; continue;
+      } else { inQuote = true; continue; }
+    }
+    if (inQuote) continue;
+
+    if (ch === '(') { depth++; continue; }
+    if (ch === ')') { if (depth > 0) depth--; continue; }
+
+    if (ch === '=' && depth === 0) {
+      // Check for += or -=
+      let j = i - 1;
+      while (j >= 0 && s[j] === ' ') j--;
+      if (j >= 0 && (s[j] === '+' || s[j] === '-')) {
+        opStart = j; // '+=' or '-=' starts at j
+      } else {
+        opStart = i; // '='
+      }
+      break;
+    }
+  }
+  if (opStart < 0) return false;
+
+  const lhs = s.slice(0, opStart).trim();
+  if (!lhs) return false;
+
+  // LHS validators:
+  const ident = '[A-Za-z_][A-Za-z0-9_#$@]*';
+  const seg = `${ident}(\\s*\\([^)]*\\))?`;               // name or name(...)
+  const dotted = new RegExp(`^${seg}(\\.${seg})*$`);      // a, a(i), a.b, a(i).b(j).c
+  const builtIn = /^%[A-Za-z0-9_]+\s*\(.*\)$/;            // %SUBST(...)
+  const starIN = /^\*IN(\(\s*([A-Za-z_][A-Za-z0-9_]*|\d+)\s*\)|[A-Za-z0-9_]+)$/i; // *INLR, *IN(82), *IN(idx)
+
+  return builtIn.test(lhs) || starIN.test(lhs) || dotted.test(lhs);
+}
+
 
 export function isValidOpcode(id: string): boolean {
   // List of valid opcodes (operation extenders not included)

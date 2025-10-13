@@ -74,7 +74,7 @@ function getTabStops(line: string): number[] {
 }
 
 function getNextStop(current: number, stops: number[], reverse: boolean): number | undefined {
-  if (!stops.length || rpgiv.isRPGFree()) return undefined;
+  if (!stops.length) return undefined;
 
   if (!reverse) {
     // If current is at or beyond the last stop, return undefined
@@ -126,11 +126,12 @@ function getStmtRule(line: string): string {
 export async function handleSmartTab(reverse: boolean): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor) return;
+
   const langId = editor.document.languageId;
   if (langId !== 'rpgle' && langId !== 'sqlrpgle' && langId !== 'rpginc') {
-    // Optionally: clear decorations here
     return;
   }
+
   // Early exit: If suggestion widget is visible, let VS Code handle Tab
   if ((vscode as any).window.activeTextEditor?.options.suggestWidgetVisible) {
     await vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
@@ -138,13 +139,15 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
   }
 
   const doc = editor.document;
-  if (rpgiv.isRPGFree()) {
+
+  // Check if document is free format - if so, use default behavior
+  if (rpgiv.isFreeFormatRPG(doc)) {
     await vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
     return;
   }
 
   const config = vscode.workspace.getConfiguration('rpgiv2free');
-  const maxRPGLen = config.get<number>('maxRPGSourceLength', 100);  // Default to 80
+  const maxRPGLen = config.get<number>('maxRPGSourceLength', 100);
   const cursor = editor.selection.active;
   const line = doc.lineAt(cursor.line);
   const lineText = line.text;
@@ -152,14 +155,13 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
   // Is it a Fixed Format statement?
   const specChar = getStmtRule(lineText);
   if (lineText.length < 6 || !specChar || !RPG_TAB_STOPS[specChar]) {
-    vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
+    await vscode.commands.executeCommand(reverse ? 'outdent' : 'tab'); // Add missing await
     return;
   }
 
   const stops = getTabStops(lineText);
   if (stops.length === 0 || (stops[0] === 0 && stops.length === 1)) {
-    // No valid tab stops found
-    vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
+    await vscode.commands.executeCommand(reverse ? 'outdent' : 'tab'); // Add missing await
     return;
   }
 
@@ -328,7 +330,7 @@ export async function highlightCurrentTabZone(editor: vscode.TextEditor): Promis
 
 export function drawTabStopLines(editor: vscode.TextEditor, lineNbr: number): void {
 
-  if (!editor || rpgiv.isRPGFree()) {
+  if (!editor || rpgiv.isFreeFormatRPG()) {
     return;
   }
   const langId = editor.document.languageId;
@@ -378,7 +380,7 @@ export function drawTabStopLines(editor: vscode.TextEditor, lineNbr: number): vo
 }
 
 export function applyColumnarDecorations(editor: vscode.TextEditor, smartTabEnabled: boolean) {
-  if (!editor || rpgiv.isRPGFree()) return;
+  if (!editor || rpgiv.isFreeFormatRPG()) return;
   const langId = editor.document.languageId;
   if (langId !== 'rpgle' && langId !== 'sqlrpgle' && langId !== 'rpginc') {
     // Optionally: clear decorations here

@@ -23,7 +23,7 @@ export function registerSmartEnterCommand(context: vscode.ExtensionContext) {
 
     const fallBackOnEnter =
       mode === rpgiv.SmartEnterMode.Disabled ||
-      (mode === rpgiv.SmartEnterMode.FixedOnly && rpgiv.isNOTFixedFormatRPG()) ||
+      (mode === rpgiv.SmartEnterMode.FixedOnly && rpgiv.isFreeFormatRPG(doc)) ||
       (mode === rpgiv.SmartEnterMode.FixedAndFree && !rpgiv.isRPGDocument());
     // Check if the document is not RPG or if the mode is disabled
     // If the selection is on the first row, first position and Enter is pressed,
