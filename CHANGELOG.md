@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+
+## [1.0.10] - 2025-10-30
+- GOTO statements that target an ENDSR label are now converted to the LEAVESR opcode. This allows conversion of subroutines that were originally RPGIII (where LEAVESR does not exist) or early RPG IV fixed format code that uses this technique long before LEAVESR was added to the language.
+- The logic for the SUBST has been enhanced to use the CODE4IBMi variable database. Please verify that your SUBST are now converted more effectively. If now, remember to use the Ctrl-Z / Cmd-Z keys to UNDO that conversion. In our testing it worked well but we can not test 100% of all situations, obviously.
+
 ## [1.0.8] - 2025-10-12
 - **MAJOR FIX**: Resolved issue where Smart Enter and Smart Tab were activating in free-format RPG files (files starting with **FREE)
 - Enhanced format detection logic to properly distinguish between fixed-format and free-format RPG source

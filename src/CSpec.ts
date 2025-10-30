@@ -85,6 +85,7 @@ export async function convertCSpec(
 
     ({ newLines: convertedLines, newOpcode: enhValues.opcode } =
       await convertOpcodeToFreeFormat(
+        curLineIndex,
         opcode,
         factor1,
         factor2,
@@ -105,7 +106,7 @@ export async function convertCSpec(
       enhValues.opcode = opcode;
     }
     else if (enhValues.opcode === '*KEEP') {
-      return []; // pass thru stmt such as MOVEA that is NOT *IN related
+      return []; // pass thru stmt such as GOTO, TAG, PARM, PLIST
     }
     else {
 
@@ -212,6 +213,7 @@ export function enhanceOpcode(
 }
 
 async function convertOpcodeToFreeFormat(
+  curLineIndex: number,
   opcode: string,
   factor1: string,
   factor2: string,
@@ -336,6 +338,7 @@ async function convertOpcodeToFreeFormat(
       newLines.push(newMath);
 
       break;
+    // curLineIndex
     case "DIV":
       if (opExt?.trim() !== '') {
         newMath = `eval(${opExt}) `;
@@ -382,6 +385,18 @@ async function convertOpcodeToFreeFormat(
       else {
         newOpcode = '*KEEP'
         comments?.push('// Cannot find previous Fixed-Format DIV opcode.');
+      }
+      break;
+
+    // curLineIndex
+
+    case 'GOTO':  // Handle GOTO within a subroutine -> LEAVESR
+      const newLEAVESR = op.convertGOTO(curLineIndex, fullOpcode, factor1, factor2, result);
+      if (newLEAVESR && newLEAVESR.length > 0) { // If nothing returned, then conventional GOTO (no conversion)
+        newLines.push(newLEAVESR);
+      }
+      else {
+        newOpcode = '*KEEP'
       }
       break;
 
@@ -453,9 +468,13 @@ async function convertOpcodeToFreeFormat(
       newLines.push(freeFormat);
       break;
     case 'SUBST':
-      newLines.push(...op.convertSUBST(fullOpcode, factor1, factor2, result, extraDCL));
-      newOpcode = '';
+      const { lines: substLines, action: substAction } = await op.convertSUBST(fullOpcode, factor1, factor2, result, extraDCL);
+      if (substAction && substAction === '*KEEP') {
+        return { newLines: substLines, newOpcode: substAction };
+      }
+      newLines.push(...substLines);
       break;
+
     case 'SCAN':
       newLines.push(...op.convertSCAN(fullOpcode, factor1, factor2, result, extraDCL));
       newOpcode = '';

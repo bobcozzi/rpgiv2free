@@ -88,7 +88,7 @@ export function registerConvertToRPGFreeCommand(context: vscode.ExtensionContext
       const collectedStmts = collectStmt(allLines, i, condIndy?.condStmt ?? null);
       if (!collectedStmts) continue;
 
-      const {indexes: indexes, lines: specLines, comments: rawComments, isSQL, isCollected, entityName } = collectedStmts;
+      const { indexes: indexes, lines: specLines, comments: rawComments, isSQL, isCollected, entityName } = collectedStmts;
       let comments = rawComments ?? [];
       if (!specLines.length) continue;
       if (indexes.some(idx => processedLines.has(idx))) continue;
@@ -133,6 +133,11 @@ export function registerConvertToRPGFreeCommand(context: vscode.ExtensionContext
           const condIndyForC = collectCondCalc(allLines, i);
           const condStmt = condIndyForC?.condStmt ?? '';
           converted = await convertCSpec(specLines, comments, condStmt, extraDCL, allLines, i);
+          // If convertCSpec returned nothing (empty array or non-array), fall back to original lines
+          if (!Array.isArray(converted) || converted.length === 0) {
+            continue;
+          }
+
         } else {
           converted = specLines;
         }

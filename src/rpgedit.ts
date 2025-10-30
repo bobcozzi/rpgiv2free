@@ -15,6 +15,47 @@ export function getEOL(): string {
   return editor.document.eol === vscode.EndOfLine.CRLF ? '\r\n' : '\n';
 }
 
+/**
+ * Detects an artificial "end of source" marker on a non-blank line.
+ *
+ * This examines a single source line and returns true when that line should
+ * be treated as the end of the RPG source member. It does NOT treat blank
+ * lines as end-of-source (those are handled by EOF itself). Conditions that
+ * indicate end-of-source:
+ *  - line begins with "**" and the remainder of the record is blank (only trailing spaces)
+ *  - line begins with "**" followed immediately by at least one blank and then text
+ *    (these are often used as end-of-source comment markers in IBM i source members)
+ *  - line (trimmed) begins with "**CTDATA" (case-insensitive)
+ *
+ * @param line The source line to test (may be undefined/null/empty)
+ * @returns true when the line represents an artificial end-of-source marker
+ */
+export function isEndSrc(line: string | null | undefined): boolean {
+  if (!line) return false;
+
+  // TrimRight not used because we need to inspect leading columns
+  const trimmed = line.trimEnd();
+  if (trimmed === '') return false; // blank lines are not "end" markers here
+
+  // Check for **CTDATA (or similar) at start of the trimmed text
+  if (/^\*\*CTDATA\b/i.test(trimmed)) return true;
+
+  // Check columns 1-2 for "**"
+  if (line.length >= 2 && line[0] === '*' && line[1] === '*') {
+    const after = line.substring(2);
+
+    // If remainder is only spaces (i.e. "**" followed by blanks) => end of source
+    if (after.trim() === '') return true;
+
+    // If remainder begins with at least one space/tab then some text (i.e. "** SOME TEXT")
+    // treat as end-of-source comment marker per user requirement
+    if (/^[ \t].+/.test(after)) return true;
+  }
+
+  return false;
+}
+
+
 export function getActiveFileInfo(): {
   fullPath: string;
   fileName: string;
@@ -942,7 +983,7 @@ export function isReservedWord(id: string): boolean {
 export function isUnSupportedOpcode(id: string): boolean {
   // List of valid opcodes (operation extenders not included)
   const oldRPGOpcodes = new Set([
-    "CALL", "CALLB", "PLIST", "PARM", "KLIST", "KFLD", "FREE", "DEBUG", "GOTO", "TAG"
+    "CALL", "CALLB", "PLIST", "PARM", "KLIST", "KFLD", "FREE", "DEBUG", "TAG"
   ]);
   // Strip off operation extenders like "(EHMR)" from the ID
   const baseOpcode = id.replace(/\([A-Z]+\)$/i, "").toUpperCase();
