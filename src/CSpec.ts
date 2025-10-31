@@ -460,7 +460,7 @@ async function convertOpcodeToFreeFormat(
       break;
 
     case "END":
-      freeFormat = ` ENDIF; // ${opCode}xx; opcode deprecated. Use ENDxx (e.g., ENDIF, ENDDO, etc.)`;
+      freeFormat = ` ENDIF; // ${opCode}; opcode deprecated. Use ENDxx (e.g., ENDIF, ENDDO, etc.)`;
       newLines.push(freeFormat);
       break;
     case "ENDCS":

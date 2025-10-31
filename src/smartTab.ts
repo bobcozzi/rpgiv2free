@@ -16,11 +16,14 @@ import * as types from './types';
 // C                   IF        A = B
 const RPG_TAB_STOPS: Record<string, number[]> = {
   H: [1, 6, 7, 81],
-  F: [1, 6, 7, 17, 18, 19, 20, 21, 22, 23, 28, 29, 33, 34, 36, 43, 44, 81],
+  F: [1, 6, 7, 17, 18, 19, 20, 21, 22, 23, 28, 29, 34, 36, 43, 44, 81],
   D: [1, 6, 7, 22, 23, 24, 26, 33, 40, 41, 43, 44, 81],
   C: [1, 6, 7, 9, 12, 26, 36, 50, 64, 69, 71, 73, 75, 77, 81],
   CX: [1, 6, 7, 9, 26, 36, 81],
-  I: [1, 6, 7, 8, 10, 12, 17, 24, 39],
+  I: [1, 6, 7, 17, 19, 20, 21, 23, 28, 29, 30, 31, 36, 37, 38, 39, 44, 45, 46, 48, 81],
+  IX: [1, 6, 7, 17, 21, 23, 81],  // Pos 17 - 20 are blank but 7 to 16 are not
+  IJ: [1, 6, 7, 30, 31, 35, 36, 37, 42, 47, 49, 63, 65, 67, 69, 71, 73, 75, 81],
+  IJX: [1, 6, 7, 21, 31, 49, 63, 65, 67, 69, 71, 73, 75, 81], // Pos 7-20 & 31-48 are blank
   O: [1, 6, 7, 8, 10, 12, 17, 24, 39],
   P: [1, 6, 7, 24, 44, 81]
 };
@@ -115,12 +118,38 @@ function getStmtRule(line: string): string {
   const lineType = rpgiv.getSpecType(line);
   if (lineType && lineType.trim() !== '') {
     specType = lineType.toUpperCase();
-    if (specType === 'C' && rpgiv.isExtFactor2(line)) {
-      specType = 'CX';  // Extended Factor 2 opcode
-    }
+    specType = getStmtVariant(line, specType);
   }
-
   return specType;
+}
+
+function getStmtVariant(line: string, specType: string): string {
+  let varient = specType;
+  switch (specType) {
+    case 'C':
+      if (rpgiv.isExtFactor2(line)) {
+        varient = 'CX';  // Extended Factor 2 opcode
+      }
+      break;
+
+    case 'I':
+      if ((rpgiv.getCol(line, 17, 20).trim() === '') &&
+        (rpgiv.getCol(line, 7, 16).trim() != '')) {
+        varient = 'IX'; // Pos 17 - 20 are blank but 7 to 16 are not
+      }
+      if ((rpgiv.getCol(line, 17, 20).trim() === '') &&
+        (rpgiv.getCol(line, 31, 48).trim() === '') &&
+        (rpgiv.getCol(line, 67, 68).trim() === '') &&
+        (rpgiv.getCol(line, 75, 80).trim() === '')) {
+        varient = 'IJX'; // Pos 7-20 & 31-48 are blank
+      }
+      if ((rpgiv.getCol(line, 17, 30).trim() === '') &&
+        (rpgiv.getCol(line, 31, 48).trim() != '')) {
+        varient = 'IJ'; // Pos 7-20 & 31-48 are blank
+      }
+
+  }
+  return varient;
 }
 
 export async function handleSmartTab(reverse: boolean): Promise<void> {
