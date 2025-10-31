@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file.
 
 
+## [1.0.12] - 2025-10-31
+- Corrected the vertical line/ruler that appears on the fixed format RPG IV code so that it works better with the 4 types of Input specifications:
+  - Program Described Input File "header"
+  - Externally Described Input File "header"
+  - Program Described Input field detail
+  - Externally Described Input field detail
+- Corrected a small issue with RPG IV formatting when the statement length hit the line length (e.g., exactly 80 bytes) the formatter would wrap the closing semicolon onto a new line by itself, or in some cases, would include the right paren if it were the last character on the line.
+- Corrected and extra tab position on fixed format File spec used by the vertical ruler.
+
 ## [1.0.10] - 2025-10-30
 - GOTO statements that target an ENDSR label are now converted to the LEAVESR opcode. This allows conversion of subroutines that were originally RPGIII (where LEAVESR does not exist) or early RPG IV fixed format code that uses this technique long before LEAVESR was added to the language.
 - The logic for the SUBST has been enhanced to use the CODE4IBMi variable database. Please verify that your SUBST are now converted more effectively. If not, remember to use the Ctrl-Z / Cmd-Z keys to UNDO that conversion. In our testing it worked well but we can not test 100% of all situations, obviously.

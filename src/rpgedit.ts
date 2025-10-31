@@ -240,8 +240,29 @@ export function isEmptyStmt(line: string): boolean {
 }
 
 export const rpgDataTypes = [
-  'char', 'varchar', 'packed', 'zoned', 'int', 'uns', 'float', 'real',
-  'date', 'time', 'timestamp', 'ind', 'like', 'likeds', 'likerec', 'pointer', 'const'
+  'bindec',
+  'char',
+  'const',
+  'date',
+  'float',
+  'graph',
+  'ind',
+  'int',
+  'like',
+  'likeds',
+  'likerec',
+  'object',
+  'packed',
+  'pointer',
+  'real',
+  'time',
+  'timestamp',
+  'ucs2',
+  'uns',
+  'varchar',
+  'vargraph',
+  'varucs2',
+  'zoned'
 ];
 
 function isRPGFreeSubfield(line: string): boolean {

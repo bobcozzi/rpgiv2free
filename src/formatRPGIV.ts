@@ -221,7 +221,34 @@ export const formatRPGIV = (input: string, splitOffComments: boolean = false): s
         addToken(token, spacers[i]);
       }
     }
-    flushLine();
+
+        flushLine();
+
+        // Post-process: if the final line is only a semicolon, move the previous token to a cont line with the semicolon.
+        // Conservative: only steals the last whitespace-separated token from the nearest non-comment non-empty line.
+        const lastIdx = result.length - 1;
+        if (lastIdx >= 0 && /^\s*;\s*$/.test(result[lastIdx])) {
+          for (let j = lastIdx - 1; j >= 0; j--) {
+            const cand = result[j];
+            if (!cand || cand.trim() === '') continue;
+            if (rpgiv.isComment(cand)) continue;
+
+            const leading = (cand.match(/^\s*/) || [''])[0];
+            const body = cand.trimEnd();
+            const parts = body.split(/\s+/);
+            if (parts.length > 1) {
+              // move last token to a continuation line and append semicolon
+              const lastToken = parts.pop()!;
+              const leftPart = parts.join(' ');
+              result[j] = (leading + leftPart).trimEnd();
+              // remove the lone semicolon line and push the new continuation line
+              result.pop();
+              result.push(indent(contIndentLen) + lastToken + ';');
+              break;
+            }
+            // if only one token on this line, keep searching upward
+          }
+        }
 
   }
 
