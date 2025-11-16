@@ -180,6 +180,16 @@ export async function activate(context: vscode.ExtensionContext) {
     console.error('getIBMiAPI failed:', err);
   }
 
+  const smartTabEnabled = vscode.workspace.getConfiguration().get<boolean>('rpgiv2free.enableRPGSmartTab', true);
+  await vscode.commands.executeCommand('setContext', 'rpgiv2free.smartTabEnabled', smartTabEnabled);
+
+  // watch for setting changes (optional)
+  vscode.workspace.onDidChangeConfiguration(e => {
+    if (e.affectsConfiguration('rpgiv2free.enableRPGSmartTab')) {
+      const v = vscode.workspace.getConfiguration().get<boolean>('rpgiv2free.enableRPGSmartTab', true);
+      vscode.commands.executeCommand('setContext', 'rpgiv2free.smartTabEnabled', v);
+    }
+  });
 }
 
 // This method is called when your extension is deactivated

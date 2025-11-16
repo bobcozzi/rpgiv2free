@@ -1,8 +1,20 @@
-import * as vscode from "vscode";
-import * as rpgiv from "./rpgedit";  // Using your existing functions
-import * as types from './types';
+import * as vscode from 'vscode';
+import * as rpgiv from './rpgedit';
+import * as types from './types'; // <-- restore the types import so setSuppressTabZoneUpdate works
 
-
+// helper to accept suggestions if present
+async function acceptAnySuggestionIfShown(): Promise<void> {
+  try {
+    await vscode.commands.executeCommand('editor.action.inlineSuggest.commit');
+  } catch {
+    // ignore if no inline suggestion or command not available
+  }
+  try {
+    await vscode.commands.executeCommand('acceptSelectedSuggestion');
+  } catch {
+    // ignore if no classic suggestion or command not available
+  }
+}
 
 // Tab stops by spec type — update or expand as needed
 //    *. 1 ...+... 2 ...+... 3 ...+... 4 ...+... 5 ...+... 6 ...+... 7 ...+... 8 .. v
@@ -156,30 +168,44 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor) return;
 
-  const langId = editor.document.languageId;
-  if (langId !== 'rpgle' && langId !== 'sqlrpgle' && langId !== 'rpginc') {
-    return;
-  }
-
-  // Early exit: If suggestion widget is visible, let VS Code handle Tab
-  if ((vscode as any).window.activeTextEditor?.options.suggestWidgetVisible) {
-    await vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
-    return;
-  }
-
   const doc = editor.document;
+  const langId = doc.languageId;
+  if (langId !== 'rpgle' && langId !== 'sqlrpgle' && langId !== 'rpginc') return;
 
-  // Check if document is free format - if so, use default behavior
-  if (rpgiv.isFreeFormatRPG(doc)) {
+  const cursor = editor.selection.active;
+  const line = doc.lineAt(cursor.line);
+  const lineText = line.text;
+
+  // Determine whether the document is free-format and whether the current line is a valid fixed-format line.
+  const isFreeFormatDoc = rpgiv.isFreeFormatRPG(doc);
+  const curLineIsValidFixed = rpgiv.isValidFixedFormat(lineText);
+
+  // Only accept/commit suggestions when the DOCUMENT is free-format AND the current line is NOT a valid fixed-format statement.
+  if (isFreeFormatDoc && !curLineIsValidFixed) {
+    const docVersionBefore = doc.version;
+    await acceptAnySuggestionIfShown();
+    if (doc.version !== docVersionBefore) {
+      // A suggestion was accepted and the document changed — let VS Code handle cursor/insert behavior.
+      return;
+    }
+  } else {
+    // Fixed-format document OR current line is fixed-format: do NOT accept suggestions.
+    // If suggestion widget is visible, delegate to VS Code default tab/outdent so Tab still moves cursor.
+    const suggestVisible = Boolean((vscode as any).window.activeTextEditor?.options?.suggestWidgetVisible);
+    if (suggestVisible) {
+      await vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
+      return;
+    }
+  }
+
+  // If still considered free-format (and no suggestion committed), fall back to default Tab behavior.
+  if (isFreeFormatDoc) {
     await vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
     return;
   }
 
   const config = vscode.workspace.getConfiguration('rpgiv2free');
   const maxRPGLen = config.get<number>('maxRPGSourceLength', 100);
-  const cursor = editor.selection.active;
-  const line = doc.lineAt(cursor.line);
-  const lineText = line.text;
 
   // Is it a Fixed Format statement?
   const specChar = getStmtRule(lineText);

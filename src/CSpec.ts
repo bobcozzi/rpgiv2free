@@ -459,6 +459,19 @@ async function convertOpcodeToFreeFormat(
       }
       break;
 
+    case "EXSR":
+      if (factor2.trim() !== '') {
+        freeFormat = `${opCode} ${factor2}; `;
+      }
+      else if (result.trim() !== '') {
+        freeFormat = `${opCode} ${result};`;
+      }
+      else {
+        // If factor2 is empty, use the result as the first operand
+        freeFormat = ` EXSR <????>; // Target Subroutine name is blank: ${factor2};`;
+      }
+      newLines.push(freeFormat);
+      break;
     case "END":
       freeFormat = ` ENDIF; // ${opCode}; opcode deprecated. Use ENDxx (e.g., ENDIF, ENDDO, etc.)`;
       newLines.push(freeFormat);
