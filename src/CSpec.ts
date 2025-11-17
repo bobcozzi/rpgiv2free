@@ -296,11 +296,13 @@ async function convertOpcodeToFreeFormat(
       factor1 = getKeyList(factor1);
       break;
   }
+
   switch (opCode.toUpperCase()) {
-    case 'COMP':   // Skippable non-opcode in free format (indy manipulations only)
-    case 'SETON':
-    case 'SETOFF':
+    case "COMP":   // Skippable non-opcode in free format (indy manipulations only)
+    case "SETON":
+    case "SETOFF":
       newOpcode = '*DLT';
+      break;
 
     case "ADD":
       if (opExt?.trim() !== '') {
@@ -352,7 +354,7 @@ async function convertOpcodeToFreeFormat(
 
       break;
 
-    case 'SQRT':
+    case "SQRT":
       if (opExt?.trim() !== '') {
         newMath = `eval(${opExt}) `;
       }
@@ -459,7 +461,7 @@ async function convertOpcodeToFreeFormat(
       }
       break;
 
-    case "EXSR":
+    case "EXSR": // EXSR was not converting so created its own case
       if (factor2.trim() !== '') {
         freeFormat = `${opCode} ${factor2}; `;
       }
@@ -472,6 +474,7 @@ async function convertOpcodeToFreeFormat(
       }
       newLines.push(freeFormat);
       break;
+
     case "END":
       freeFormat = ` ENDIF; // ${opCode}; opcode deprecated. Use ENDxx (e.g., ENDIF, ENDDO, etc.)`;
       newLines.push(freeFormat);
@@ -726,9 +729,16 @@ async function convertOpcodeToFreeFormat(
     default:
       freeFormat = `${fullOpcode} ${factor1} ${factor2} ${result}`;
       newLines.push(freeFormat);
+      console.log(`default Opcode conversion: rawOpcode="${rawOpcode}"`);
       break;
-      // handle unrecognized opcode
-      break;
+  }
+
+  console.log(`convertCSpec: opcode="${opcode}", rawOpcode="${rawOpcode}"`);
+  if (rpgiv.isUnSupportedOpcode(opcode)) {
+    console.log(`  -> ${rawOpcode} is blocked by isUnSupportedOpcode`);
+  }
+  if (rpgiv.isExtOpcode(rawOpcode)) {
+    console.log(`  ->  ${rawOpcode} is blocked by isExtOpcode`);
   }
 
   if (cmt && cmt.trim() !== '') {
@@ -754,7 +764,7 @@ function handleResultingIndicators(
   const normalizedOpcode = opcode.toUpperCase().replace(/\(.*\)$/, "");
   const newLines: string[] = [];
 
-  // Bail out if the opcode is one of those whose resulting indicators are handled during conversion
+  // Bail out if the opcode is one of those opcodes whose resulting indicators are handled during conversion
   const indicatorOpcodes = new Set(['LOOKUP', 'OCCUR', 'TESTZ', 'TESTB', 'TESTN', 'BITON', 'BITOFF']);
   if (indicatorOpcodes.has(normalizedOpcode)) {
     return newLines; // returns empty set for these opcodes
