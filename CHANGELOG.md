@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.12.1] - 2025-11-16
+## [1.12.2] - 2025-11-16
 - The EXSR opcode was not being converted to free format in many cases. This has been fixed.
--
+- Update the version number.
 
 ## [1.0.12] - 2025-10-31
 - Corrected the vertical line/ruler that appears on fixed-format RPG IV code so that it works better with the four types of input specifications:
