@@ -107,6 +107,7 @@ export function collectExtF2(
   let namedOpcode = '';
   let inQuote = false;
   let wasQuoted = false;
+  let effectiveComment = '';
 
   for (let i = firstIndex; i < allLines.length; i++) {
     const line = allLines[i];
@@ -122,6 +123,15 @@ export function collectExtF2(
     let opCode = rpgiv.getFullOpcode(line);
     const opArea = rpgiv.getCol(line, 8, 35).trim();
     const factor2 = rpgiv.getCol(line, 36, 80).trimEnd();
+    const comment = rpgiv.getCol(line, 81, 100).trim();
+    const altCmt = rpgiv.getCol(line, 1, 5).trim();
+
+    effectiveComment += (() => {
+      const a = altCmt?.trim() || '';
+      const c = comment?.trim() || '';
+      if (a && c) return `${a} * ${c}`;
+      return a || c;
+    })();
 
     if (opArea !== '' && opCode !== '') {
       if (namedOpcode) break; // Already collecting; new opcode, stop
@@ -167,6 +177,9 @@ export function collectExtF2(
     wasQuoted = inQuote;
 
     indexes.push(i);
+  }
+  if (effectiveComment && effectiveComment.trim() !== '') {
+    comments.push(effectiveComment.trim());
   }
 
   return { extF2, indexes, comments, namedOpcode };

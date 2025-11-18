@@ -60,6 +60,15 @@ export async function convertCSpec(
     prevCalc = getPrevCalcSpec(allLines, curLineIndex);
   }
 
+
+  // Use altCmt as the comment if comment is null, empty, or blank and altCmt is non-blank
+  const effectiveComment = (() => {
+    const a = altCmt?.trim() || '';
+    const c = comment?.trim() || '';
+    if (a && c) return `${a} * ${c}`;
+    return a || c;
+  })();
+
   if (rpgiv.isExtOpcode(rawOpcode)) {
     if (lines.length > 1) {
       // Extract cols 36–80 (1-based) from each line starting with index 1
@@ -72,6 +81,9 @@ export async function convertCSpec(
     if ((!opExt && opExt === '') && rawOpcode.toLowerCase() === "eval" || rawOpcode.toLowerCase() === 'callp') {
       rawOpcode = "";  // EVAL/callp is not needed in free-form
     }
+    if (effectiveComment && effectiveComment.trim() !== '') {
+      freeFormLine.unshift(`// ${effectiveComment}`);
+    }
     freeFormLine.push(`${opcode.toLowerCase()} ${extFactor2}`);
 
   } else if (!rpgiv.isUnSupportedOpcode(opcode)) {
@@ -79,9 +91,6 @@ export async function convertCSpec(
     const enhValues: OpcodeEnhancement = enhanceOpcode(opcode, factor1, factor2, result, length, decimals, resInd1, resInd2, resInd3);
 
     let convertedLines: string[] = [];
-
-    // Use altCmt as the comment if comment is null, empty, or blank and altCmt is non-blank
-    const effectiveComment = (!comment || comment.trim() === '') && altCmt && altCmt.trim() !== '' ? altCmt : comment;
 
     ({ newLines: convertedLines, newOpcode: enhValues.opcode } =
       await convertOpcodeToFreeFormat(
@@ -734,12 +743,6 @@ async function convertOpcodeToFreeFormat(
   }
 
   console.log(`convertCSpec: opcode="${opcode}", rawOpcode="${rawOpcode}"`);
-  if (rpgiv.isUnSupportedOpcode(opcode)) {
-    console.log(`  -> ${rawOpcode} is blocked by isUnSupportedOpcode`);
-  }
-  if (rpgiv.isExtOpcode(rawOpcode)) {
-    console.log(`  ->  ${rawOpcode} is blocked by isExtOpcode`);
-  }
 
   if (cmt && cmt.trim() !== '') {
     if (newLines.length > 0 && !newLines[0].includes(cmt)) {

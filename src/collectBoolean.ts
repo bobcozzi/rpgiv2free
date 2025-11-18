@@ -7,7 +7,7 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number, con
   const indexes: number[] = [];
   const comments: string[] = [];
   const eol = rpgiv.getEOL();
-
+  let effectiveComment = '';
   const indent = ' '.repeat(12);
   const condStmt = (!condIndyStmt || condIndyStmt.trim() === '') ? '' : condIndyStmt;
   const opMap: { [key: string]: string } = {
@@ -30,8 +30,17 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number, con
   const opcode = rpgiv.getRawOpcode(startLine); // IFEQ, WHENNE, etc.
   const factor2 = rpgiv.getCol(startLine, 36, 49).trim();
   const comment = rpgiv.getCol(startLine, 81, 100).trim();
-  if (comment && comment.trim() !== '') {
-    comments.push(comment);
+  const altCmt = rpgiv.getCol(startLine, 1, 5).trim();
+
+  effectiveComment = (() => {
+    const a = altCmt?.trim() || '';
+    const c = comment?.trim() || '';
+    if (a && c) return `${a} * ${c}`;
+    return a || c;
+  })();
+
+  if (effectiveComment && effectiveComment.trim() !== '') {
+    comments.push(effectiveComment.trim());
   }
 
   let ffOpcode = '';
@@ -85,16 +94,27 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number, con
     const contOpcode = rpgiv.getRawOpcode(line); // ANDGT, ORLE, etc.
     const contFactor2 = rpgiv.getCol(line, 36, 49).trim();
     const comment = rpgiv.getCol(line, 81, 100).trim();
+    const altCmt = rpgiv.getCol(line, 1, 5).trim();
 
     const logicOp = contOpcode.startsWith('OR') ? 'or' :
       contOpcode.startsWith('AND') ? 'and' :
         contOpcode.startsWith('WHEN') ? 'when' : '?';
     const comp = contOpcode.slice(-2); // Last 2 characters
     const compSymbol = opMap[comp] ?? '?';
-    if (comment && comment.trim() !== '') {
-      comments.push(comment);
+
+    effectiveComment = (() => {
+      const a = altCmt?.trim() || '';
+      const c = comment?.trim() || '';
+      if (a && c) return `${a} * ${c}`;
+      return a || c;
+    })();
+
+    if (effectiveComment && effectiveComment.trim() !== '') {
+      comments.push(effectiveComment.trim());
     }
     booleanExpr += ` ${logicOp} ${contFactor1} ${compSymbol} ${contFactor2}`;
+
+
     i++;
   }
   if (condIndyStmt && condIndyStmt.trim() !== '') {

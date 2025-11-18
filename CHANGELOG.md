@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.12.3] - 2025-11-17
+- Columns 1 to 5 which were often used as change logs are not treated the same as comments
+- specified in Column 80+. Depending on the context, a `//` style comment is inserted to the right
+- of the free format code, or in the case of compound conditional statements, such as IFEQ, the
+- comment is inserted as one or more lines above the statement itself.
+For example:
+```
+RC012C     ScanPos       IFGT      0                                            Found?
+```
+Is converted to:
+```
+          // RC012 * Found?
+            if ScanPos > 0;
+```
+
+
 ## [1.12.2] - 2025-11-16
 - The EXSR opcode was not being converted to free format in many cases. This has been fixed.
 - Update the version number.
