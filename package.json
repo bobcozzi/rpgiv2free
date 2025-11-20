@@ -10,7 +10,7 @@
   "icon": "images/rpgiv2free.png",
   "preview": false,
   "private": false,
-  "version": "1.12.3",
+  "version": "1.12.4",
   "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0",
@@ -51,23 +51,31 @@
       {
         "command": "rpgiv2free.debugContext",
         "title": "Debug RPG Context"
+      },
+      {
+        "command": "rpgiv2free.openSettings",
+        "title": "RPGIV2Free Settings"
+      },
+      {
+        "command": "rpgiv2free.openCode4iSettings",
+        "title": "Code for IBM i Settings"
       }
     ],
     "keybindings": [
       {
         "key": "enter",
         "command": "rpgiv2free.smartEnter",
-        "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && !suggestWidgetVisible && !inSnippetMode && rpgiv2free.isFixedFormat"
+        "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && !suggestWidgetVisible && !inSnippetMode && rpgiv2free.isFixedFormat && config.rpgiv2free.enableRPGSmartEnter != 'disable'"
       },
       {
         "key": "tab",
         "command": "rpgsmarttab.tab",
-        "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && !suggestWidgetVisible && !inSnippetMode && rpgiv2free.isFixedFormat && rpgiv2free.smartTabEnabled"
+        "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && !suggestWidgetVisible && !inSnippetMode && rpgiv2free.isFixedFormat && config.rpgiv2free.enableRPGSmartTab"
       },
       {
         "key": "shift+tab",
         "command": "rpgsmarttab.shiftTab",
-        "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && !suggestWidgetVisible && !inSnippetMode && rpgiv2free.isFixedFormat && rpgiv2free.smartTabEnabled"
+        "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && !suggestWidgetVisible && !inSnippetMode && rpgiv2free.isFixedFormat && config.rpgiv2free.enableRPGSmartTab"
       }
     ],
     "menus": {
@@ -76,6 +84,24 @@
           "command": "rpgiv2free.convertToRPGFree",
           "when": "resourceExtname =~ /\\.rpg(le)?|\\.sqlrpgle|\\.rpgleinc/i",
           "group": "navigation"
+        },
+        {
+          "command": "rpgiv2free.openSettings",
+          "when": "editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpginc'",
+          "group": "rpgiv2free@5"
+        },
+        {
+          "command": "rpgiv2free.openCode4iSettings",
+          "when": "editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpginc'",
+          "group": "rpgiv2free@6"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "rpgiv2free.openSettings"
+        },
+        {
+          "command": "rpgiv2free.openCode4iSettings"
         }
       ]
     },
@@ -83,18 +109,18 @@
       "title": "RPGIV to Free Format Conversion",
       "properties": {
         "rpgiv2free.convertBINTOINT": {
-          "type": "number",
-          "title": "Enabled Convert BIN to INT",
-          "default": 2,
+          "type": "string",
+          "title": "Convert BIN to INT",
+          "default": "auto",
           "enum": [
-            0,
-            1,
-            2
+            "disable",
+            "always",
+            "auto"
           ],
           "enumDescriptions": [
-            "0 - Do not convert to Integer (disable)",
-            "1 - Always convert B (binary) fields to Integer",
-            "2 - Convert to Integer only when decimal positions = 0"
+            "Do not convert to Integer (disable)",
+            "Always convert B (binary) fields to Integer",
+            "Convert to Integer only when decimal positions = 0"
           ],
           "description": "Controls how RPG IV B ('binary') fields are converted to integers."
         },
@@ -130,29 +156,29 @@
           "default": true,
           "description": "Add INZ keyword to data structures that do not have one."
         },
-        "rpgiv2free.maxFreeFormatLineLength": {
+        "rpgiv2free.rightMargin": {
           "type": "number",
-          "title": "Maximum record length for free format",
+          "title": "Right margin for converted free format code",
           "default": 76,
-          "minimum": 72,
-          "maximum": 110,
-          "description": "Max length for converted free format lines (right margin)."
+          "minimum": 68,
+          "maximum": 140,
+          "description": "Right Margin for converted free format code."
         },
-        "rpgiv2free.indentFirstLine": {
+        "rpgiv2free.leftMargin": {
           "type": "number",
-          "title": "First line Indent Space count",
+          "title": "Left Margin for first line of converted code (indent)",
           "default": 10,
           "minimum": 0,
           "maximum": 64,
-          "description": "First free format line indent/spaces (in bytes)."
+          "description": "Left Margin for first line of converted free format code."
         },
-        "rpgiv2free.indentContinuedLines": {
+        "rpgiv2free.leftMarginContinued": {
           "type": "number",
-          "title": "Continuation Indent Space count",
+          "title": "Left Margin for continued converted code",
           "default": 12,
           "minimum": 0,
           "maximum": 64,
-          "description": "Secondary free format lines indent/spaces (in bytes)."
+          "description": "Left Margin for Secondary lines of converted free format code."
         },
         "rpgiv2free.indentDirectives": {
           "type": "number",
@@ -162,14 +188,6 @@
           "maximum": 32,
           "description": "Number of columns to indent /include, /copy etc."
         },
-        "rpgiv2free.maxRPGSourceLength": {
-          "type": "number",
-          "title": "Est maximum line length for RPG source",
-          "default": 80,
-          "minimum": 80,
-          "maximum": 240,
-          "description": "Maximum record length for RPG source files."
-        },
         "rpgiv2free.AddEXTDeviceFlag": {
           "type": "boolean",
           "title": "Add *EXT to device ID on File specs",
@@ -178,43 +196,43 @@
         },
         "rpgiv2free.RemoveFREEDirective": {
           "type": "boolean",
-          "title": "Comment-out /FREE and /END-FREE directives",
+          "title": "Remove /FREE and /END-FREE directives",
           "default": true,
-          "markdownDescription": "Remove old /free and /end-free directives**  \nThis will comment them out in RPG source."
+          "markdownDescription": "Remove deprecated /free and /end-free directives."
         },
         "rpgiv2free.ReplaceCOPYwithINCLUDE_RPG": {
           "type": "boolean",
           "title": "Replace /COPY with /INCLUDE [RPGLE]",
           "default": true,
-          "description": "Replaces /copy statements in RPGLE source types with the more modern /include directive."
+          "description": "Replaces /copy statements in RPGLE source members with a /include directive."
         },
         "rpgiv2free.ReplaceCOPYwithINCLUDE_SQLRPG": {
           "type": "boolean",
           "title": "Replace /COPY with /INCLUDE [SQLRPG]",
           "default": false,
-          "description": "Replaces /copy statements in SQLRPG* source types with the more modern /include directive."
+          "description": "Replaces /copy statements in SQLRPG* source members with a /include directive."
         },
         "rpgiv2free.RemoveOLDDirectives": {
           "type": "boolean",
-          "title": "Remove old deprecated legacy compiler directives",
+          "title": "Remove old, deprecated, legacy compiler directives",
           "default": true,
           "description": "Remove /SPACE, /SKIP, /EJECT and /TITLE directives."
         },
         "rpgiv2free.tempVarName1": {
           "type": "string",
-          "title": "Name of Length variable for string opcodes",
+          "title": "Work variable name for String Opcodes",
           "default": "f2f_tempSTG",
           "minLength": 5,
           "maxLength": 32,
-          "description": "Fixed to Free format Temp/Workfield name to generate for CAT, SUBST etc, opcode conversions."
+          "description": "Generated variable name used for fixed to free format CAT, SUBST etc, opcode conversions."
         },
         "rpgiv2free.tempVarName2": {
           "type": "string",
-          "title": "Name of DO/FOR Loop counter variable",
+          "title": "Work variable name for DO/FOR Loop counter variable",
           "default": "f2f_tempDO",
           "minLength": 5,
           "maxLength": 32,
-          "description": "Fixed to Free format Temp/Workfield name to generate for DO/FOR operations."
+          "description": "Generated variable name used for fixed to free format DO/FOR operations."
         },
         "rpgiv2free.enableRPGSmartEnter": {
           "type": "string",
@@ -234,17 +252,23 @@
           "default": "fixedOnly",
           "description": "Controls the RPG Smart Enter key behavior."
         },
-        "rpgiv2free.enableRPGCopySpecOnEnter": {
-          "type": "boolean",
-          "title": "Copy Fixed Format Spec to next line on Enter",
-          "default": true,
-          "description": "When RPG Smart Enter is enabled, copy the RPG spec letter to column 6 and align the cursor after it."
-        },
         "rpgiv2free.enableRPGSmartTab": {
           "type": "boolean",
           "title": "Enable Smart Columnar Tab in fixed format",
           "default": true,
           "description": "Enable RPG Smart Tab/Shift+Tab navigation in RPG IV fixed-format source lines."
+        },
+        "rpgiv2free.enableRPGRuler": {
+          "type": "boolean",
+          "title": "Enable RPG Fixed-Format Columnar Ruler",
+          "default": true,
+          "description": "Show vertical columnar ruler/guidelines for fixed-format RPG (independent of Smart Tab/Enter features)."
+        },
+        "rpgiv2free.enableRPGCopySpecOnEnter": {
+          "type": "boolean",
+          "title": "Copy Fixed Format Spec to next line on Enter",
+          "default": true,
+          "description": "When RPG Smart Enter is enabled, copy the RPG spec letter to column 6 and align the cursor after it."
         },
         "rpgiv2free.verticalTabColor_DarkMode": {
           "type": "string",

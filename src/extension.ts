@@ -190,6 +190,19 @@ export async function activate(context: vscode.ExtensionContext) {
       vscode.commands.executeCommand('setContext', 'rpgiv2free.smartTabEnabled', v);
     }
   });
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('rpgiv2free.openSettings', () => {
+      vscode.commands.executeCommand('workbench.action.openSettings', '@ext:CozziResearch.rpgiv2free');
+    })
+  );
+
+  // NEW: Add this command to open Code for IBM i settings
+  context.subscriptions.push(
+    vscode.commands.registerCommand('rpgiv2free.openCode4iSettings', () => {
+      vscode.commands.executeCommand('workbench.action.openSettings', '@ext:halcyontechltd.code-for-ibmi');
+    })
+  );
 }
 
 // This method is called when your extension is deactivated
@@ -203,17 +216,23 @@ function evaluateAndApplyFeatures(document: vscode.TextDocument) {
   const editor = vscode.window.visibleTextEditors.find(e => e.document === document);
   if (!editor) return;
 
-  if (rpgiv.isFreeFormatRPG(document)) {  // ✅ Pass the document parameter
+  if (rpgiv.isFreeFormatRPG(document)) {
     // Clear decorations if not fixed format
     applyColumnarDecorations(editor, false);
     return;
   }
 
-  if (rpgSmartTabEnabled) {
+  // NEW: Check enableRPGRuler setting separately from Smart Tab
+  const config = vscode.workspace.getConfiguration('rpgiv2free');
+  const rulerEnabled = config.get<boolean>('enableRPGRuler', true);
+
+  if (rulerEnabled) {
     applyColumnarDecorations(editor, true);
     // Draw tab stop lines for all lines in the document
     for (let line = 0; line < document.lineCount; line++) {
       drawTabStopLines(editor, line);
     }
+  } else {
+    applyColumnarDecorations(editor, false);
   }
 }

@@ -77,10 +77,9 @@ export function getActiveFileInfo(): {
 export interface configSettings {
   convertBINTOINT: number;
   addINZ: boolean;
-  indentFirstLine: number;
-  indentContLines: number;
   rightMargin: number;
-  srcRcdLen: number;
+  leftMargin: number;
+  leftMarginContinued: number;
   indentDir: number;
   altMOVEL: boolean;
   indyMOVEAStyle: string;
@@ -96,14 +95,28 @@ export interface configSettings {
 
 export function getRPGIVFreeSettings(): configSettings {
   const config = vscode.workspace.getConfiguration('rpgiv2free');
+  const binToIntSetting = config.get<string>('convertBINTOINT', 'auto');
+  // Convert string to number for your existing logic
+  let convertBINTOINT: number;
+  switch (binToIntSetting) {
+    case 'disable':
+      convertBINTOINT = 0;
+      break;
+    case 'always':
+      convertBINTOINT = 1;
+      break;
+    case 'auto':
+    default:
+      convertBINTOINT = 2;
+      break;
+  }
   return {
-    convertBINTOINT: config.get<number>('convertBINTOINT', 2),
+    convertBINTOINT: convertBINTOINT,
     addINZ: config.get<boolean>('addINZ', true),
-    indentFirstLine: config.get<number>('indentFirstLine', 10),
-    indentContLines: config.get<number>('indentContinuedLines', 12),
+    rightMargin: config.get<number>('rightMargin', 76),
+    leftMargin: config.get<number>('leftMargin', 10),
+    leftMarginContinued: config.get<number>('leftMarginContinued', 12),
     indentDir: config.get<number>('indentDirectives', 8),
-    rightMargin: config.get<number>('maxFreeFormatLineLength', 76),
-    srcRcdLen: config.get<number>('maxRPGSourceLength', 80),
     altMOVEL: config.get<boolean>('ALTMOVEL', true),
     indyMOVEAStyle: config.get<string>('indyMOVEAStyle', "LIST"),
     addEXTDEVFLAG: config.get<boolean>('AddEXTDeviceFlag', true),
@@ -541,8 +554,7 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
         break;
       }
     }
-    if (i >= allLines.length)
-    {
+    if (i >= allLines.length) {
       return -1;  // End of file?
     }
     insertPoint = i;

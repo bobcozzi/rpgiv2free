@@ -1,6 +1,22 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to this project are documented in this file.
+
+## [1.12.4] - 2025-11-20
+- **New Settings UI Commands**: Added convenient right-click context menu options to quickly access extension settings:
+  - "RPGIV2Free Settings" - Opens this extension's settings directly
+  - "Code for IBM i Settings" - Opens the Code for IBM i extension settings
+- **New Columnar-Guides/Ruler-Only Setting**: Added `enableRPGRuler` setting to show columnar guidelines independently of Smart Tab/Enter features. Users can now display the fixed-format RPG columnar guides without enabling Smart Tab or Smart Enter functionality.
+- **Smart Tab/Enter Respect Settings**: Fixed an issue where Smart Tab and Smart Enter were intercepting keystrokes even when disabled in settings. These features now properly check their enable/disable state before activating.
+- **Improved Settings UI**: Changed `convertBINTOINT` setting from numeric dropdown to string-based options with descriptive labels:
+  - "disable" - Do not convert to Integer
+  - "always" - Always convert B (binary) fields to Integer
+  - "auto" - Convert to Integer only when decimal positions = 0
+- **Removed Deprecated Setting**: Removed `maxRPGSourceLength` setting as it was redundant with the `rightMargin` setting and tab stops already enforce column limits.
+- **Fixed TESTZ Conversion**: Corrected TESTZ conversion to include proper spacing before `or` operator in compound expressions.
+- **Fixed Copy/Paste Bugs in test.ts**: Corrected conditional checks for `resInd2` and `resInd3` (were incorrectly checking `resInd1` in all three cases).
+- **Code Cleanup**: Removed unused alternative tokenization functions with broken regex patterns that could cause extension activation failures.
+- **MHHZO MLLZO Opcode planning**: Started conversion development to support the Move Low to Low Zone and Move High to Low Zone etc. Opcodes. They should be introduced in an upcoming release but are currently reflowed to free format opcodes which do not exist. The new conversion will convert them to %BITAND/OR built-in functions.
 
 ## [1.12.3] - 2025-11-17
 - Columns 1 to 5 which were often used as change logs are now treated the same as comments

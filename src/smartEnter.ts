@@ -4,23 +4,10 @@ import * as rpgiv from './rpgedit';
 export async function handleSmartEnter(editor: vscode.TextEditor, position: vscode.Position) {
   const config = vscode.workspace.getConfiguration('rpgiv2free');
 
-  // Try to commit/accept any suggestion before running smart enter logic
-  try {
-    await vscode.commands.executeCommand('editor.action.inlineSuggest.commit');
-  } catch {
-    // ignore
-  }
-  try {
-    await vscode.commands.executeCommand('acceptSelectedSuggestion');
-  } catch {
-    // ignore
-  }
-
-  const copySpec = config.get<boolean>('enableRPGCopySpecOnEnter', true);
-
   // Check if Smart Enter is enabled
   const smartRPGEnterMode = config.get<string>('enableRPGSmartEnter', 'fixedOnly');
   if (!smartRPGEnterMode || smartRPGEnterMode === 'disable') {
+    // Use default VS Code Enter behavior
     await vscode.commands.executeCommand('default:type', { text: rpgiv.getEOL() });
     return;
   }
@@ -43,6 +30,8 @@ export async function handleSmartEnter(editor: vscode.TextEditor, position: vsco
     return;
   }
 
+  // NEW: Read the copySpec setting
+  const copySpec = config.get<boolean>('enableRPGCopySpecOnEnter', true);
 
   const eol = rpgiv.getEOL();
   const col1To5 = text.substring(0, 5);

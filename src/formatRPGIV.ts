@@ -1,4 +1,3 @@
-
 import * as vscode from 'vscode';
 import * as rpgiv from './rpgedit';
 
@@ -25,10 +24,9 @@ function extractComment(line: string): { code: string, comment: string | null } 
 
 export const formatRPGIV = (input: string, splitOffComments: boolean = false): string[] => {
   const config = rpgiv.getRPGIVFreeSettings();
-  const firstIndentLen = config.indentFirstLine - 1;
-  const contIndentLen = config.indentContLines - 1;
+  const firstIndentLen = config.leftMargin - 1;
+  const contIndentLen = config.leftMarginContinued - 1;
   const rightMargin = config.rightMargin;
-  const srcRcdLen = config.srcRcdLen;
   const dirIndent = config.indentDir;
 
   const indent = (n: number) => ' '.repeat(n);
@@ -61,23 +59,17 @@ export const formatRPGIV = (input: string, splitOffComments: boolean = false): s
 
 
   const addToken = (token: string, tokenSpacer: string = '', addIndent = true) => {
-
     const tokenLen = token.length + tokenSpacer.length;
-    let margin = rightMargin;
 
-    if (currentLength + tokenLen >= margin && currentLength + tokenLen < srcRcdLen) {
-      margin = srcRcdLen;
-   //   flushLine(true, addIndent);
-    }
-    if (currentLength + tokenLen > margin) { // &&    !isSpecialPrefixToken(token)) {
-      if (currentLine.trim().length > 0) {
-        flushLine(true, addIndent);
-      }
-      currentLine += token + tokenSpacer;
-      currentLength = contIndentLen + tokenLen;
-      return;
+    // If adding this token would exceed the right margin, flush the current line
+    if (currentLength + tokenLen > rightMargin) {
+        // Only flush if there's already content on the line
+        if (currentLine.trim().length > 0) {
+            flushLine(true, addIndent);
+        }
     }
 
+    // Now add the token
     currentLine += token + tokenSpacer;
     currentLength += tokenLen;
   };
@@ -315,44 +307,5 @@ function tokenizeWithSpacing_ALT2(line: string): { tokens: string[], spacers: st
     tokens.push(match[1]);
     spacers.push(match[match.length - 1] || '');
   }
-  return { tokens, spacers };
-}
-function tokenizeWithSpacing_ALT(line: string): { tokens: string[], spacers: string[] } {
-  const tokens: string[] = [];
-  const spacers: string[] = [];
-
-  // This regex matches quoted strings, identifiers, keywords, operators, and punctuation, and always separates out whitespace.
-  const regex = /('([^']|'')*')|[A-Z#$@][A-Z0-9#$@_]*|\*IN\d{2}|[(){}\[\]+\-*/=<>:,;]|[^\sA-Z0-9_]+|\s+/gi;
-
-  let match: RegExpExecArray | null;
-  let lastIndex = 0;
-  while ((match = regex.exec(line)) !== null) {
-    const part = match[0];
-    const start = match.index;
-    // If there is a gap between the last match and this one, it's whitespace
-    if (start > lastIndex) {
-      const space = line.slice(lastIndex, start);
-      if (tokens.length > 0) {
-        spacers[spacers.length - 1] += space;
-      }
-    }
-    if (!/\s+/.test(part)) {
-      tokens.push(part);
-      spacers.push('');
-    } else {
-      // If it's whitespace, add it as a spacer for the previous token
-      if (tokens.length > 0) {
-        spacers[spacers.length - 1] += part;
-      }
-    }
-    lastIndex = start + part.length;
-  }
-  // If there's trailing whitespace after the last token, add it as a spacer
-  if (lastIndex < line.length && tokens.length > 0) {
-    spacers[spacers.length - 1] += line.slice(lastIndex);
-  }
-  // Ensure spacers array matches tokens array length
-  while (spacers.length < tokens.length) spacers.push('');
-
   return { tokens, spacers };
 }

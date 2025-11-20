@@ -156,7 +156,7 @@ export function registerConvertToRPGFreeCommand(context: vscode.ExtensionContext
           convertedText = '' + eol + convertedText;
         }
         else {
-          const indent = config.indentFirstLine - 1;
+          const indent = config.leftMargin - 1;
           const prefix = ' '.repeat(Math.max(0, indent)) + '// ';
           convertedText = comments.map(c => prefix + c).join(eol) + eol + convertedText;
         }

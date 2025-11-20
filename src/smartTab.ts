@@ -172,6 +172,16 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
   const langId = doc.languageId;
   if (langId !== 'rpgle' && langId !== 'sqlrpgle' && langId !== 'rpginc') return;
 
+  // Read config at runtime to respect user setting changes
+  const runtimeConfig = vscode.workspace.getConfiguration('rpgiv2free');
+  const smartTabEnabled = runtimeConfig.get<boolean>('enableRPGSmartTab', true);
+
+  // If Smart Tab is disabled, use default VS Code behavior
+  if (!smartTabEnabled) {
+    await vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
+    return;
+  }
+
   const cursor = editor.selection.active;
   const line = doc.lineAt(cursor.line);
   const lineText = line.text;
@@ -189,8 +199,6 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
       return;
     }
   } else {
-    // Fixed-format document OR current line is fixed-format: do NOT accept suggestions.
-    // If suggestion widget is visible, delegate to VS Code default tab/outdent so Tab still moves cursor.
     const suggestVisible = Boolean((vscode as any).window.activeTextEditor?.options?.suggestWidgetVisible);
     if (suggestVisible) {
       await vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
@@ -198,25 +206,23 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
     }
   }
 
-  // If still considered free-format (and no suggestion committed), fall back to default Tab behavior.
   if (isFreeFormatDoc) {
     await vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
     return;
   }
 
-  const config = vscode.workspace.getConfiguration('rpgiv2free');
-  const maxRPGLen = config.get<number>('maxRPGSourceLength', 100);
+  // DELETE THIS LINE (line 204):
 
   // Is it a Fixed Format statement?
   const specChar = getStmtRule(lineText);
   if (lineText.length < 6 || !specChar || !RPG_TAB_STOPS[specChar]) {
-    await vscode.commands.executeCommand(reverse ? 'outdent' : 'tab'); // Add missing await
+    await vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
     return;
   }
 
   const stops = getTabStops(lineText);
   if (stops.length === 0 || (stops[0] === 0 && stops.length === 1)) {
-    await vscode.commands.executeCommand(reverse ? 'outdent' : 'tab'); // Add missing await
+    await vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
     return;
   }
 
@@ -227,11 +233,7 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
   // 1. If there is a next tab stop, move to it (including the last one)
   if (typeof newCol === "number" && newCol > cursor.character) {
     // Pad if needed
-    if (
-      newCol > cursor.character &&
-      newCol >= lineText.length
-      //   && newCol <= maxRPGLen
-    ) {
+    if (newCol > cursor.character && newCol >= lineText.length) {
       const padding = " ".repeat(newCol - lineText.length);
       await editor.edit(editBuilder => {
         editBuilder.insert(
@@ -252,9 +254,8 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
       range = new vscode.Range(cursor.line, startCol, cursor.line, endCol);
     }
 
-    // Move cursor
-    const safeColumn = Math.min(newCol, maxRPGLen);
-    const newPos = new vscode.Position(cursor.line, safeColumn);
+    // Move cursor (REPLACE line 241 - remove Math.min)
+    const newPos = new vscode.Position(cursor.line, newCol);
     editor.selection = new vscode.Selection(newPos, newPos);
     editor.revealRange(new vscode.Range(newPos, newPos));
     if (range) {
@@ -275,9 +276,8 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
       }, { undoStopBefore: false, undoStopAfter: false });
     }
 
-    // Move cursor
-    const safeColumn = Math.min(newCol, maxRPGLen - 1);
-    const newPos = new vscode.Position(cursor.line, safeColumn);
+    // Move cursor (REPLACE line 256 - remove Math.min)
+    const newPos = new vscode.Position(cursor.line, newCol);
     editor.selection = new vscode.Selection(newPos, newPos);
     editor.revealRange(new vscode.Range(newPos, newPos));
     return;

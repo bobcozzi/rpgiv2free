@@ -127,18 +127,18 @@ Include a comment with a `%SUBST(...)` assignment as an optional alternative for
 
 Default: `true`
 
-### `rpgiv2free.maxFreeFormatLineLength`
+### `rpgiv2free.rightMargin`
 Max length for converted free format lines (right margin).
 Since this extension is converting to free format RPG IV, it is limited to 80 characters line width/margins. However, if you are intending to move to fully free format (i.e., add the **FREE directive to line 1, column 1) then you may set this margin to more than 80.
 Note: We default to 76 to allow for a blank and a + sign to be added for continuation lines that contains quoted strings to safely fit within the standard 80-character line width.
 Default: `76`
 
-### `rpgiv2free.indentFirstLine`
+### `rpgiv2free.leftMargin`
 First free format line indent/spaces (in bytes).
 
 Default: `10`
 
-### `rpgiv2free.indentContinuedLines`
+### `rpgiv2free.leftMarginContinued`
 Secondary free format lines indent/spaces (in bytes).
 
 Default: `12`

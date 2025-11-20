@@ -1,5 +1,3 @@
-
-
 import * as vscode from 'vscode';
 import * as rpgiv from '../rpgedit';
 
@@ -16,35 +14,24 @@ export function convertTESTZ(
 ): { lines: string[], action: string } {
 
     const lines: string[] = [];
-    let action = '';  // reserved for future use
+    let action = '';
 
-    let freeForm = '';
-    let bif = '';
-    let extraIndy = '';
-    let compBool = '';
-    let compOper = '';
-    let arrIndex = '';
-    let target = '';
-    const [arr, idx] = rpgiv.splitArray(factor2);
-
-    if (idx && !/^\d+$/.test(idx.trim())) {
-        target = idx.trim();
-        arrIndex = `:${target}`;
-    }
     // Add a comment with the original statement, for reference purposes
     lines.push(` // TESTZ ${factor2} ${result} ${resInd1} ${resInd2} ${resInd3}`);
 
     if (resInd1 && resInd1.trim() !== '') {
-        freeForm = `*in${resInd1} = (%BITAND(X'F0': %SUBST(${result}:1:1)) = %BITAND(X'F0':'A'))`;
+        const freeForm = `*in${resInd1} = (%BITAND(X'F0': %SUBST(${result}:1:1)) = %BITAND(X'F0':'A'))`;
         lines.push(freeForm);
     }
-    if (resInd1 && resInd1.trim() !== '') {
-        freeForm = `*in${resInd2} = (%BITAND(X'F0': %SUBST(${result}:1:1)) = %BITAND(X'F0':'J'))`;
+
+    if (resInd2 && resInd2.trim() !== '') {
+        const freeForm = `*in${resInd2} = (%BITAND(X'F0': %SUBST(${result}:1:1)) = %BITAND(X'F0':'J'))`;
         lines.push(freeForm);
     }
-    if (resInd1 && resInd1.trim() !== '') {
-        freeForm = `*in${resInd3} = NOT (%BITAND(X'F0': %SUBST(${result}:1:1)) =`;
-        freeForm += ` %BITAND(X'F0':'A') or %BITAND(X'F0': %SUBST(${result}:1:1)) = %BITAND(X'F0':'J'))`;
+
+    if (resInd3 && resInd3.trim() !== '') {
+        // FIXED: Build as single string OR separate properly
+        const freeForm = `*in${resInd3} = NOT (%BITAND(X'F0': %SUBST(${result}:1:1)) = %BITAND(X'F0':'A') or %BITAND(X'F0': %SUBST(${result}:1:1)) = %BITAND(X'F0':'J'))`;
         lines.push(freeForm);
     }
 
