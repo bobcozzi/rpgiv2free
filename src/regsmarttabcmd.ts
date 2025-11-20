@@ -40,10 +40,9 @@ export function registerSmartTabCommands(
     setSmartTabEnabled(!getSmartTabEnabled());
     await context.globalState.update('rpgSmartTabEnabled', getSmartTabEnabled());
     updateSmartTabStatusBar();
-    const editor = vscode.window.activeTextEditor;
-    if (editor) {
-      applyColumnarDecorations(editor, getSmartTabEnabled());
-    }
+
+    // Don't touch decorations here - the ruler is controlled by enableRPGColumnGuides setting
+    // The onDidChangeTextEditorSelection listener will handle redrawing ruler lines
   });
   context.subscriptions.push(toggleRPGSmartTabCmd);
   updateSmartTabStatusBar();

@@ -119,7 +119,11 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   const visibleRangesListener = vscode.window.onDidChangeTextEditorVisibleRanges((event) => {
-    if (rpgSmartTabEnabled) {
+    // Check the enableRPGColumnGuides setting, not rpgSmartTabEnabled
+    const config = vscode.workspace.getConfiguration('rpgiv2free');
+    const rulerEnabled = config.get<boolean>('enableRPGColumnGuides', true);
+
+    if (rulerEnabled) {
       applyColumnarDecorations(event.textEditor, true);
     }
   });
@@ -130,19 +134,28 @@ export async function activate(context: vscode.ExtensionContext) {
   // add listener for character/non-tab cursor movement
   context.subscriptions.push(
     vscode.window.onDidChangeTextEditorSelection((e) => {
-      if (!e.textEditor || !rpgSmartTabEnabled) return;
+      if (!e.textEditor) return;
       if (rpgiv.isNOTFixedFormatRPG(e.textEditor.document)) return;
+
+      // Check ruler setting separately from Smart Tab
+      const config = vscode.workspace.getConfiguration('rpgiv2free');
+      const rulerEnabled = config.get<boolean>('enableRPGColumnGuides', true);
 
       if (tabStopDebounceTimer) clearTimeout(tabStopDebounceTimer);
 
       tabStopDebounceTimer = setTimeout(async () => {
         try {
-          await highlightCurrentTabZone(e.textEditor);
+          // Only highlight tab zone if Smart Tab is enabled
+          if (rpgSmartTabEnabled) {
+            await highlightCurrentTabZone(e.textEditor);
+          }
 
-          // Only update the current line's tab boundaries
-          const activeLine = e.selections[0]?.active.line;
-          if (typeof activeLine === 'number') {
-            drawTabStopLines(e.textEditor, activeLine);
+          // Always draw vertical ruler lines if ruler setting is enabled
+          if (rulerEnabled) {
+            const activeLine = e.selections[0]?.active.line;
+            if (typeof activeLine === 'number') {
+              drawTabStopLines(e.textEditor, activeLine);
+            }
           }
         } catch (err) {
           console.error("Tab zone debounce error:", err);
@@ -189,6 +202,14 @@ export async function activate(context: vscode.ExtensionContext) {
       const v = vscode.workspace.getConfiguration().get<boolean>('rpgiv2free.enableRPGSmartTab', true);
       vscode.commands.executeCommand('setContext', 'rpgiv2free.smartTabEnabled', v);
     }
+
+    // NEW: Re-evaluate ruler decorations when ruler setting changes
+    if (e.affectsConfiguration('rpgiv2free.enableRPGColumnGuides')) {
+      const activeEditor = vscode.window.activeTextEditor;
+      if (activeEditor && rpgiv.isRPGDocument(activeEditor.document)) {
+        evaluateAndApplyFeatures(activeEditor.document);
+      }
+    }
   });
 
   context.subscriptions.push(
@@ -222,9 +243,9 @@ function evaluateAndApplyFeatures(document: vscode.TextDocument) {
     return;
   }
 
-  // NEW: Check enableRPGRuler setting separately from Smart Tab
+  // NEW: Check enableRPGColumnGuides setting separately from Smart Tab
   const config = vscode.workspace.getConfiguration('rpgiv2free');
-  const rulerEnabled = config.get<boolean>('enableRPGRuler', true);
+  const rulerEnabled = config.get<boolean>('enableRPGColumnGuides', true);
 
   if (rulerEnabled) {
     applyColumnarDecorations(editor, true);

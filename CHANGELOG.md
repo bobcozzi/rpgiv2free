@@ -2,11 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
+
+## [1.12.5] - 2025-11-20
+- Corrected issue with the timing of when the Verticle Column Rulers/Guidelines appear.
+
 ## [1.12.4] - 2025-11-20
 - **New Settings UI Commands**: Added convenient right-click context menu options to quickly access extension settings:
   - "RPGIV2Free Settings" - Opens this extension's settings directly
   - "Code for IBM i Settings" - Opens the Code for IBM i extension settings
-- **New Columnar-Guides/Ruler-Only Setting**: Added `enableRPGRuler` setting to show columnar guidelines independently of Smart Tab/Enter features. Users can now display the fixed-format RPG columnar guides without enabling Smart Tab or Smart Enter functionality.
+- **New Columnar-Guides/Ruler-Only Setting**: Added `enableRPGColumnGuides` setting to show columnar guidelines independently of Smart Tab/Enter features. Users can now display the fixed-format RPG columnar guides without enabling Smart Tab or Smart Enter functionality.
 - **Smart Tab/Enter Respect Settings**: Fixed an issue where Smart Tab and Smart Enter were intercepting keystrokes even when disabled in settings. These features now properly check their enable/disable state before activating.
 - **Improved Settings UI**: Changed `convertBINTOINT` setting from numeric dropdown to string-based options with descriptive labels:
   - "disable" - Do not convert to Integer

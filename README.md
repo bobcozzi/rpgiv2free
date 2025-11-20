@@ -92,7 +92,7 @@ Enables the RPG Smart Enter key behavior which adds a new line without breaking 
 
 Default: `fixedOnly`
 
-### `rpgiv2free.enableRPGCopySpecOnEnter`
+### `rpgiv2free.enableRPGSmartEnterDupSpec`
 When enableRPGSmartEnter is not disabled, the new line will receive the same specification in column 6 as the current line. In addition the cursor is moved over to the first non-blank column in original line.
 
 - `true` — RPG Fixed Format Smart Enter adds the same spec type to new lines.

@@ -10,7 +10,7 @@
   "icon": "images/rpgiv2free.png",
   "preview": false,
   "private": false,
-  "version": "1.12.4",
+  "version": "1.12.5",
   "license": "SEE LICENSE in license.txt",
   "engines": {
     "vscode": "^1.70.0",
@@ -236,7 +236,7 @@
         },
         "rpgiv2free.enableRPGSmartEnter": {
           "type": "string",
-          "title": "Enable RPG non-destructive Smart Enter key",
+          "title": "Enable RPG Smart Enter key (non-destructive)",
           "enum": [
             "fixedOnly",
             "fixedAndFree",
@@ -252,23 +252,23 @@
           "default": "fixedOnly",
           "description": "Controls the RPG Smart Enter key behavior."
         },
+        "rpgiv2free.enableRPGSmartEnterDupSpec": {
+          "type": "boolean",
+          "title": "Duplicate Fixed Format Spec on Smart Enter",
+          "default": true,
+          "description": "When RPG Smart Enter is enabled, then on Enter, Duplicate the RPG spec and align cursor to prior entry."
+        },
         "rpgiv2free.enableRPGSmartTab": {
           "type": "boolean",
           "title": "Enable Smart Columnar Tab in fixed format",
           "default": true,
           "description": "Enable RPG Smart Tab/Shift+Tab navigation in RPG IV fixed-format source lines."
         },
-        "rpgiv2free.enableRPGRuler": {
+        "rpgiv2free.enableRPGColumnGuides": {
           "type": "boolean",
-          "title": "Enable RPG Fixed-Format Columnar Ruler",
+          "title": "Enable RPG Fixed-Format Columnar Guides",
           "default": true,
-          "description": "Show vertical columnar ruler/guidelines for fixed-format RPG (independent of Smart Tab/Enter features)."
-        },
-        "rpgiv2free.enableRPGCopySpecOnEnter": {
-          "type": "boolean",
-          "title": "Copy Fixed Format Spec to next line on Enter",
-          "default": true,
-          "description": "When RPG Smart Enter is enabled, copy the RPG spec letter to column 6 and align the cursor after it."
+          "description": "Show vertical columnar guidelines for fixed-format RPG (independent of Smart Tab/Enter features)."
         },
         "rpgiv2free.verticalTabColor_DarkMode": {
           "type": "string",

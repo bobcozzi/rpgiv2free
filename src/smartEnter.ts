@@ -31,7 +31,7 @@ export async function handleSmartEnter(editor: vscode.TextEditor, position: vsco
   }
 
   // NEW: Read the copySpec setting
-  const copySpec = config.get<boolean>('enableRPGCopySpecOnEnter', true);
+  const copySpec = config.get<boolean>('enableRPGSmartEnterDupSpec', true);
 
   const eol = rpgiv.getEOL();
   const col1To5 = text.substring(0, 5);
