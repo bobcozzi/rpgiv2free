@@ -61,12 +61,35 @@ export const formatRPGIV = (input: string, splitOffComments: boolean = false): s
   const addToken = (token: string, tokenSpacer: string = '', addIndent = true) => {
     const tokenLen = token.length + tokenSpacer.length;
 
-    // If adding this token would exceed the right margin, flush the current line
+    // Special handling for parens
+    const isClosingParen = token === ')';
+    const isOpeningParen = token === '(';
+
+    // If adding this token would exceed the right margin
     if (currentLength + tokenLen > rightMargin) {
-        // Only flush if there's already content on the line
-        if (currentLine.trim().length > 0) {
-            flushLine(true, addIndent);
+      // Keep closing parens with previous content even if exceeding margin
+      if (isClosingParen && currentLine.trim().length > 0) {
+        currentLine += token + tokenSpacer;
+        currentLength += tokenLen;
+        return;
+      }
+
+      // Keep opening parens with previous token (function name) if possible
+      if (isOpeningParen && currentLine.trim().length > 0) {
+        // Check if previous token looks like a function name (%SUBST, %BITOR, etc.)
+        const trimmed = currentLine.trimEnd();
+        if (/[A-Z0-9_]$/i.test(trimmed)) {
+          // Keep the ( with the function name
+          currentLine += token + tokenSpacer;
+          currentLength += tokenLen;
+          return;
         }
+      }
+
+      // For all other tokens, flush if there's content on the line
+      if (currentLine.trim().length > 0) {
+        flushLine(true, addIndent);
+      }
     }
 
     // Now add the token

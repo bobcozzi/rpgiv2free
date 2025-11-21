@@ -625,6 +625,33 @@ async function convertOpcodeToFreeFormat(
       }
       break;
 
+    // MxxxZO  (Move high/low Zone to high/low Zone)
+    case 'MHHZO':
+      ({ lines: opLines, action: opAction } = op.convertMHHZO(fullOpcode, factor1, factor2, result, resInd1, resInd2, resInd3, extraDCL));
+      if (opLines && opLines.length > 0) {
+        newLines.push(...opLines);
+      }
+      break;
+    case 'MHLZO':
+      ({ lines: opLines, action: opAction } = op.convertMHLZO(fullOpcode, factor1, factor2, result, resInd1, resInd2, resInd3, extraDCL));
+      if (opLines && opLines.length > 0) {
+        newLines.push(...opLines);
+      }
+      break;
+    case 'MLHZO':
+      ({ lines: opLines, action: opAction } = op.convertMLHZO(fullOpcode, factor1, factor2, result, resInd1, resInd2, resInd3, extraDCL));
+      if (opLines && opLines.length > 0) {
+        newLines.push(...opLines);
+      }
+      break;
+    case 'MLLZO':
+      ({ lines: opLines, action: opAction } = op.convertMLLZO(fullOpcode, factor1, factor2, result, resInd1, resInd2, resInd3, extraDCL));
+      if (opLines && opLines.length > 0) {
+        newLines.push(...opLines);
+      }
+      break;
+
+      ////////////
     case 'BITON':
       ({ lines: opLines, action: opAction } = op.convertBITON(fullOpcode, factor1, factor2, result, resInd1, resInd2, resInd3, extraDCL));
       if (opLines && opLines.length > 0) {

@@ -2,9 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.6] - 2025-11-21
+- The Move High/Low Zone opcodes (MHHZO, MHLZO, MLLZO, MLHZO) are now incorporated into the conversion and are converted to %BITxx opcodes.
+- Corrected a small issue with RPG formatting/pagination with orphaned parens.
+- Added context menu options for direct access to the VS CODE for IBM i Settings and RPGIV2FREE Settings panels.
 
 ## [1.12.5] - 2025-11-20
-- Corrected issue with the timing of when the Verticle Column Rulers/Guidelines appear.
+- Corrected a timing issue when the Verticle Column Rulers/Guidelines appear.
 
 ## [1.12.4] - 2025-11-20
 - **New Settings UI Commands**: Added convenient right-click context menu options to quickly access extension settings:
