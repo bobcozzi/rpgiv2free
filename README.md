@@ -231,6 +231,7 @@ If you want to disable inline suggestions only for RPGLE and/or SQLRPGLE files, 
 ## License
 
 This project is licensed. See the LICENSE.txt file for details.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Support
 
