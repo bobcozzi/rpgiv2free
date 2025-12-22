@@ -2,10 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.8] - 2025-12-22
+- **Issue #22 Resolved**: Enhanced the look-ahead logic for `END-xx` statement placement when processing `DCL-xx` declarations. The analyzer now more thoroughly examines free-format source code to correctly determine where declarations should end, preventing misplaced or missing END statements.
+
 ## [1.12.7] - 2025-12-03
 - **License Change**: Switched from custom license to MIT License for broader open-source compatibility
 - Removed legacy customized licensing verbiage
--
+
 ## [1.12.6] - 2025-11-21
 - The Move High/Low Zone opcodes (MHHZO, MHLZO, MLLZO, MLHZO) are now incorporated into the conversion and are converted to %BITxx opcodes.
 - Corrected a small issue with RPG formatting/pagination with orphaned parens.

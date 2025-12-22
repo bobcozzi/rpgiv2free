@@ -231,7 +231,7 @@ export function registerConvertToRPGFreeCommand(context: vscode.ExtensionContext
           vscode.window.showErrorMessage('Failed to apply conversion edits. Please try again.');
         }
         else {
-          //  applyColumnarDecorations(editor, false);
+
           // Redraw guides only for lines that are still fixed-format
           const doc = editor.document;
           const updatedLines = new Set<number>();

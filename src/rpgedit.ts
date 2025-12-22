@@ -239,17 +239,41 @@ export function isVarDcl(name: string): boolean {
   return false;
 }
 
-// for for not executable source lines, like comments, blanks line, or compiler directives
-export function isEmptyStmt(line: string): boolean {
-  const bBlankLine = line.trim().length < 6;
+// for not executable source lines, like comments, blanks line, or compiler directives
+/**
+ * Determines if a line represents an empty statement (no executable content).
+ * Supports fixed format, hybrid free format (column 8-80), and full free format RPG IV.
+ * Includes directives as empty statements.
+ *
+ * @param line - The source line to check
+ * @param document - Optional document for format detection; if not provided, uses heuristics
+ * @returns true if the line is an empty statement (non-comment with no content) or a directive
+ */
+export function isEmptyStmt(line: string, document?: vscode.TextDocument): boolean {
+  // Comments are handled separately by isComment(), not here
+  if (isComment(line)) {
+    return false;
+  }
 
-  const bEmptyStmt = (
-    line.length > 5 &&
-    line[5].trim() !== '' &&
-    getCol(line, 8, 80).trim() === ''
-  );
+  // Directives are treated as empty statements
+  if (isDirective(line)) {
+    return true;
+  }
 
-  return (bBlankLine || bEmptyStmt);
+  // Determine RPG format type if document is provided
+  const isFreeFormat = document ? isFreeFormatRPG(document) : null;
+
+  if (isFreeFormat === true) {
+    // Full free-format RPG IV (**FREE directive)
+    // A statement is empty if the entire line is only whitespace
+    return line.trim() === '';
+  }
+
+  // Fixed format or hybrid free format (respects column 8-80 boundary)
+  // In both cases, the statement content area is columns 8-80
+  // A statement is empty if this area contains only whitespace
+  const statementArea = getCol(line, 8, 80).trim();
+  return statementArea === '';
 }
 
 export const rpgDataTypes = [
@@ -357,15 +381,15 @@ export function getNextSrcStmt(allLines: string[], startIndex: number): string |
 }
 
 // for non-executable source lines, like comments, blanks line, or compiler directives
-export function isSkipStmt(line: string): boolean {
+export function isSkipStmt(line: string, document?: vscode.TextDocument): boolean {
   const bComment = isComment(line);  // Assumes isComment() handles RPG IV logic
-  const bEmptyStmt = isEmptyStmt(line);
+  const bEmptyStmt = isEmptyStmt(line, document);
   const bDirective = isDirective(line);
   return bComment || bDirective || bEmptyStmt;
 }
 // for non-executable source lines, like comments, blanks line, or compiler directives
-export function isSkipNonComment(line: string): boolean {
-  const bEmptyStmt = isEmptyStmt(line);
+export function isSkipNonComment(line: string, document?: vscode.TextDocument): boolean {
+  const bEmptyStmt = isEmptyStmt(line, document);
   const bDirective = isDirective(line);
   return bDirective || bEmptyStmt;
 }
@@ -522,6 +546,9 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
     if (trimmed && !bFixedFormat) {
       const tokens = trimmed.split(/\s+|\(/);
       const firstToken = tokens[0].toUpperCase();
+      if (firstToken && isValidOpcode(firstToken)) {
+        break;
+      }
 
       // is a free format calc spec?
       if (isFreeFormCalcStmt(line)) {
@@ -542,7 +569,6 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
 
     // By now we should be in only fixed format arena
     const bValidDefn = isValidFixedDefnLine(line);
-
 
     if (!bValidDefn) {
       break;
@@ -845,29 +871,30 @@ export function isFreeFormCalcStmt(line: string): boolean {
   // Simple procedure call: myProc(...);
   // Built-in only call: %SUBST(...); etc.
   // Require top-level ';' so we don’t misfire on declarations
-  let inQuote = false, depth = 0, hasTopLevelSemi = false;
-  for (let i = 0; i < s.length; i++) {
-    const ch = s[i];
-    if (ch === "'") {
-      if (inQuote && s[i + 1] === "'") { i++; continue; }
-      inQuote = !inQuote; continue;
-    }
-    if (inQuote) continue;
-    if (ch === '(') { depth++; continue; }
-    if (ch === ')') { if (depth > 0) depth--; continue; }
-    if (ch === ';' && depth === 0) { hasTopLevelSemi = true; break; }
-  }
-  if (!hasTopLevelSemi) return false;
-
   // Ignore DCL/END/CTL directives on free-form lines
   const startsWithDirective = /^(DCL-|END-|CTL-)/i.test(s);
   if (startsWithDirective) return false;
 
-  // Proc call: identifier(...);
-  if (/^[A-Za-z_][A-Za-z0-9_#$@]*\s*\(.*\)\s*;?$/.test(s)) return true;
+  // Extract first token to check for opcode
+  const tokens = s.split(/\s+/);
+  const firstToken = tokens[0].toUpperCase();
 
-  // Built-in call: %NAME(...);
-  if (/^%[A-Za-z0-9_]+\s*\(.*\)\s*;?$/.test(s)) return true;
+  if (!firstToken) return false;
+
+  // Check if first token is a valid RPG opcode
+  if (isValidOpcode(firstToken)) {
+    return true;
+  }
+
+  // Procedure call: identifier(...) - semicolon is optional for multi-line statements
+  if (/^[A-Za-z_][A-Za-z0-9_#$@]*\s*\(.*\);?$/.test(s)) {
+    return true;
+  }
+
+  // Built-in function call: %NAME(...) - semicolon is optional for multi-line statements
+  if (/^%[A-Za-z0-9_]+\s*\(.*\);?$/.test(s)) {
+    return true;
+  }
 
   return false;
 }
