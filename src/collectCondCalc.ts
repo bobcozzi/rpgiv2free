@@ -53,6 +53,21 @@ export function collectCondCalc(allLines: string[], startIndex: number): {
     for (i = firstIndex; i < allLines.length; i++) {
         const line = allLines[i];
 
+        // Check spec type first - if not a C spec, break out
+        if (rpgiv.getSpecType(line) !== 'c') {
+            // But if it's a comment or blank, skip it and continue looking
+            if (rpgiv.isComment(line)) {
+                comments.push(line);
+                indexes.push(i);
+                continue;
+            }
+            else if (rpgiv.isSkipStmt(line)) {
+                continue;
+            }
+            // Not a C spec and not a comment/blank, so we're done
+            break;
+        }
+
         if (rpgiv.isComment(line)) {
             comments.push(line);
             indexes.push(i);
@@ -60,9 +75,6 @@ export function collectCondCalc(allLines: string[], startIndex: number): {
         }
         else if (rpgiv.isSkipStmt(line)) {
             continue;
-        }
-        if (rpgiv.getSpecType(line) !== 'c') {
-            break;
         }
 
         // Unlike other collectors, we just want to find the top of the indicator stack

@@ -84,9 +84,26 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number, con
   i++;
   const nextLine = allLines[i];
   // Continue collecting ANDxx / ORxx lines
-  while (i < allLines.length &&
-    ((isSelect && rpgiv.isOpcodeWHENxx(allLines[i])) || rpgiv.isOpcodeANDxxORxx(allLines[i]))) {
+  while (i < allLines.length) {
     const line = allLines[i];
+
+    // Skip over comments and blank lines to find the next opcode
+    if (rpgiv.isSkipStmt(line)) {
+      // If it's a comment, capture it
+      if (rpgiv.isComment(line)) {
+        const commentText = rpgiv.getCol(line, 8, 80).trimEnd();
+        if (commentText) {
+          comments.push(commentText);
+        }
+      }
+      i++;
+      continue;
+    }
+
+    // Check if it's an AND/OR or WHEN opcode
+    if (!((isSelect && rpgiv.isOpcodeWHENxx(line)) || rpgiv.isOpcodeANDxxORxx(line))) {
+      break;
+    }
 
     indexes.push(i);
 

@@ -2,6 +2,9 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.9] - 2025-12-26
+- **Compound Conditional Statement Fix**: Resolved an issue where fixed format compound boolean conditional blocks containing multiple OR/AND operations would be truncated when embedded comments or blank lines appeared within the statement block. The conversion now properly skips over comments and blank lines to collect the complete conditional expression and correctly preserves embedded comments in the converted output.
+-
 ## [1.12.8] - 2025-12-22
 - **Issue #22 Resolved**: Enhanced the look-ahead logic for `END-xx` statement placement when processing `DCL-xx` declarations. The analyzer now more thoroughly examines free-format source code to correctly determine where declarations should end, preventing misplaced or missing END statements.
 

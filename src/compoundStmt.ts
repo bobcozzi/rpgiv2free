@@ -78,6 +78,13 @@ export function expandCompoundRange(lines: string[], selectedIndex: number): num
 
     while (end < lines.length) {
       const nextLine = lines[end];
+
+      // Skip over comments and blank lines to find the next opcode
+      if (rpgiv.isSkipStmt(nextLine)) {
+        end++;
+        continue;
+      }
+
       if (!(rpgiv.isOpcodeANDxxORxx(nextLine) ||
         ((bIsSelect || bIsWhen) && rpgiv.isOpcodeWHENxx(nextLine)))) {
         break;
