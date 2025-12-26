@@ -2,6 +2,9 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.11] - 2025-12-26
+- **Context Menu Reorganization**: Rearranged "Comment RPG IV Source Line" and "Uncomment RPG IV Source Line" commands to appear after the primary "Convert to RPG IV Free Format" command with a visual separator for better menu organization.
+
 ## [1.12.10] - 2025-12-26
 - **New Context Menu Commands**: Added "Comment RPG IV Source Line" and "Uncomment RPG IV Source Line" commands to the right-click context menu for RPG files.
   - **Comment**: Converts active source lines to comments by inserting an asterisk (`*`) at column 7 in fixed-format code (shifting all existing content on the line from column 7 to the right by one position), or by prepending `//` to free-format lines while preserving indentation.

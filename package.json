@@ -10,7 +10,7 @@
   "icon": "images/rpgiv2free.png",
   "preview": false,
   "private": false,
-  "version": "1.12.10",
+  "version": "1.12.11",
   "license": "MIT",
   "engines": {
     "vscode": "^1.70.0",
@@ -96,12 +96,12 @@
         {
           "command": "rpgiv2free.commentStatement",
           "when": "resourceExtname =~ /\\.rpg(le)?|\\.sqlrpgle|\\.rpgleinc/i",
-          "group": "navigation"
+          "group": "rpgiv2free@1"
         },
         {
           "command": "rpgiv2free.uncommentStatement",
           "when": "resourceExtname =~ /\\.rpg(le)?|\\.sqlrpgle|\\.rpgleinc/i",
-          "group": "navigation"
+          "group": "rpgiv2free@2"
         },
         {
           "command": "rpgiv2free.openSettings",
