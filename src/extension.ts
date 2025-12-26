@@ -23,6 +23,7 @@ import * as rpgiv from './rpgedit';
 import { registerConvertToRPGFreeCommand } from './regrpgiv2freecmd';
 import { registerSmartTabCommands } from './regsmarttabcmd';
 import { registerSmartEnterCommand } from './regsmartentercmd';
+import { registerCommentStatementCommand, registerUncommentStatementCommand } from './commentStmt';
 
 let rpgSmartTabEnabled = true;  // ← In-memory toggle
 
@@ -165,6 +166,8 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   registerConvertToRPGFreeCommand(context, config);
+  registerCommentStatementCommand(context);
+  registerUncommentStatementCommand(context);
 
   // Resolve the Code for IBM i API and store it globally so it’s available elsewhere
   try {

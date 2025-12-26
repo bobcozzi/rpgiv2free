@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.10] - 2025-12-26
+- **New Context Menu Commands**: Added "Comment RPG IV Source Line" and "Uncomment RPG IV Source Line" commands to the right-click context menu for RPG files.
+  - **Comment**: Converts active source lines to comments by inserting an asterisk (`*`) at column 7 in fixed-format code (shifting all existing content on the line from column 7 to the right by one position), or by prepending `//` to free-format lines while preserving indentation.
+  - **Uncomment**: Reverses the commenting process by removing the asterisk from column 7 and shifting content back left in fixed-format code, or by removing the `//` prefix from free-format lines while preserving indentation.
+  - Works with mixed-format RPG IV files by detecting each line's format individually.
+  - Works with `**FREE` format files using free-format comment notation throughout.
+  - **Usage**: Select one or more source lines in the editor and invoke the appropriate command from the right-click context menu. Operations are line-oriented and independent of statement boundaries, allowing you to comment/uncomment partial statements or individual lines within multi-line constructs.
+
 ## [1.12.9] - 2025-12-26
 - **Compound Conditional Statement Fix**: Resolved an issue where fixed format compound boolean conditional blocks containing multiple OR/AND operations would be truncated when embedded comments or blank lines appeared within the statement block. The conversion now properly skips over comments and blank lines to collect the complete conditional expression and correctly preserves embedded comments in the converted output.
 -

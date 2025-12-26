@@ -10,7 +10,7 @@
   "icon": "images/rpgiv2free.png",
   "preview": false,
   "private": false,
-  "version": "1.12.9",
+  "version": "1.12.10",
   "license": "MIT",
   "engines": {
     "vscode": "^1.70.0",
@@ -59,6 +59,14 @@
       {
         "command": "rpgiv2free.openCode4iSettings",
         "title": "Code for IBM i Settings"
+      },
+      {
+        "command": "rpgiv2free.commentStatement",
+        "title": "Comment RPG IV Source Line"
+      },
+      {
+        "command": "rpgiv2free.uncommentStatement",
+        "title": "Uncomment RPG IV Source Line"
       }
     ],
     "keybindings": [
@@ -82,6 +90,16 @@
       "editor/context": [
         {
           "command": "rpgiv2free.convertToRPGFree",
+          "when": "resourceExtname =~ /\\.rpg(le)?|\\.sqlrpgle|\\.rpgleinc/i",
+          "group": "navigation"
+        },
+        {
+          "command": "rpgiv2free.commentStatement",
+          "when": "resourceExtname =~ /\\.rpg(le)?|\\.sqlrpgle|\\.rpgleinc/i",
+          "group": "navigation"
+        },
+        {
+          "command": "rpgiv2free.uncommentStatement",
           "when": "resourceExtname =~ /\\.rpg(le)?|\\.sqlrpgle|\\.rpgleinc/i",
           "group": "navigation"
         },
