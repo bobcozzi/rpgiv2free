@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.12] - 2026-02-12
+- **MOVE/MOVEL Opcode Bug Fix**: Corrected conversion of MOVE/MOVEL opcodes when converting between numeric (ZONED and PACKED decimal) types and character:
+  - Now properly uses `%EDITC(var : 'X')` instead of `%CHAR(var)` when converting numeric to character
+  - Now properly inserts `%ZONED()` or `%DEC()` when converting character to numeric
+
 ## [1.12.11] - 2025-12-26
 - **Context Menu Reorganization**: Rearranged "Comment RPG IV Source Line" and "Uncomment RPG IV Source Line" commands to appear after the primary "Convert to RPG IV Free Format" command with a visual separator for better menu organization.
 
@@ -212,7 +217,7 @@ Is converted to:
           endFor;
 ```
 
-- All other MOVEA opcodes are roundtripped (ignored) during conversion and need to be migrated manually.
+**IMPORTANT** All other MOVEA opcodes are roundtripped (ignored) during conversion and need to be migrated manually.**
 
 ## [0.6.31] - 2025-05-29
 - Corrected an issue with CASxx blocks that would continue collecting statements past the ENDCS statement causing the "Duplicate Edits" error to appear in the editor window.

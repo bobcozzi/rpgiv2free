@@ -10,7 +10,7 @@
   "icon": "images/rpgiv2free.png",
   "preview": false,
   "private": false,
-  "version": "1.12.11",
+  "version": "1.12.12",
   "license": "MIT",
   "engines": {
     "vscode": "^1.70.0",
