@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.13] - 2026-02-13
+- Corrected an issue with %INT and EVAL vs EVALR when MOVEing between numeric and non-numeric fields.  - Now the proper EVALR is inserted when the MOVE opcode was used.
+- When converting from INT, UNS, and FLOAT to character, the length and decimal positions are no longer inserted (incorrectly) into the %xxx() conversion function.
+
 ## [1.12.12] - 2026-02-12
 - **MOVE/MOVEL Opcode Bug Fix**: Corrected conversion of MOVE/MOVEL opcodes when converting between numeric (ZONED and PACKED decimal) types and character:
   - Now properly uses `%EDITC(var : 'X')` instead of `%CHAR(var)` when converting numeric to character

@@ -213,22 +213,38 @@ export async function convertMOVE(
     else {
         if ((f2a && rfa) && ((['PACKED', 'DEC', 'DECIMAL', 'ZONED', 'INT', 'UNS', 'FLOAT'].includes(f2a.type) &&
             ['STRUCT', 'CHAR', 'VARCHAR', 'GRAPH', 'VARGRAPH'].includes(rfa.type)) ||
+
             (['STRUCT', 'CHAR', 'VARCHAR', 'GRAPH', 'VARGRAPH', 'LITERAL', 'CONST'].includes(f2a.type) &&
-                ['PACKED', 'ZONED', 'INT', 'UNS', 'FLOAT'].includes(rfa.type)))) {
+                ['PACKED', 'ZONED', 'INT', 'UNS', 'FLOAT'].includes(rfa.type))))
+        {
             let rType = (rfa.type === 'PACKED') ? 'DEC' : rfa.type;
               // Is Char to Numeric or Numeric to numeric?
-            if ((f2a && rfa) && ['DEC', 'DECIMAL', 'PACKED', 'ZONED'].includes(rType)) {
+            if ((f2a && rfa) && ['DEC','PACKED', 'ZONED', 'INT', 'UNS', 'FLOAT'].includes(rType)) {
                 let rfLen = rfa.length;
                 let rfDec = (typeof rfa.decimals === 'number') ? rfa.decimals : 0;
-                lines.push(`${result} = %${rType}(${f2} : ${rfLen} : ${rfDec})`);
+                if (['INT', 'UNS', 'FLOAT'].includes(rType)) {
+                    lines.push(`${result} = %${rType}(${f2})`);
+                }
+                else
+                {
+                    lines.push(`${result} = %${rType}(${f2} : ${rfLen} : ${rfDec})`);
+                }
             }
             else { // Is Numeric to non-numeric?
                 // lines.push(`${result} = %${rType}(${f2})`);
-                lines.push(`${result} = %editC(${f2} : 'X')`);
+                lines.push(`${oper} ${result} = %editC(${f2} : 'X')`);
             }
         }
-        else {
-            lines.push(`${result} = ${f2}`);
+        else {  // Numeric to Numeric or Char to Char or "like to like"
+            if ((f2a && rfa) &&
+                ( ['DEC', 'PACKED', 'ZONED', 'INT', 'UNS', 'FLOAT'].includes(rfa.type) ||
+                    ['DEC', 'PACKED', 'ZONED', 'INT', 'UNS', 'FLOAT'].includes(f2a.type) &&
+                    f2a.type != rfa.type)) {
+                lines.push(`${oper} ${result} = ${f2}`);
+            }
+            else {
+                lines.push(`${result} = ${f2}`);
+            }
         }
     }
 

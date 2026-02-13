@@ -1,12 +1,14 @@
 # Bob Cozzi's RPG IV to Free Format Conversion (rpgiv2free) Extension for VS CODE for i
 
-This Visual Studio Code extension helps developers convert RPG IV fixed-format statements into free-format RPG IV code effortlessly. Whether you’re working with File (F) specs, Definition (D) specs, or Embedded SQL statements, this tool streamlines the conversion to free format process by making it a one-click option from the context menu. Just put the cursor on the line(s) you want to convert to free format and select "Convert RPG IV to free format" from the context menu and bam! it is converted.
-Download from the Visual Studio CODE Marketplace: [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/CozziResearch.rpgiv2free.svg?label=VS%20Code%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=CozziResearch.rpgiv2free)).
+This Visual Studio Code extension helps developers convert RPG IV fixed-format statements into free-format RPG IV code effortlessly.
+Download this extension from the Visual Studio CODE Marketplace: [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/CozziResearch.rpgiv2free.svg?label=VS%20Code%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=CozziResearch.rpgiv2free)).
 
 For a list of changes and release notes, see the [Changelog](https://github.com/bobcozzi/rpgiv2free/blob/main/CHANGELOG.md).
 
-This extension is an RPG IV to Free Format statement converter. Select the RPG IV fixed format statements you want to convert to free format, right-click and select **Convert RPG IV to free format**. Note there are other extensions that have a similar "command name". Be sure to select the one with this exact wording to evoke this extension.
-This extension is **NOT a refactoring or modernization tool**. Its only purpose is to convert RPG IV fixed-format statements to free format RPG IV syntax. It `does not convert` legacy RPG II Cycle code.
+This extension is an **RPG IV fixed-format to Free Format** statement converter. Select the RPG IV fixed format line or lines (or all lines) that you want to convert to free format, right-click and select **Convert RPG IV to Free Format** and the statements are converted. Use the UNDO function (CMD+Z on Apple/MacOS or Ctrl+Z on Windows) to revert the conversion back to fixed format.
+Note there are other extensions that have a similar "command name". Si be certain to select the one worded exactly as **Convert RPG IV to Free Format** to evoke this extension. It will be the first context menu option listed.
+
+This extension is **NOT a refactoring or modernization tool**. Its only purpose is to convert RPG IV fixed-format statements to compatible free format RPG IV syntax. It `does not convert` legacy RPG II Cycle code. Also note that some RPG IV operation codes (`opcodes`) may not be converted directly to free format. When something cannot be converted, that code is untouched by this extension.
 
 ## Features
 
