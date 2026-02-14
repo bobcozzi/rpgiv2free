@@ -92,7 +92,7 @@ export function getVarTypeInfo(symbols: any, varName: string): {
             // Supported types (all uppercase for comparison)
             const supportedTypes =
                 ["CHAR", "VARCHAR", "GRAPH", "VARGRAPH",
-                    "PACKED", "ZONED", "INT", "UNS", "IND",
+                    "PACKED", "BINDEC", "DEC", "ZONED", "INT", "UNS", "IND",
                     "DATE", "TIME", "TIMESTAMP"];
             // Search meta keys case-insensitively
             for (const key of Object.keys(meta)) {
@@ -104,7 +104,8 @@ export function getVarTypeInfo(symbols: any, varName: string): {
                         length = meta[key] ? Number(meta[key]) : 1;
                         return { type, length };
                     }
-                    if (['PACKED', 'ZONED'].includes(type)) {
+                    // Added BINDEC support
+                    if (['PACKED', 'DEC','BINDEC','ZONED'].includes(type)) {
                         // meta[key] could be "7:2" or just "7"
                         let length: number | undefined = 1;
                         let decimals: number | undefined = undefined;

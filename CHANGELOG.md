@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.14] - 2026-02-14
+- Corrected an issue with %ZONED and %BINDEC. Neither of these built-in functions exist; the proper protocol is to use %DEC to convert any variable to numeric (other than INT and FLOAT).
+- **BINDEC Decimal Position Limitation**: Binary decimal (`B` datatype variables or `BINDEC`) are currently not recorded correctly in the IBM RPGLE extension's `symbols` database. Consequently, the RPGIV2FREE extension cannot accurately determine the number of decimal positions for BINDEC variables when converting Fixed-Format Calc specs to free format. This limitation does not affect D-specs (Definition specifications), as RPGIV2FREE reads the actual specification directly. When no decimals are detected, the default value of `0` is used. If your program contains legacy `B` datatypes, the converted Calc specs will use `0` decimal positions. You should review and correct any non-zero decimals for `B` datatype variables after conversion. Note: When the RPGLE extension's `symbol` table database is corrected, this extension will automatically adapt and properly include decimal positions.
+
 ## [1.12.13] - 2026-02-13
 - Corrected an issue with %INT and EVAL vs EVALR when MOVEing between numeric and non-numeric fields.  - Now the proper EVALR is inserted when the MOVE opcode was used.
 - When converting from INT, UNS, and FLOAT to character, the length and decimal positions are no longer inserted (incorrectly) into the %xxx() conversion function.

@@ -210,16 +210,17 @@ export async function convertMOVE(
         }
 
     }
-    else {
-        if ((f2a && rfa) && ((['PACKED', 'DEC', 'DECIMAL', 'ZONED', 'INT', 'UNS', 'FLOAT'].includes(f2a.type) &&
+    else {   // Numeric to Char or Char to Numberic or likeType = likeType (e.g., char to char)
+        if ((f2a && rfa) &&
+            ((['PACKED', 'DEC', 'DECIMAL', 'BINDEC', 'ZONED', 'INT', 'UNS', 'FLOAT'].includes(f2a.type) &&
             ['STRUCT', 'CHAR', 'VARCHAR', 'GRAPH', 'VARGRAPH'].includes(rfa.type)) ||
 
-            (['STRUCT', 'CHAR', 'VARCHAR', 'GRAPH', 'VARGRAPH', 'LITERAL', 'CONST'].includes(f2a.type) &&
-                ['PACKED', 'ZONED', 'INT', 'UNS', 'FLOAT'].includes(rfa.type))))
+           (['STRUCT', 'CHAR', 'VARCHAR', 'GRAPH', 'VARGRAPH', 'LITERAL', 'CONST'].includes(f2a.type) &&
+              ['PACKED', 'DEC', 'DECIMAL', 'BINDEC','ZONED', 'INT', 'UNS', 'FLOAT'].includes(rfa.type))))
         {
             let rType = (rfa.type === 'PACKED') ? 'DEC' : rfa.type;
-              // Is Char to Numeric or Numeric to numeric?
-            if ((f2a && rfa) && ['DEC','PACKED', 'ZONED', 'INT', 'UNS', 'FLOAT'].includes(rType)) {
+              // Is Char to Numeric?
+            if ((f2a && rfa) && ['DEC','PACKED', 'ZONED', 'BINDEC', 'INT', 'UNS', 'FLOAT'].includes(rType)) {
                 let rfLen = rfa.length;
                 let rfDec = (typeof rfa.decimals === 'number') ? rfa.decimals : 0;
                 if (['INT', 'UNS', 'FLOAT'].includes(rType)) {
@@ -227,6 +228,9 @@ export async function convertMOVE(
                 }
                 else
                 {
+                    // FIX: Always use %DEC instead of %ZONED or %BINDEC because they do not exist.
+                    // lines.push(`${result} = %${rType}(${f2} : ${rfLen} : ${rfDec})`);
+                    rType = 'DEC';
                     lines.push(`${result} = %${rType}(${f2} : ${rfLen} : ${rfDec})`);
                 }
             }
@@ -235,14 +239,26 @@ export async function convertMOVE(
                 lines.push(`${oper} ${result} = %editC(${f2} : 'X')`);
             }
         }
-        else {  // Numeric to Numeric or Char to Char or "like to like"
+        else {  // both numeric, then just do an assignment
             if ((f2a && rfa) &&
-                ( ['DEC', 'PACKED', 'ZONED', 'INT', 'UNS', 'FLOAT'].includes(rfa.type) ||
-                    ['DEC', 'PACKED', 'ZONED', 'INT', 'UNS', 'FLOAT'].includes(f2a.type) &&
-                    f2a.type != rfa.type)) {
-                lines.push(`${oper} ${result} = ${f2}`);
+                ( ['DEC', 'PACKED', 'ZONED', 'BINDEC', 'INT', 'UNS', 'FLOAT'].includes(rfa.type) &&
+                  ['DEC', 'PACKED', 'ZONED', 'BINDEC', 'INT', 'UNS', 'FLOAT'].includes(f2a.type)))
+            {
+                lines.push(`${result} = ${f2}`);
             }
-            else {
+            else if ((f2a && rfa) &&  // If one is numeric and the other isn't then do {opcode} assigment
+                ( ['DEC', 'PACKED', 'ZONED', 'BINDEC', 'INT', 'UNS', 'FLOAT'].includes(rfa.type) ||
+                  ['DEC', 'PACKED', 'ZONED', 'BINDEC', 'INT', 'UNS', 'FLOAT'].includes(f2a.type) &&
+                    f2a.type != rfa.type)) {
+                if (oper && oper != '') {
+                    lines.push(`${oper} ${result} = ${f2}`);
+                }
+                else {
+                    lines.push(`${result} = ${f2}`);
+                }
+
+            }
+            else {  // Catch-all -- likely never gets executed
                 lines.push(`${result} = ${f2}`);
             }
         }
