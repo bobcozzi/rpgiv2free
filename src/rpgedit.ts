@@ -182,6 +182,65 @@ export function getDclType(line: string): string {
   return getColUpper(line, 24, 25).trim();
 }
 
+/**
+ * Walks backwards from the given line index to find the parent definition context.
+ * This determines whether a subfield/parameter should default to Zoned (DS subfield)
+ * or Packed (PI/PR parameter) when no explicit type is specified.
+ *
+ * @param lineIndex - The current line index (0-based) to start searching from
+ * @param allLines - Array of all source lines
+ * @returns The parent definition type ('DS', 'PI', 'PR', 'S', 'C') or empty string if not found
+ */
+export function getDefnContext(lineIndex: number, allLines: string[]): string {
+  if (lineIndex < 0 || lineIndex >= allLines.length) return '';
+
+  for (let i = lineIndex - 1; i >= 0; i--) {
+    const line = allLines[i];
+
+    // Skip blank lines and comments
+    if (!line || !line.trim() || isComment(line)) continue;
+
+    // Skip continuation lines (names ending with ...)
+    if (getCol(line, 7, 80).trimEnd().endsWith('...')) continue;
+
+    // Check for fixed-format D-spec with a defnType
+    const specType = getSpecType(line);
+    if (specType === 'd') {
+      const dclType = getDclType(line).toUpperCase();
+      // Only return if it's a parent type (DS, PI, PR, S, C)
+      if (dclType && ['DS', 'PI', 'PR', 'S', 'C'].includes(dclType)) {
+        return dclType;
+      }
+      // If dclType is empty, continue searching (it might be another subfield)
+      if (!dclType) continue;
+    }
+
+    // Check for free-format DCL- statements
+    const freeDCL = getColUpper(line, 8, 25).trimStart();
+    const fullyFreeDCL = getColUpper(line, 1, 80).trimStart();
+
+    // Check if the line starts with DCL-
+    if (freeDCL.startsWith('DCL-') || fullyFreeDCL.startsWith('DCL-')) {
+      // Extract the DCL type (DS, PI, PR, S, C, SUBF, PARM)
+      const match = (freeDCL + fullyFreeDCL).match(/^DCL-(DS|PI|PR|S|C|SUBF|PARM)\b/i);
+      if (match) {
+        const dclType = match[1].toUpperCase();
+        // Only return parent types, skip SUBF and PARM
+        if (['DS', 'PI', 'PR', 'S', 'C'].includes(dclType)) {
+          return dclType;
+        }
+      }
+    }
+
+    // If we hit a C-spec or other non-D spec (except H, F, P), stop searching
+    if (specType && !['d', 'h', 'f', 'p', ''].includes(specType)) {
+      break;
+    }
+  }
+
+  return ''; // No parent context found
+}
+
 export function convertCmt(line: string): string {
   let freeComment = '';
   const indent = ' '.repeat(10);

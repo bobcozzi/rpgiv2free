@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.15] - 2026-02-27
+- **PACKEVEN Keyword Support**: Added support for the PACKEVEN keyword in packed decimal field definitions. When PACKEVEN is specified, the length calculation now uses the formula `2(N-1)` instead of the standard `2N-1` to produce even-numbered digit counts. The PACKEVEN keyword is properly stripped from the converted free-format output as it's not valid in free format.
+- **Enhanced Numeric Field Type Detection**: Improved handling of numeric fields without explicit data type declarations. The converter now intelligently determines whether to default to Zoned or Packed decimal based on the parent declaration context:
+  - Data Structure (DS) subfields default to **Zoned** decimal
+  - Procedure Interface (PI) and Prototype (PR) parameters default to **Packed** decimal
+  - Added `getDefnContext()` function that walks backwards through the source to identify the parent declaration type
+- **Context-Aware Type Conversion**: The `convertTypeToKwd()` function now accepts the document context (`allLines` and `curLineIndex`) to enable intelligent type defaulting based on the surrounding code structure.
+
 ## [1.12.14] - 2026-02-14
 - Corrected an issue with %ZONED and %BINDEC. Neither of these built-in functions exist; the proper protocol is to use %DEC to convert any variable to numeric (other than INT and FLOAT).
 - **BINDEC Decimal Position Limitation**: Binary decimal (`B` datatype variables or `BINDEC`) are currently not recorded correctly in the IBM RPGLE extension's `symbols` database. Consequently, the RPGIV2FREE extension cannot accurately determine the number of decimal positions for BINDEC variables when converting Fixed-Format Calc specs to free format. This limitation does not affect D-specs (Definition specifications), as RPGIV2FREE reads the actual specification directly. When no decimals are detected, the default value of `0` is used. If your program contains legacy `B` datatypes, the converted Calc specs will use `0` decimal positions. You should review and correct any non-zero decimals for `B` datatype variables after conversion. Note: When the RPGLE extension's `symbol` table database is corrected, this extension will automatically adapt and properly include decimal positions.

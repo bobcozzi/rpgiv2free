@@ -4,6 +4,12 @@ import { convertChildVar } from './convertChildVar';
 
 const isDigits = (s: string) => /^\d+$/.test(s);
 
+// Helper function to check if a keyword exists in the keyword area
+function hasKeyword(kwdArea: string, keyword: string): boolean {
+  const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+  return regex.test(kwdArea);
+}
+
 // Function to convert D specs from fixed-format to free-format
 export function convertDSpec(lines: string[],
   entityName: string | null,
@@ -54,7 +60,7 @@ export function convertDSpec(lines: string[],
     toPosOrLen = lenMatch[1];
   }
   else {
-    length = calcLength(dataType, fromPos, toPosOrLen);
+    length = calcLength(dataType, fromPos, toPosOrLen, kwdArea);
   }
 
 
@@ -64,7 +70,7 @@ export function convertDSpec(lines: string[],
     fieldType = specPos.trim();
   }
   else {
-    ({ fieldType, kwds: kwdArea } = convertTypeToKwd(dclType.trim(), dataType.trim(), fromPos.trim(), toPosOrLen.trim(), decPos.trim(), fmt.trim(), kwdArea.trim()));
+    ({ fieldType, kwds: kwdArea } = convertTypeToKwd(dclType.trim(), dataType.trim(), fromPos.trim(), toPosOrLen.trim(), decPos.trim(), fmt.trim(), kwdArea.trim(), allLines, curLineIndex));
   }
 
   if (fieldType === '') {
@@ -267,19 +273,32 @@ function fixKeywordArgs(KwdArea: string): string {
  * - If fromPos is not all digits, length = toPos
  * - If dataType is 'P', use packed decimal rules: positions = toPos - (fromPos - 1);
  * - If positions is even, length = positions - 1; if odd, length = positions
+ * - If dataType is 'P' and PACKEVEN keyword exists, use modified calculation
  */
 // Likely need to pass in decimal positions as a string so that,
 // if decimal positions and no dataType, then assume Packed or Zoned
 // likely also need to know if this is a stand-aloe field (DCL-S) or not
 // so we can default to Packed or Zoned respectively.
-function calcLength(dataType: string, fromPos: string, toPos: string): number {
+function calcLength(dataType: string, fromPos: string, toPos: string, defnKwds?: string): number {
 
   if (dataType === 'P') {
     if (isDigits(fromPos) && isDigits(toPos)) {
       // Packed: number of digits = toPos - (fromPos - 1)
-      const positions = (parseInt(toPos, 10) - (parseInt(fromPos, 10) - 1)) * 2;
-      // Packed storage: if positions is even, subtract 1; if odd, use positions
-      return positions % 2 === 0 ? positions - 1 : positions;
+      const positions = (parseInt(toPos, 10) - (parseInt(fromPos, 10) - 1));
+
+      // Check for PACKEVEN keyword
+      if (defnKwds && hasKeyword(defnKwds, 'PACKEVEN')) {
+        // PACKEVEN: calculate length based on even positions 2(N-1)
+        // Standard packed calculation
+        const digits = 2 * (positions-1);
+        // Packed storage: if digits is even, subtract 1; if odd, use digits
+        return digits;
+      } else {
+        // Standard packed calculation 2N-1
+        const digits = (positions * 2) - 1;
+        // Packed storage: if digits is even, subtract 1; if odd, use digits
+        return digits;
+      }
     } else if (isDigits(toPos)) {
       return parseInt(toPos, 10);
     }
@@ -344,7 +363,9 @@ function convertTypeToKwd(
   toPos: string,
   dec: string,
   fmt: string,
-  inKwds: string
+  inKwds: string,
+  allLines: string[],
+  curLineIndex: number
 ): { fieldType: string; kwds: string } {
   let fieldType = '';
   const datfmtMatch = inKwds.match(/DATFMT\(([^)]+)\)/i);
@@ -354,7 +375,7 @@ function convertTypeToKwd(
     // Do conditional conversion
   }
   let kwds = '';
-  let length = calcLength(dataType, fromPos, toPos);
+  let length = calcLength(dataType, fromPos, toPos, inKwds);
   if (isDigits(fromPos)) {
     kwds += `POS(${fromPos})`;
   }
@@ -363,12 +384,24 @@ function convertTypeToKwd(
     // Data Structure Subfields that are numeric default to Zoned,
     // Stand-alone fields default to Packed
     if (dclType.trim() === '' && (!dataType || dataType.trim() === '')) {
-      dataType = 'S';
-      length = calcLength(dataType, fromPos, toPos);
+      // When dclType is empty and dataType is empty, use parent context to determine type
+      if (/^\d+$/.test(dec)) {
+        const parentContext = rpgiv.getDefnContext(curLineIndex, allLines);
+        if (parentContext === 'DS') {
+          dataType = 'S'; // Zoned for DS subfields
+        } else if (parentContext === 'PI' || parentContext === 'PR') {
+          dataType = 'P'; // Packed for procedure parameters
+        } else {
+          dataType = 'S'; // Default to Zoned if no parent found
+        }
+      } else {
+        dataType = 'S'; // Default to Zoned for non-numeric
+      }
+      length = calcLength(dataType, fromPos, toPos, inKwds);
     }
     else if (dclType.trim() === 'S' && (!dataType || dataType.trim() === '')) {
       dataType = 'P';
-      length = calcLength(dataType, fromPos, toPos);
+      length = calcLength(dataType, fromPos, toPos, inKwds);
     }
     else if (dataType.trim() === 'B') {
       if (settings.convertBINTOINT === 2 && dec === '0') { // Convert to int when dec = 0
@@ -380,14 +413,14 @@ function convertTypeToKwd(
         length = calcIntLength(dataType, fromPos, toPos); // length calc for Integers
       }
       else {
-        length = calcLength(dataType, fromPos, toPos);
+        length = calcLength(dataType, fromPos, toPos, inKwds);
       }
     }
     else if (dataType.trim() === 'I' || dataType.trim() === 'U') {
       length = calcIntLength(dataType, fromPos, toPos); // length calc for Integers
     }
     else {
-      length = calcLength(dataType, fromPos, toPos);
+      length = calcLength(dataType, fromPos, toPos, inKwds);
     }
   }
 
@@ -405,7 +438,10 @@ function convertTypeToKwd(
     }
   }
 
-  kwds += ` ${inKwds}`;
+  // Remove PACKEVEN keyword as it's not valid in free format (only used for calculation)
+  let cleanedKwds = inKwds.replace(/\bPACKEVEN\b\s*/i, '').trim();
+
+  kwds += ` ${cleanedKwds}`;
 
   switch (dataType) {
     case 'A':
