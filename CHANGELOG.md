@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.16] - 2026-03-09
+- **MIT License Headers**: Added MIT License headers to all TypeScript source files (.ts) with copyright notice for Robert Cozzi, Jr.
+- **BINDEC Datatype Support**: Added support for Binary Decimal (BINDEC/B) datatype in struct byte length calculations:
+  - Binary decimal fields with 1-4 digits are calculated as 2 bytes
+  - Binary decimal fields with 5-9 digits are calculated as 4 bytes
+
 ## [1.12.15] - 2026-02-27
 - **PACKEVEN Keyword Support**: Added support for the PACKEVEN keyword in packed decimal field definitions. When PACKEVEN is specified, the length calculation now uses the formula `2(N-1)` instead of the standard `2N-1` to produce even-numbered digit counts. The PACKEVEN keyword is properly stripped from the converted free-format output as it's not valid in free format.
 - **Enhanced Numeric Field Type Detection**: Improved handling of numeric fields without explicit data type declarations. The converter now intelligently determines whether to default to Zoned or Packed decimal based on the parent declaration context:

@@ -1,5 +1,29 @@
 
 /**
+ * MIT License
+ *
+ * Copyright (c) 2025 Robert Cozzi, Jr.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/**
  * Minimal symbol types used for struct size calculation.
  * These mirror the common shape produced by the RPGLE language server cache.
  */
@@ -53,8 +77,8 @@ export function calcStructByteLength(struct: RPGSymbolStruct): number {
 
 /**
  * Calculate the byte length of a single subItem (recursively for nested structs).
- * Supports: CHAR, VARCHAR, GRAPH, VARGRAPH, UCS2, VARUCS2, PACKED, ZONED, IND, INT, UNS,
- * DATE/TIME/TIMESTAMP (as character sizes), and nested subItems.
+ * Supports: CHAR, VARCHAR, GRAPH, VARGRAPH, UCS2, VARUCS2, PACKED, ZONED, BINDEC (B),
+ * IND, INT, UNS, DATE/TIME/TIMESTAMP (as character sizes), and nested subItems.
  * @param subItem The subItem to measure.
  */
 export function calcSubItemByteLength(subItem: RPGSymbolSubItem): number {
@@ -120,6 +144,15 @@ function calcSubItemByteLengthImpl(subItem: RPGSymbolSubItem): number {
     const precision = firstNum(zoned);
     if (precision !== undefined) {
       return precision;
+    }
+  }
+
+  // BINDEC: Binary decimal (1-4 digits: 2 bytes, 5-9 digits: 4 bytes)
+  {
+    const digits = toNum(getKeyword(meta, 'BINDEC'));
+    if (digits !== undefined) {
+      const bytes = bindecBytes(digits);
+      if (bytes !== undefined) return bytes;
     }
   }
 
@@ -223,6 +256,13 @@ function intBytes(digits: number): number | undefined {
     case 20: return 8; // 64-bit
     default: return undefined;
   }
+}
+
+/** Map RPG BINDEC digit counts to storage bytes. */
+function bindecBytes(digits: number): number | undefined {
+  if (digits >= 1 && digits <= 4) return 2;  // 1-4 digits: 2 bytes
+  if (digits >= 5 && digits <= 9) return 4;  // 5-9 digits: 4 bytes
+  return undefined;
 }
 
 function firstNum(val: unknown): number | undefined {
