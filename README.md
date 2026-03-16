@@ -10,7 +10,13 @@ Note there are other extensions that have a similar "command name". Si be certai
 
 This extension is **NOT a refactoring or modernization tool**. Its only purpose is to convert RPG IV fixed-format statements to compatible free format RPG IV syntax. It `does not convert` legacy RPG II Cycle code. Also note that some RPG IV operation codes (`opcodes`) may not be converted directly to free format. When something cannot be converted, that code is untouched by this extension.
 
-## Features
+
+## Also Check Out my IBM i CL Prompter for VS Code
+
+If you work on IBM i, you will also want to install the **CL Prompter** extension for VS Code. It provides interactive command prompting for IBM i CL commands directly inside VS Code — just like prompting on the green screen, simply position your cursor anywhere on any CL command, press F4 and the CL prompter is invoked. It is a natural companion to this extension for developers working in the IBM i development environment. Find it on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=CozziResearch.clprompter).
+
+
+## RPG IV to Free Format Features
 
 - **Convert RPG IV Fixed-Format to Free Format**:
   Once installed, right-click on any RPG IV fixed-format statement in your editor and select the “Convert RPG IV to Free Format” option from the context menu. When possible, the statement is be converted to equivalent free format RPG IV syntax.
@@ -231,7 +237,6 @@ If you want to disable inline suggestions only for RPGLE and/or SQLRPGLE files, 
   "editor.inlineSuggest.enabled": false
 }
 ```
-
 
 ## License
 

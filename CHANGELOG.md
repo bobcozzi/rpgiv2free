@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.17] - 2026-03-16
+- Release bump, updated the README.MD file.
+  - Added a notice and link to the CL Prompter extension.
+- No code changes.
+
 ## [1.12.16] - 2026-03-09
 - **MIT License Headers**: Added MIT License headers to all TypeScript source files (.ts) with copyright notice for Robert Cozzi, Jr.
 - **BINDEC Datatype Support**: Added support for Binary Decimal (BINDEC/B) datatype in struct byte length calculations:
