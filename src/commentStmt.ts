@@ -51,10 +51,10 @@ export function registerCommentStatementCommand(context: vscode.ExtensionContext
           const line = allLines[lineIndex];
 
           // Skip lines that are already comments
-          if (rpgiv.isComment(line)) continue;
+          if (rpgiv.isComment(line, doc)) continue;
 
           // Skip empty/blank/directive lines
-          if (rpgiv.isSkipStmt(line)) continue;
+          if (rpgiv.isSkipStmt(line, doc)) continue;
 
           let commentedLine = '';
 
@@ -124,7 +124,7 @@ export function registerUncommentStatementCommand(context: vscode.ExtensionConte
           const line = allLines[lineIndex];
 
           // Only process comment lines
-          if (!rpgiv.isComment(line)) continue;
+          if (!rpgiv.isComment(line, doc)) continue;
 
           let uncommentedLine = '';
 

@@ -68,11 +68,11 @@ export function isEndSrc(line: string | null | undefined): boolean {
   if (line.length >= 2 && line[0] === '*' && line[1] === '*') {
     const after = line.substring(2);
 
-    // If remainder is only spaces (i.e. "**" followed by blanks) => end of source
+    // If remainder is only spaces (i.e. "**" followed by blanks) = end of source
     if (after.trim() === '') return true;
 
     // If remainder begins with at least one space/tab then some text (i.e. "** SOME TEXT")
-    // treat as end-of-source comment marker per user requirement
+    // treat as end-of-source comment marker
     if (/^[ \t].+/.test(after)) return true;
   }
 
@@ -334,7 +334,7 @@ export function isVarDcl(name: string): boolean {
  */
 export function isEmptyStmt(line: string, document?: vscode.TextDocument): boolean {
   // Comments are handled separately by isComment(), not here
-  if (isComment(line)) {
+  if (isComment(line, document)) {
     return false;
   }
 
@@ -426,6 +426,23 @@ export function isDirective(line: string, bFreeFormOnly?: boolean): boolean {
     if (bDirective) return true;
   }
 
+  //  /FREE
+  //  /END-FREE
+  //  /TITLE
+  //  /EJECT
+  //  /SPACE
+  //  /SET     [CCSID() | DATFMT() | TIMFMT()]
+  //  /RESTORE /* restored a prior /SET operation to what it was before /SET */
+  //  /OVERLOAD [DETAIL | NODETAIL]
+  //  /CHARCOUNT [NATURAL | STDCHARSIZE]
+  //  /COPY  library/file,source-member
+  //  /INCLUDE ["hiarchical-file-system-name" | library/source-file,source-member]
+  //  /DEFINE symbol
+  //  /UNDEFINE symbol
+  //  /IF [NOT [condition | DEFINED(symbol)]]
+  //  /ELSE
+  //  /ENDIF
+
   // Free-form or modern: line starts with '/' followed by A-Za-z0-9
   const trimmed = getCol(line, 7, 80).trim(); // Avoid converting to uppercase unnecessarily
   if (!trimmed.startsWith('//') &&
@@ -465,7 +482,7 @@ export function getNextSrcStmt(allLines: string[], startIndex: number): string |
 
 // for non-executable source lines, like comments, blanks line, or compiler directives
 export function isSkipStmt(line: string, document?: vscode.TextDocument): boolean {
-  const bComment = isComment(line);  // Assumes isComment() handles RPG IV logic
+  const bComment = isComment(line, document);
   const bEmptyStmt = isEmptyStmt(line, document);
   const bDirective = isDirective(line);
   return bComment || bDirective || bEmptyStmt;
@@ -481,15 +498,17 @@ export function isNotSkipStmt(line: string): boolean {
   return (!isSkipStmt(line));
 }
 
-export function isComment(line: string): boolean {
-  const classicRPGStyle = line.length > 6 && line[6] === '*';
+export function isComment(line: string, document?: vscode.TextDocument): boolean {
+  const isFreeFormat = document ? isFreeFormatRPG(document) : false;
+  // Classic RPG IV column-7 '*' comments are not valid in fully free-format (**FREE) source
+  const classicRPGStyle = !isFreeFormat && line.length > 6 && line[6] === '*';
   const cppStyle = getCol(line, 8, 80).trimStart().startsWith('//') ||
     getCol(line, 1, 80).trimStart().startsWith('//');
   return classicRPGStyle || cppStyle;
 }
 
-export function isNotComment(line: string): boolean {
-  return (!isComment(line));
+export function isNotComment(line: string, document?: vscode.TextDocument): boolean {
+  return (!isComment(line, document));
 }
 
 
@@ -521,7 +540,7 @@ export function insertExtraDCLLinesBatch(
       // Walk backwards to find last non-blank, non-comment line
       while (insertAfterLine > 0) {
         const candidate = allLines[insertAfterLine].trim();
-        if (candidate === '' || isComment(candidate)) {
+        if (candidate === '' || isComment(candidate, editor.document)) {
           insertAfterLine--;
         } else {
           break;
@@ -595,8 +614,10 @@ export function insertExtraDCLLinesBatch(
 function findLocationForEndStmt(startIndex: number, allLines: string[]): number {
   let insertPoint = startIndex;
   let i = 0;
+  let inNameContinuation = false; // Track if previous line was a name continuation
   for (i = startIndex + 1; i < allLines.length; i++) {
-    const line = allLines[i].toUpperCase();
+    const line = allLines[i]; // Use original line for column-based checks
+    const lineUpper = line.toUpperCase();
 
     if (!line || line.trim() === '') continue;
     if (isComment(line)) continue;
@@ -604,13 +625,13 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
 
 
     // Check for END-xxx (xxx must be alpha only, case-insensitive)
-    const endMatch = line.trimStart().toUpperCase().match(/^END-([A-Z]+)/);
+    const endMatch = lineUpper.trimStart().match(/^END-([A-Z]+)/);
     if (endMatch) {
       break;
     }
 
     // Check for DCL-xxx (not SUBF or PARM)
-    const dclMatch = line.trimStart().toUpperCase().match(/^DCL-([A-Z]+)/);
+    const dclMatch = lineUpper.trimStart().match(/^DCL-([A-Z]+)/);
     if (dclMatch) {
       const dclType = dclMatch[1];
       // continuing if it isn't dcl-parm or dcl-subf
@@ -651,6 +672,33 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
     }
 
     // By now we should be in only fixed format arena
+
+    // Check if this is a continuation line (name or keyword continuation)
+    // Use original line for column-based checks
+    const bNameContinues = dNameContinues(line);
+    const bKwdContinues = dKwdContinues(line);
+
+    // Skip continuation lines and continue processing
+    // Also skip if previous line was a name continuation (this line completes it)
+    if (bNameContinues || bKwdContinues || inNameContinuation) {
+      insertPoint = i;
+      inNameContinuation = bNameContinues; // Update state for next iteration
+      continue;
+    }
+
+    // Reset continuation state since we're not in a continuation
+    inNameContinuation = false;
+
+    // Additional check: is this a continuation line completing a long name?
+    // Such lines have blanks in columns 7-21 (name area) but content elsewhere
+    const nameArea = getCol(line, 7, 21).trim();
+    const hasDataInOtherCols = getCol(line, 22, 80).trim() !== '';
+    if (nameArea === '' && hasDataInOtherCols) {
+      // This is likely continuing a previous definition (blank name, but has type/keywords)
+      insertPoint = i;
+      continue;
+    }
+
     const bValidDefn = isValidFixedDefnLine(line);
 
     if (!bValidDefn) {
@@ -1005,7 +1053,9 @@ export function isFixedFormatRPG(document?: vscode.TextDocument): boolean {
   const firstLine = doc.lineAt(0).text;
 
   // Check if **FREE appears in columns 1-6 (case-insensitive)
-  // Per IBM rules, **FREE must be the only content (plus trailing blanks)
+  // Per IBM rules, **FREE must be the only content on the line,
+  // however, anything after `**FREE` should be ignored, thus the real test
+  // is if line 1, position 1 to 6 contains `**FREE` case ignored.
   const bIsFreeFormat = (firstLine.length >= 6 &&
     firstLine.substring(0, 6).toUpperCase() === '**FREE');
 
@@ -1028,7 +1078,8 @@ export function isFreeFormatRPG(document?: vscode.TextDocument): boolean {
   const firstLine = doc.lineAt(0).text;
 
   // Check if **FREE appears in columns 1-6 (case-insensitive)
-  // Per IBM rules, **FREE must be the only content (plus trailing blanks)
+  // Per IBM rules, **FREE must be the only content but the compiler
+  // ignores anything after `**FREE` that it detects
   const bIsFreeFormat = (firstLine.length >= 6 &&
     firstLine.substring(0, 6).toUpperCase() === '**FREE');
 
@@ -1255,9 +1306,15 @@ export function dKwdContinues(line: string): boolean {
 
   // Case 2: Identifier (name) continued with ...
   if (kwdArea.endsWith('...')) {
-    const base = kwdArea.slice(0, -3);
-    // Check that it's a valid name: A-Z, 0-9, _
-    return /^[A-Za-z0-9_]+$/.test(base);
+    // Extract the last token before '...' to check if it's a valid identifier
+    const base = kwdArea.slice(0, -3).trimEnd();
+
+    // Find the last word/token by looking for the last sequence of valid identifier chars
+    const lastTokenMatch = base.match(/[A-Za-z0-9_]+$/);
+
+    // If we found a valid identifier token at the end, it's a continuation
+    // E.g., "Inz(0) BASED(ptr_veryLong..." -> "ptr_veryLong" is valid
+    return lastTokenMatch !== null;
   }
 
   return false;

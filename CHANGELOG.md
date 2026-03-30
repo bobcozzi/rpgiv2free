@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.18] - 2026-03-30
+- **Data Structure Long Name Continuation Fix**: Fixed an issue where `END-DS` statements were being inserted prematurely when data structure subfields used long names (ending with `...`) that continued to the next line.
+  - Enhanced `dKwdContinues()` function to properly detect keyword area continuations when long names appear in the keyword area with other keywords (e.g., `BASED(ptr_veryLong...`). Now checks if the last token before `...` is a valid identifier rather than requiring the entire keyword area to be alphanumeric.
+  - Improved `findLocationForEndStmt()` function to correctly handle name and keyword continuation lines, including when the continuation line has a blank name area but content in other columns.
+  - The converter now properly processes all subfields before inserting the `END-DS` statement, regardless of long name continuations.
+
 ## [1.12.17] - 2026-03-16
 - Release bump, updated the README.MD file.
   - Added a notice and link to the CL Prompter extension.
@@ -23,7 +29,7 @@ All notable changes to this project are documented in this file.
 
 ## [1.12.14] - 2026-02-14
 - Corrected an issue with %ZONED and %BINDEC. Neither of these built-in functions exist; the proper protocol is to use %DEC to convert any variable to numeric (other than INT and FLOAT).
-- **BINDEC Decimal Position Limitation**: Binary decimal (`B` datatype variables or `BINDEC`) are currently not recorded correctly in the IBM RPGLE extension's `symbols` database. Consequently, the RPGIV2FREE extension cannot accurately determine the number of decimal positions for BINDEC variables when converting Fixed-Format Calc specs to free format. This limitation does not affect D-specs (Definition specifications), as RPGIV2FREE reads the actual specification directly. When no decimals are detected, the default value of `0` is used. If your program contains legacy `B` datatypes, the converted Calc specs will use `0` decimal positions. You should review and correct any non-zero decimals for `B` datatype variables after conversion. Note: When the RPGLE extension's `symbol` table database is corrected, this extension will automatically adapt and properly include decimal positions.
+- **BINDEC Decimal Position Limitation**: Binary decimal (`B` datatype variables or `BINDEC`) are currently not recorded correctly in the IBM RPGLE extension's `symbols` database. Consequently, the RPGIV2FREE extension cannot accurately determine the number of decimal positions for BINDEC variables when converting Fixed-Format Calc specs to free format. This limitation does not affect D-specs (Definition specifications), as RPGIV2FREE reads the actual specification directly. When no decimals are detected, the default value of `0` is used. If your program contains legacy `B` datatypes, the converted Calc specs will use `0` decimal positions. You should review and correct any non-zero decimals for `B` datatype variables after conversion. Note: When the RPGLE extension's `symbol` table database is corrected, this extension will automatically adapt and properly include decimal positions. That work is in progress now and should be integrated soon.
 
 ## [1.12.13] - 2026-02-13
 - Corrected an issue with %INT and EVAL vs EVALR when MOVEing between numeric and non-numeric fields.  - Now the proper EVALR is inserted when the MOVE opcode was used.
