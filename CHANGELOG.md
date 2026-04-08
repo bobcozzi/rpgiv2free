@@ -2,6 +2,9 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.19] - 2026-04-08
+- **Fix for CASxx blocks with resulting indicators**: Resulting indicators on CAS/CASxx opcodes (CASEQ, CASNE, CASLT, etc.) now correctly emit `*INxx` assignments after the IF/ELSEIF condition but before the `EXSR` subroutine call. Previously, CASxx opcodes were falling through to the `default` case in `handleResultingIndicators`, producing incorrect `%FOUND()` and `%ERROR()` lines.
+
 ## [1.12.18] - 2026-03-30
 - **Data Structure Long Name Continuation Fix**: Fixed an issue where `END-DS` statements were being inserted prematurely when data structure subfields used long names (ending with `...`) that continued to the next line.
   - Enhanced `dKwdContinues()` function to properly detect keyword area continuations when long names appear in the keyword area with other keywords (e.g., `BASED(ptr_veryLong...`). Now checks if the last token before `...` is a valid identifier rather than requiring the entire keyword area to be alphanumeric.

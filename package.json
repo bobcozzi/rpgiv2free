@@ -10,7 +10,7 @@
   "icon": "images/rpgiv2free.png",
   "preview": false,
   "private": false,
-  "version": "1.12.18",
+  "version": "1.12.19",
   "license": "MIT",
   "engines": {
     "vscode": "^1.70.0",
@@ -309,9 +309,33 @@
           "type": "number",
           "default": 1,
           "description": "Line width (in pixels) for vertical tab stops in dark mode."
+        },
+        "rpgiv2free.enableFixedFormatHighlighting": {
+          "type": "boolean",
+          "title": "Enable Fixed-Format RPG IV Syntax Highlighting",
+          "default": false,
+          "description": "Adds column-aware semantic syntax highlighting for fixed-format RPG IV and RPG III source lines. OFF by default."
         }
       }
-    }
+    },
+    "semanticTokenScopes": [
+      {
+        "scopes": {
+          "specType": ["storage.type.spec.rpgiv"],
+          "fieldName": ["entity.name.variable.rpgiv"],
+          "opcode": ["keyword.operator.opcode.rpgiv"],
+          "factor1": ["variable.other.factor1.rpgiv"],
+          "factor2": ["variable.other.factor2.rpgiv"],
+          "resultField": ["variable.other.result.rpgiv"],
+          "indicator": ["constant.numeric.indicator.rpgiv"],
+          "keyword": ["keyword.other.rpgiv"],
+          "constant": ["string.quoted.rpgiv"],
+          "dataType": ["storage.type.rpgiv"],
+          "positions": ["constant.numeric.rpgiv"],
+          "reserved": ["comment.rpgiv"]
+        }
+      }
+    ]
   },
   "main": "./out/extension.js",
   "activationEvents": [

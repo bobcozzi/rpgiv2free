@@ -1,7 +1,8 @@
 # Bob Cozzi's RPG IV to Free Format Conversion (rpgiv2free) Extension for VS CODE for i
 
-This Visual Studio Code extension helps developers convert RPG IV fixed-format statements into free-format RPG IV code effortlessly.
-Download this extension from the Visual Studio CODE Marketplace: [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/CozziResearch.rpgiv2free.svg?label=VS%20Code%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=CozziResearch.rpgiv2free).
+This Visual Studio Code extension helps developers convert RPG IV fixed-format statements into free-format RPG IV code effortlessly. Your input and feedback is extremely valuable. Please [use this link to submit your bugs or feedback](https://github.com/bobcozzi/rpgiv2free/issues).
+
+Download RPGIV2FREE from the Visual Studio CODE Marketplace: [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/CozziResearch.rpgiv2free.svg?label=VS%20Code%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=CozziResearch.rpgiv2free).
 
 For a list of changes and release notes, see the [Changelog](https://github.com/bobcozzi/rpgiv2free/blob/main/CHANGELOG.md).
 
@@ -11,9 +12,9 @@ Note there are other extensions that have a similar "command name". Si be certai
 This extension is **NOT a refactoring or modernization tool**. Its only purpose is to convert RPG IV fixed-format statements to compatible free format RPG IV syntax. It `does not convert` legacy RPG II Cycle code. Also note that some RPG IV operation codes (`opcodes`) may not be converted directly to free format. When something cannot be converted, that code is untouched by this extension.
 
 
-## Also Check Out my IBM i CL Prompter for VS Code
+## Also Check Out my IBM i CL Prompter and Formatter for VS Code
 
-If you work on IBM i, you will also want to install the **CL Prompter** extension for VS Code. It provides interactive command prompting for IBM i CL commands directly inside VS Code — just like prompting on the green screen, simply position your cursor anywhere on any CL command, press F4 and the CL prompter is invoked. It is a natural companion to this extension for developers working in the IBM i development environment. Find it on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=CozziResearch.clprompter).
+If you work on IBM i, you will also want to install the **CL Prompter and Formatter** extension for VS Code. It provides interactive command prompting for IBM i CL commands directly inside VS Code — similar to prompting on the green screen. Position your cursor anywhere on any CL command, press F4 and the CL prompter is invoked. Press Enter when finished and the CL command is formatted. It is a natural companion to this extension for developers working in the IBM i development environment. Find it on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=CozziResearch.clprompter).
 
 
 ## RPG IV to Free Format Features

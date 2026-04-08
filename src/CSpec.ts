@@ -134,20 +134,13 @@ export async function convertCSpec(
         extraDCL
       ));
 
+    let bDLT = false;
     if (enhValues.opcode === '*DLT') {
       enhValues.opcode = opcode;
+      bDLT = true;
     }
     else if (enhValues.opcode === '*KEEP') {
       return []; // pass thru stmt such as GOTO, TAG, PARM, PLIST
-    }
-    else {
-
-      if (convertedLines.length > 0) {
-        freeFormLine.push(...convertedLines);
-      } else {
-        const newLine = `${enhValues.opcode.toLowerCase()} ${enhValues.factor1} ${enhValues.factor2} ${enhValues.result}`;
-        freeFormLine.push(newLine.trimEnd() + ';'); // See if we can remove the addition of the ';', I think we can.
-      }
     }
 
     if (extraDCL.length === 0 && length.trim() !== '') {
@@ -166,8 +159,32 @@ export async function convertCSpec(
       resInd3
     );
 
-    if (addlLines.length > 0) {
-      freeFormLine.push(...addlLines);
+    if (!bDLT) {
+      if (convertedLines.length > 0) {
+        // For CASxx: indicators must go after the IF/ELSEIF line but before the exsr
+        const isCAS = /^CAS([A-Z]{0,2})$/i.test(enhValues.opcode);
+        if (isCAS && addlLines.length > 0) {
+          freeFormLine.push(...convertedLines.slice(0, -1));
+          freeFormLine.push(...addlLines);
+          freeFormLine.push(convertedLines[convertedLines.length - 1]);
+        } else {
+          if (addlLines.length > 0) {
+            freeFormLine.push(...addlLines);
+          }
+          freeFormLine.push(...convertedLines);
+        }
+      } else {
+        if (addlLines.length > 0) {
+          freeFormLine.push(...addlLines);
+        }
+        const newLine = `${enhValues.opcode.toLowerCase()} ${enhValues.factor1} ${enhValues.factor2} ${enhValues.result}`;
+        freeFormLine.push(newLine.trimEnd() + ';'); // See if we can remove the addition of the ';', I think we can.
+      }
+    } else {
+      // *DLT opcodes (SETON, SETOFF, COMP): no converted statement, only indicator assignments
+      if (addlLines.length > 0) {
+        freeFormLine.push(...addlLines);
+      }
     }
 
   }
@@ -489,6 +506,7 @@ async function convertOpcodeToFreeFormat(
           }
           newLines.push(freeFormat);
         }
+
         newLines.push(`exsr ${result}`);
       }
       break;
@@ -756,6 +774,7 @@ async function convertOpcodeToFreeFormat(
       break;
 
     case "COMP":
+    case "CASE":
       if (resInd1) {
         newLines.push(`*IN${resInd1} = (${factor1} > ${factor2})`);
       }
@@ -814,7 +833,9 @@ function handleResultingIndicators(
   resInd2: string,
   resInd3: string
 ): string[] {
-  const normalizedOpcode = opcode.toUpperCase().replace(/\(.*\)$/, "");
+  const rawNormalizedOpcode = opcode.toUpperCase().replace(/\(.*\)$/, "");
+  // Normalize all CASxx variants (CASEQ, CASNE, CASLT, etc.) to "CASE" for indicator handling
+  const normalizedOpcode = /^CAS([A-Z]{0,2})$/i.test(rawNormalizedOpcode) ? 'CASE' : rawNormalizedOpcode;
   const newLines: string[] = [];
 
   // Bail out if the opcode is one of those opcodes whose resulting indicators are handled during conversion
@@ -874,6 +895,7 @@ function handleResultingIndicators(
       break;
 
     case "COMP":
+    case "CASE":
       if (resInd1) {
         newLines.push(`*IN${resInd1} = (${factor1} > ${factor2});`);
       }

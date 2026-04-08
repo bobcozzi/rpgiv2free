@@ -56,11 +56,16 @@ const RPG_TAB_STOPS: Record<string, number[]> = {
   D: [1, 6, 7, 22, 23, 24, 26, 33, 40, 41, 43, 44, 81],
   C: [1, 6, 7, 9, 12, 26, 36, 50, 64, 69, 71, 73, 75, 77, 81],
   CX: [1, 6, 7, 9, 26, 36, 81],
-  I: [1, 6, 7, 17, 19, 20, 21, 23, 28, 29, 30, 31, 36, 37, 38, 39, 44, 45, 46, 48, 81],
-  IX: [1, 6, 7, 17, 21, 23, 81],  // Pos 17 - 20 are blank but 7 to 16 are not
-  IJ: [1, 6, 7, 30, 31, 35, 36, 37, 42, 47, 49, 63, 65, 67, 69, 71, 73, 75, 81],
-  IJX: [1, 6, 7, 21, 31, 49, 63, 65, 67, 69, 71, 73, 75, 81], // Pos 7-20 & 31-48 are blank
-  O: [1, 6, 7, 8, 10, 12, 17, 24, 39],
+  I:    [1, 6, 7, 17, 19, 20, 21, 23, 28, 29, 30, 31, 36, 37, 38, 39, 44, 45, 46, 47, 81],  // Prog-described record: name, seq, num, opt, RI, 3× Pos/N/CC
+  IAnd: [1, 6, 16, 21, 23, 28, 29, 30, 31, 36, 37, 38, 39, 44, 45, 46, 47, 81],             // AND/OR continuation: connector, RI, 3× Pos/N/CC
+  IX:   [1, 6, 31, 35, 37, 42, 47, 49, 63, 65, 67, 69, 71, 73, 75, 81],                      // Prog-described field: fmt, from, to, dec, name, level/match/relation, indicators
+  IER:  [1, 6, 7, 17, 21, 23, 81],                                                            // Ext-described record: record name, RI indicator
+  IEF:  [1, 6, 21, 31, 49, 63, 65, 69, 71, 73, 75, 81],                                      // Ext-described field: ext name, RPG name, level/match, indicators
+  O:    [1, 6, 7, 17, 18, 21, 24, 27, 30, 40, 43, 46, 49],  // Record ID: name, type, flag, 3× indicators, EXCEPT, spacing
+  OAnd: [1, 6, 16, 21, 24, 27, 30],                          // AND/OR continuation: AND keyword, 3× indicators, EXCEPT name
+  OX:   [1, 6, 21, 24, 27, 30, 44, 45, 47, 52, 53],         // Prog-described field: indicators, name, edit code, end pos, constant
+  OFC:  [1, 6, 53],                                          // Field constant continuation
+  OEF:  [1, 6, 21, 24, 27, 30, 45],                         // Ext-described field: indicators, name, blank-after
   P: [1, 6, 7, 24, 44, 81]
 };
 
@@ -159,7 +164,7 @@ function getStmtRule(line: string): string {
   return specType;
 }
 
-function getStmtVariant(line: string, specType: string): string {
+export function getStmtVariant(line: string, specType: string): string {
   let varient = specType;
   switch (specType) {
     case 'C':
@@ -168,22 +173,42 @@ function getStmtVariant(line: string, specType: string): string {
       }
       break;
 
-    case 'I':
-      if ((rpgiv.getCol(line, 17, 20).trim() === '') &&
-        (rpgiv.getCol(line, 7, 16).trim() != '')) {
-        varient = 'IX'; // Pos 17 - 20 are blank but 7 to 16 are not
+    case 'O': {
+      // AND continuation: cols 7-15 blank, AND keyword at cols 16-18
+      if (rpgiv.getCol(line, 7, 15).trim() === '' &&
+          rpgiv.getCol(line, 16, 18).toUpperCase().trim() === 'AND') {
+        varient = 'OAnd';
+      } else if (rpgiv.getCol(line, 7, 16).trim() !== '') {
+        varient = 'O';                               // Record identification line
+      } else if (rpgiv.getCol(line, 7, 52).trim() === '') {
+        varient = 'OFC';                             // Constant continuation
+      } else if (rpgiv.getCol(line, 47, 51).trim() !== '') {
+        varient = 'OX';                              // Program-described field
+      } else {
+        varient = 'OEF';                             // Externally-described field
       }
-      if ((rpgiv.getCol(line, 17, 20).trim() === '') &&
-        (rpgiv.getCol(line, 31, 48).trim() === '') &&
-        (rpgiv.getCol(line, 67, 68).trim() === '') &&
-        (rpgiv.getCol(line, 75, 80).trim() === '')) {
-        varient = 'IJX'; // Pos 7-20 & 31-48 are blank
-      }
-      if ((rpgiv.getCol(line, 17, 30).trim() === '') &&
-        (rpgiv.getCol(line, 31, 48).trim() != '')) {
-        varient = 'IJ'; // Pos 7-20 & 31-48 are blank
-      }
+      break;
+    }
 
+    case 'I': {
+      const iCols715  = rpgiv.getCol(line, 7, 15).trim();
+      const iConxn    = rpgiv.getCol(line, 16, 18).toUpperCase().trim();
+      const iName716  = rpgiv.getCol(line, 7, 16).trim();
+      const iCols1720 = rpgiv.getCol(line, 17, 20).trim();
+      const iExtName  = rpgiv.getCol(line, 21, 30).trim();
+      const iProgFld  = rpgiv.getCol(line, 31, 74).trim();
+
+      if (!iCols715 && (iConxn === 'AND' || iConxn === 'OR')) {
+        varient = 'IAnd';                            // AND/OR continuation
+      } else if (iName716) {
+        varient = iCols1720 ? 'I' : 'IER';          // Prog- or ext-described record
+      } else if (iExtName) {
+        varient = 'IEF';                             // Ext-described field
+      } else if (iProgFld) {
+        varient = 'IX';                              // Prog-described field
+      }
+      break;
+    }
   }
   return varient;
 }
