@@ -10,7 +10,7 @@
   "icon": "images/rpgiv2free.png",
   "preview": false,
   "private": false,
-  "version": "1.12.19",
+  "version": "1.12.20",
   "license": "MIT",
   "engines": {
     "vscode": "^1.70.0",
@@ -73,7 +73,7 @@
       {
         "key": "enter",
         "command": "rpgiv2free.smartEnter",
-        "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && !suggestWidgetVisible && !inSnippetMode && rpgiv2free.isFixedFormat && config.rpgiv2free.enableRPGSmartEnter != 'disable'"
+        "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && !suggestWidgetVisible && !inSnippetMode && (rpgiv2free.isFixedFormat || config.rpgiv2free.enableRPGSmartEnter == 'fixedAndFree' || config.rpgiv2free.enableRPGSmartEnter == '*ALL') && config.rpgiv2free.enableRPGSmartEnter != 'disable'"
       },
       {
         "key": "tab",

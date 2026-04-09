@@ -2,6 +2,9 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.20] - 2026-04-09
+- **Smart Enter fix for free-format RPG**: Corrected an issue where the Smart Enter key did not work in fully free-format RPG (files beginning with `**FREE`) when the `enableRPGSmartEnter` setting was set to `fixedAndFree` or `*ALL`. The keybinding `when` condition was gated on `rpgiv2free.isFixedFormat` (which is `false` for free-format documents) and `handleSmartEnter` unconditionally fell back to the default Enter for any free-format line. Both are now resolved; Smart Enter correctly inserts a non-destructive newline with matching indentation in free-format files.
+
 ## [1.12.19] - 2026-04-08
 - **Fix for CASxx blocks with resulting indicators**: Resulting indicators on CAS/CASxx opcodes (CASEQ, CASNE, CASLT, etc.) now correctly emit `*INxx` assignments after the IF/ELSEIF condition but before the `EXSR` subroutine call. Previously, CASxx opcodes were falling through to the `default` case in `handleResultingIndicators`, producing incorrect `%FOUND()` and `%ERROR()` lines.
 

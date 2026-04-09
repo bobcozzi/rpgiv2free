@@ -26,18 +26,19 @@ import * as vscode from 'vscode';
 import * as rpgiv from './rpgedit';
 
 export async function handleSmartEnter(editor: vscode.TextEditor, position: vscode.Position) {
-  const config = vscode.workspace.getConfiguration('rpgiv2free');
+  const mode = rpgiv.getSmartEnterMode();
 
-  // Check if Smart Enter is enabled
-  const smartRPGEnterMode = config.get<string>('enableRPGSmartEnter', 'fixedOnly');
-  if (!smartRPGEnterMode || smartRPGEnterMode === 'disable') {
-    // Use default VS Code Enter behavior
+  if (mode === rpgiv.SmartEnterMode.Disabled) {
     await vscode.commands.executeCommand('default:type', { text: rpgiv.getEOL() });
     return;
   }
 
   const doc = editor.document;
-  if (rpgiv.isNOTFixedFormatRPG()) {
+  const isFreeFormatDoc = rpgiv.isFreeFormatRPG(doc);
+  const eol = rpgiv.getEOL();
+
+  // For fixedOnly mode, bail out on free-format documents
+  if (mode === rpgiv.SmartEnterMode.FixedOnly && isFreeFormatDoc) {
     await vscode.commands.executeCommand('default:type', { text: rpgiv.getEOL() });
     return;
   }
@@ -49,20 +50,32 @@ export async function handleSmartEnter(editor: vscode.TextEditor, position: vsco
   }
 
   const text = line.text;
-  if (!text || !rpgiv.isValidFixedFormat(text)) {
+
+  // For fully free-format documents (starts with **FREE), or free-format lines in hybrid
+  // documents when fixedAndFree/allSource mode is active: move to next line preserving indent
+  const isFreeFormatLine = isFreeFormatDoc || !rpgiv.isValidFixedFormat(text);
+  if (isFreeFormatLine) {
+    if (mode === rpgiv.SmartEnterMode.FixedAndFree || mode === rpgiv.SmartEnterMode.allSource) {
+      const indent = text.match(/^(\s*)/)?.[1] ?? '';
+      const lineEndPosition = line.range.end;
+      await editor.edit(editBuilder => {
+        editBuilder.insert(lineEndPosition, eol + indent);
+      });
+      const newCursorPos = new vscode.Position(position.line + 1, indent.length);
+      editor.selection = new vscode.Selection(newCursorPos, newCursorPos);
+      return;
+    }
     await vscode.commands.executeCommand('default:type', { text: rpgiv.getEOL() });
     return;
   }
 
-  // NEW: Read the copySpec setting
+  // Fixed-format line: duplicate spec prefix and align cursor to first content column
+  const config = vscode.workspace.getConfiguration('rpgiv2free');
   const copySpec = config.get<boolean>('enableRPGSmartEnterDupSpec', true);
 
-  const eol = rpgiv.getEOL();
-  const col1To5 = text.substring(0, 5);
   const specPrefix = text.substring(0, 6);
   const afterSpec = text.substring(6);
 
-  // Find the first non-whitespace character index in that substring
   const nonSpacePos = copySpec ? afterSpec.search(/\S/) : text.search(/\S/);
   const paddingLength = nonSpacePos;
   const padding = ' '.repeat(paddingLength > 0 ? paddingLength : 0);
