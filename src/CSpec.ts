@@ -191,6 +191,7 @@ export async function convertCSpec(
   if (afterOpcode && afterOpcode.trim() !== '') {
     freeFormLine.push(afterOpcode);
   }
+
   let condIndy = (condIndyStmt && condIndyStmt.trim() !== '') ? condIndyStmt.trim() : '';
   if (condIndy && !opcode.toUpperCase().trim().startsWith('CAS')) {
     freeFormLine.unshift(condIndy);
@@ -200,6 +201,28 @@ export async function convertCSpec(
   return freeFormLine;
 }
 
+
+function isConditionalOpcode(opcode: string): boolean {
+  const op = opcode.toUpperCase().trim().replace(/\(.*\)$/, '');
+  const conditionalOpcodes = new Set([
+    'IF', 'ELSEIF', 'ELSE', 'ENDIF',
+    'DOW', 'DOU', 'DO', 'ENDDO',
+    'FOR', 'FOR-EACH', 'ENDFOR',
+    'SELECT', 'WHEN', 'OTHER', 'ENDSL',
+    'BEGSR', 'ENDSR',
+    'MONITOR', 'ON-ERROR', 'ENDMON',
+    'ITER', 'LEAVE',
+    'GOTO', 'TAG',
+  ]);
+  if (conditionalOpcodes.has(op)) return true;
+  if (/^IF(EQ|NE|GT|LT|GE|LE)$/.test(op)) return true;
+  if (/^DOW(EQ|NE|GT|LT|GE|LE)$/.test(op)) return true;
+  if (/^DOU(EQ|NE|GT|LT|GE|LE)$/.test(op)) return true;
+  if (/^WHEN(EQ|NE|GT|LT|GE|LE)$/.test(op)) return true;
+  if (/^(AND|OR)(EQ|NE|GT|LT|GE|LE)$/.test(op)) return true;
+  if (/^CAS(EQ|NE|LT|LE|GT|GE)?$/.test(op)) return true;
+  return false;
+}
 
 export function enhanceOpcode(
   opcode: string,

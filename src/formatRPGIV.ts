@@ -46,19 +46,48 @@ function extractComment(line: string): { code: string, comment: string | null } 
   return { code: line.trimEnd(), comment: null };
 }
 
+function shouldIndentStatement(firstToken: string): boolean {
+  if (!firstToken) return false;
+  const tok = firstToken.toUpperCase().replace(/\(.*\)$/, '').replace(/;$/, '');
+  // Comments are never indented
+  if (tok.startsWith('//')) return false;
+  // Boolean comparison opcodes (IFxx, DOWxx, DOUxx, WHENxx, ANDxx, ORxx, CASxx)
+  if (/^(IF|DOW|DOU|WHEN|AND|OR)(EQ|NE|GT|LT|GE|LE)$/.test(tok)) return false;
+  if (/^CAS(EQ|NE|GT|LT|GE|LE)?$/.test(tok)) return false;
+  // Structural / control-flow / declarative keywords — no extra indent
+  const noIndentKeywords = new Set([
+    // Conditionals and loops
+    'IF', 'ELSEIF', 'ELSE', 'ENDIF',
+    'DOW', 'DOU', 'DO', 'ENDDO',
+    'FOR', 'FOR-EACH', 'ENDFOR',
+    'SELECT', 'WHEN', 'OTHER', 'ENDSL',
+    'ITER', 'LEAVE',
+    // Subroutines / procedures
+    'BEGSR', 'ENDSR',
+    'DCL-PROC', 'END-PROC',
+    // Error handling
+    'MONITOR', 'ON-ERROR', 'ENDMON',
+    // Jumps
+    'GOTO', 'TAG',
+    // Declarations
+    'DCL-S', 'DCL-DS', 'DCL-C', 'DCL-F',
+    'DCL-PR', 'DCL-PI', 'DCL-SUBF',
+    'END-DS', 'END-PR', 'END-PI',
+  ]);
+  if (noIndentKeywords.has(tok)) return false;
+  // Everything else is an action statement — indent it
+  return true;
+}
+
 export const formatRPGIV = (input: string, splitOffComments: boolean = false): string[] => {
   const config = rpgiv.getRPGIVFreeSettings();
-  const firstIndentLen = config.leftMargin - 1;
-  const contIndentLen = config.leftMarginContinued - 1;
+  let firstIndentLen = config.leftMargin - 1;
+  let contIndentLen = config.leftMarginContinued - 1;
   const rightMargin = config.rightMargin;
   const dirIndent = config.indentDir;
 
   const indent = (n: number) => ' '.repeat(n);
   const result: string[] = [];
-
-
-  let currentLine = indent(firstIndentLen);
-  let currentLength = firstIndentLen;
 
   const isValidRPGName = (token: string) =>
     /^[A-Z#$@][A-Z0-9#$@_]{0,4095}$/i.test(token);
@@ -198,6 +227,16 @@ export const formatRPGIV = (input: string, splitOffComments: boolean = false): s
   let { code, comment } = extractComment(input);
 
   const bIsDir = rpgiv.isDirective(input, true); // check free format style for directives, only
+  if (!bIsDir) {
+    const firstToken = code.trim().split(/\s+/)[0] ?? '';
+    if (shouldIndentStatement(firstToken)) {
+      firstIndentLen += 2;
+      contIndentLen += 2;
+    }
+  }
+
+  let currentLine = indent(firstIndentLen);
+  let currentLength = firstIndentLen;
   if (bIsDir) {
     result.push(indent(dirIndent) + input.trim());
   }

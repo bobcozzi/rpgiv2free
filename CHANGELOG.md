@@ -2,6 +2,9 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.21] - 2026-04-10
+- **Action statement indentation**: Converted calculation-spec action statements (assignments, I/O ops, `EXSR`, `CALLP`, and any non-structural opcode) are now indented by 2 extra spaces relative to the left margin in the free-format output, producing a visually cleaner distinction between structural keywords (`IF`, `DOW`, `DOU`, `SELECT`, `BEGSR`, `DCL-*`, `END-*`, etc.) and executable statements. The logic lives in `formatRPGIV` and applies consistently across all spec types — C-specs, D-specs, P-specs — so subfield declarations and prototype parameters are unaffected while action-only lines gain the indent. Continuation lines of a wrapped statement are indented at the same level as the first line.
+
 ## [1.12.20] - 2026-04-09
 - **Smart Enter fix for free-format RPG**: Corrected an issue where the Smart Enter key did not work in fully free-format RPG (files beginning with `**FREE`) when the `enableRPGSmartEnter` setting was set to `fixedAndFree` or `*ALL`. The keybinding `when` condition was gated on `rpgiv2free.isFixedFormat` (which is `false` for free-format documents) and `handleSmartEnter` unconditionally fell back to the default Enter for any free-format line. Both are now resolved; Smart Enter correctly inserts a non-destructive newline with matching indentation in free-format files.
 

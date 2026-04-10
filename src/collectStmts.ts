@@ -128,6 +128,9 @@ export function collectStmt(
     let emptyIndex: number[] = [];
     let idx = startIndex;
     while (idx < allLines.length && (rpgiv.isEmptyStmt(allLines[idx]) || isLineEmpty(allLines[idx]))) {
+      // Never let the empty-block scan absorb an EXEC SQL / END-EXEC line — those
+      // are code blocks that must be processed independently by collectSQLBlock.
+      if (EXEC_SQL_RX.test(allLines[idx]) || END_EXEC_RX.test(allLines[idx])) break;
       if (allLines[idx].trim() !== '') { // Only collect if not already empty
         emptyBlock.push('');
         emptyIndex.push(idx);
@@ -136,6 +139,8 @@ export function collectStmt(
     }
     idx = startIndex - 1;
     while (idx >= 0 && (rpgiv.isEmptyStmt(allLines[idx]) || isLineEmpty(allLines[idx]))) {
+      // Same guard going backward
+      if (EXEC_SQL_RX.test(allLines[idx]) || END_EXEC_RX.test(allLines[idx])) break;
       if (allLines[idx].trim() !== '') { // Only collect if not already empty
         emptyBlock.push('');
         emptyIndex.push(idx);
