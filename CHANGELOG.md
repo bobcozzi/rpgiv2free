@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.22] - 2026-04-17
+- **Long-name DS end-ds placement fix**: When a data structure header used a long name spanning multiple lines (ending with `...`), `findLocationForEndStmt` was not aware that its starting line was itself a name-continuation line, causing it to mistake the actual DS definition line for a new independent declaration and insert `end-ds` in the wrong location. Fixed by initialising `inNameContinuation` from the start line rather than always starting as `false`.
+- **Long-name type smash fix**: In `formatRPGIV`, after breaking a long variable name across lines, the spacer between the name and the following token (e.g. the data type) was not being preserved, causing the data type to be concatenated directly against the name. The spacer is now explicitly applied after `breakLongName`.
+- **B (binary) datatype conversion overhaul**:
+  - Replaced the three-value `convertBINTOINT` string setting (`disable` / `always` / `auto`) with a simple boolean **"Smart Convert BIN to INT"** (default `true`). The "always" option was removed because converting a B field that has decimal positions to INT is not valid.
+  - When enabled, B fields with no decimal positions are converted to `INT(5)` (1–4 digit count / ≤4-byte span) or `INT(10)` (5–9 digit count / ≤9-byte span).
+  - B fields **with** decimal positions are always converted to `BINDEC(digits:dec)` regardless of the setting.
+  - Fixed BINDEC digit-count calculation: standalone B fields use the raw length column value; DS subfield B fields map the byte span (2 bytes → 4 digits, 4 bytes → 9 digits) to the correct BINDEC digit count.
+
 ## [1.12.21] - 2026-04-10
 - **Action statement indentation**: Converted calculation-spec action statements (assignments, I/O ops, `EXSR`, `CALLP`, and any non-structural opcode) are now indented by 2 extra spaces relative to the left margin in the free-format output, producing a visually cleaner distinction between structural keywords (`IF`, `DOW`, `DOU`, `SELECT`, `BEGSR`, `DCL-*`, `END-*`, etc.) and executable statements. The logic lives in `formatRPGIV` and applies consistently across all spec types — C-specs, D-specs, P-specs — so subfield declarations and prototype parameters are unaffected while action-only lines gain the indent. Continuation lines of a wrapped statement are indented at the same level as the first line.
 

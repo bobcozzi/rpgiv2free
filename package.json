@@ -10,7 +10,7 @@
   "icon": "images/rpgiv2free.png",
   "preview": false,
   "private": false,
-  "version": "1.12.21",
+  "version": "1.12.22",
   "license": "MIT",
   "engines": {
     "vscode": "^1.70.0",
@@ -127,20 +127,10 @@
       "title": "RPGIV to Free Format Conversion",
       "properties": {
         "rpgiv2free.convertBINTOINT": {
-          "type": "string",
-          "title": "Convert BIN to INT",
-          "default": "auto",
-          "enum": [
-            "disable",
-            "always",
-            "auto"
-          ],
-          "enumDescriptions": [
-            "Do not convert to Integer (disable)",
-            "Always convert B (binary) fields to Integer",
-            "Convert to Integer only when decimal positions = 0"
-          ],
-          "description": "Controls how RPG IV B ('binary') fields are converted to integers."
+          "type": "boolean",
+          "title": "Smart Convert BIN to INT",
+          "default": true,
+          "description": "When enabled, converts RPG IV B ('binary') fields with no decimal positions to the equivalent Integer (INT) data type. Fields with decimal positions are always converted to BINDEC."
         },
         "rpgiv2free.VerifyCode4IBMi": {
           "type": "boolean",

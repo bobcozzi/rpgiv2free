@@ -99,7 +99,7 @@ export function getActiveFileInfo(): {
 }
 
 export interface configSettings {
-  convertBINTOINT: number;
+  convertBINTOINT: boolean;
   addINZ: boolean;
   rightMargin: number;
   leftMargin: number;
@@ -119,21 +119,7 @@ export interface configSettings {
 
 export function getRPGIVFreeSettings(): configSettings {
   const config = vscode.workspace.getConfiguration('rpgiv2free');
-  const binToIntSetting = config.get<string>('convertBINTOINT', 'auto');
-  // Convert string to number for your existing logic
-  let convertBINTOINT: number;
-  switch (binToIntSetting) {
-    case 'disable':
-      convertBINTOINT = 0;
-      break;
-    case 'always':
-      convertBINTOINT = 1;
-      break;
-    case 'auto':
-    default:
-      convertBINTOINT = 2;
-      break;
-  }
+  const convertBINTOINT = config.get<boolean>('convertBINTOINT', true);
   return {
     convertBINTOINT: convertBINTOINT,
     addINZ: config.get<boolean>('addINZ', true),
@@ -614,7 +600,10 @@ export function insertExtraDCLLinesBatch(
 function findLocationForEndStmt(startIndex: number, allLines: string[]): number {
   let insertPoint = startIndex;
   let i = 0;
-  let inNameContinuation = false; // Track if previous line was a name continuation
+  // If the starting line is itself a name-continuation line (ends with '...'), the very
+  // next line is the actual DS/PR/PI definition — treat it as a continuation so we don't
+  // break out of the scan prematurely and place end-ds in the wrong location.
+  let inNameContinuation = dNameContinues(allLines[startIndex]);
   for (i = startIndex + 1; i < allLines.length; i++) {
     const line = allLines[i]; // Use original line for column-based checks
     const lineUpper = line.toUpperCase();

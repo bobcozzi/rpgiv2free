@@ -291,6 +291,12 @@ export const formatRPGIV = (input: string, splitOffComments: boolean = false): s
       // Handle long names
       else if (isValidRPGName(token) && token.length > (rightMargin - currentLength)) {
         breakLongName(token);
+        // Preserve the spacer that follows this token so the next token (e.g. the
+        // data type) is not smashed directly against the variable name.
+        if (spacers[i]) {
+          currentLine += spacers[i];
+          currentLength += spacers[i].length;
+        }
         continue;
       }
 

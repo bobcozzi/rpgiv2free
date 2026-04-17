@@ -354,7 +354,7 @@ function calcIntLength(dataType: string, fromPos: string, toPos: string): number
         case 2: return 5; // 2 bytes
         case 4: return 10; // 4 bytes
         case 8: return 20; // 8 bytes
-        case 16: return 40; // 16 bytes
+        case 16: return 40; // 16 bytes (not currently supported by RPGIV)
         default:
           return positions;
       }
@@ -363,18 +363,10 @@ function calcIntLength(dataType: string, fromPos: string, toPos: string): number
     }
   }
   else if (dataType === 'B') {
-    if (isDigits(fromPos) && isDigits(toPos)) {
-      // Packed: number of digits = toPos - (fromPos - 1)
-      const positions = (parseInt(toPos, 10) - (parseInt(fromPos, 10) - 1));
-      // Packed storage: if positions is even, subtract 1; if odd, use positions
-      if (positions <= 2) {
-        return 5;
-      } else if (positions <= 4) {
-        return 9;
-      }
-    } else if (isDigits(toPos)) {
-      return parseInt(toPos, 10);
-    }
+    const n = isDigits(fromPos) && isDigits(toPos)
+      ? parseInt(toPos, 10) - (parseInt(fromPos, 10) - 1)
+      : isDigits(toPos) ? parseInt(toPos, 10) : 0;
+    if (n > 0) return n <= 4 ? 5 : n <= 9 ? 10 : 20;
   }
   return 0;
 }
@@ -395,9 +387,6 @@ function convertTypeToKwd(
   const datfmtMatch = inKwds.match(/DATFMT\(([^)]+)\)/i);
   const timfmtMatch = inKwds.match(/TIMFMT\(([^)]+)\)/i);
   const settings = rpgiv.getRPGIVFreeSettings(); //
-  if (settings.convertBINTOINT === 2) {
-    // Do conditional conversion
-  }
   let kwds = '';
   let length = calcLength(dataType, fromPos, toPos, inKwds);
   if (isDigits(fromPos)) {
@@ -428,16 +417,30 @@ function convertTypeToKwd(
       length = calcLength(dataType, fromPos, toPos, inKwds);
     }
     else if (dataType.trim() === 'B') {
-      if (settings.convertBINTOINT === 2 && dec === '0') { // Convert to int when dec = 0
+      const decIsZero = !dec || dec === '0';
+      // Both settings 1 and 2 convert to INT only when there are no decimal positions.
+      // A BINDEC field with decimals cannot be represented as an integer.
+      const shouldConvertToInt = decIsZero && settings.convertBINTOINT;
+      if (shouldConvertToInt) {
         dataType = 'I';
-        length = calcIntLength(dataType, fromPos, toPos); // length calc for Integers
-      }
-      else if (settings.convertBINTOINT === 1) { // Convert to int always
-        dataType = 'I';
-        length = calcIntLength(dataType, fromPos, toPos); // length calc for Integers
+        // In fixed-format RPG IV the B-field "length" column always represents digit count
+        // (1–4 digits stored in 2 bytes → INT(5); 5–9 digits stored in 4 bytes → INT(10)).
+        // This applies whether fromPos is set (DS subfield with from-to positions) or not.
+        const byteLen = isDigits(fromPos) && isDigits(toPos)
+          ? (parseInt(toPos, 10) - (parseInt(fromPos, 10) - 1))  // byte span
+          : isDigits(toPos) ? parseInt(toPos, 10) : 0;           // digit count / length value
+        length = byteLen <= 4 ? 5 : byteLen <= 9 ? 10 : 20;
       }
       else {
-        length = calcLength(dataType, fromPos, toPos, inKwds);
+        // BINDEC: for DS subfields fromPos/toPos are byte positions, so map the
+        // byte span to the BINDEC max digit count (2 bytes → 4 digits, 4 bytes → 9 digits).
+        // For standalone B fields toPos IS the digit count — use it directly.
+        if (isDigits(fromPos) && isDigits(toPos)) {
+          const span = parseInt(toPos, 10) - (parseInt(fromPos, 10) - 1);
+          length = span <= 2 ? 4 : 9;
+        } else {
+          length = isDigits(toPos) ? parseInt(toPos, 10) : 0;
+        }
       }
     }
     else if (dataType.trim() === 'I' || dataType.trim() === 'U') {
@@ -480,15 +483,9 @@ function convertTypeToKwd(
     case 'P': return { fieldType: `packed(${length}:${dec || '0'})`, kwds };
     case 'S': return { fieldType: `zoned(${length}:${dec || '0'})`, kwds };
     case 'B':
-      if (settings.convertBINTOINT === 1) {  // Convert to Int, always
-        fieldType = `int(${length})`;
-      }
-      else if (settings.convertBINTOINT === 2 && dec === '0') { // Convert to int when dec = 0
-        fieldType = `int(${length})`;
-      }
-      else {
-        fieldType = `bindec(${length}:${dec || '0'})`;
-      }
+      // dataType stays 'B' only when NOT converting to INT
+      // (dec has a value, or convertBINTOINT is disabled)
+      fieldType = `bindec(${length}:${dec || '0'})`;
       return { fieldType: fieldType, kwds };
 
     case 'I': return { fieldType: `int(${length})`, kwds };
