@@ -273,7 +273,7 @@ export function convertCmt(line: string): string {
 
 export function getDclVarName(line: string): string | null {
   // Match optional spaces, case-insensitive dcl-s, then the variable name (identifier)
-  const match = line.match(/^\s*dcl-s\s+([A-Z0-9_#$@]+)\b/i);
+  const match = line.match(/^\s*dcl-s\s+([A-Z0-9_#$@\u00C6\u00D8\u00E6\u00F8\u00A7\u00A3\u00E0\u00C0]+)\b/i);
   return match ? match[1] : null;
 }
 
@@ -649,7 +649,7 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
       }
 
       // Procedure call: myFoo('Hello') or myFoo ('Hello')
-      if (/^[A-Z0-9_#$@]+\s*\(/i.test(trimmed)) {
+      if (/^[A-Z0-9_#$@\u00C6\u00D8\u00E6\u00F8\u00A7\u00A3\u00E0\u00C0]+\s*\(/i.test(trimmed)) {
         break;
       }
       // RPG built-in function: %SUBST(...)
@@ -1007,7 +1007,7 @@ export function isFreeFormCalcStmt(line: string): boolean {
   }
 
   // Procedure call: identifier(...) - semicolon is optional for multi-line statements
-  if (/^[A-Za-z_][A-Za-z0-9_#$@]*\s*\(.*\);?$/.test(s)) {
+  if (/^[A-Za-z_\u00C6\u00D8\u00E6\u00F8\u00A7\u00A3\u00E0\u00C0][A-Za-z0-9_#$@\u00C6\u00D8\u00E6\u00F8\u00A7\u00A3\u00E0\u00C0]*\s*\(.*\);?$/.test(s)) {
     return true;
   }
 
@@ -1123,7 +1123,7 @@ export function isAssignmentStmt(line: string): boolean {
   if (!lhs) return false;
 
   // LHS validators:
-  const ident = '[A-Za-z_][A-Za-z0-9_#$@]*';
+  const ident = '[A-Za-z_\u00C6\u00D8\u00E6\u00F8\u00A7\u00A3\u00E0\u00C0][A-Za-z0-9_#$@\u00C6\u00D8\u00E6\u00F8\u00A7\u00A3\u00E0\u00C0]*';
   const seg = `${ident}(\\s*\\([^)]*\\))?`;               // name or name(...)
   const dotted = new RegExp(`^${seg}(\\.${seg})*$`);      // a, a(i), a.b, a(i).b(j).c
   const builtIn = /^%[A-Za-z0-9_]+\s*\(.*\)$/;            // %SUBST(...)
@@ -1270,7 +1270,7 @@ export function dNameContinues(line: string): boolean {
 
   // Remove '...' and validate the rest is strictly alphanumeric or underscore
   const namePrefix = namePart.slice(0, -3);
-  return /^[A-Za-z0-9_]+$/.test(namePrefix);
+  return /^[A-Za-z0-9_\u00C6\u00D8\u00E6\u00F8]+$/.test(namePrefix);
 }
 
 export function splitArray(factor2: string): [string, string | null] {

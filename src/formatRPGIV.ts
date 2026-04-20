@@ -25,6 +25,19 @@
 import * as vscode from 'vscode';
 import * as rpgiv from './rpgedit';
 
+// CCSID-variant name characters: when IBM i source is encoded in a non-37 CCSID
+// and opened in VS Code (UTF-8), the three RPG-valid "national" special characters
+// that map differently per locale arrive as different Unicode code points.
+//
+// CCSID 277 (Danish/Norwegian) — the most common European IBM i locale:
+//   CCSID-37  @  (X'7C')  →  Æ  U+00C6  (also lowercase æ U+00E6)
+//   CCSID-37  #  (X'7B')  →  Ø  U+00D8  (also lowercase ø U+00F8)
+//   CCSID-37  $  (X'5B')  →  $  (unchanged in CCSID 277)
+//
+// Adding these to all identifier character classes preserves field names like
+// `ØrendsNr` or `Æfelt` intact through the fixed-to-free conversion.
+export const RPG_NAME_VARIANT_CHARS = '\u00C6\u00D8\u00E6\u00F8\u00A7\u00A3\u00E0\u00C0'; // Æ Ø æ ø (CCSID 277)  § (CCSID 273/280)  £ à À (CCSID 297/280)
+
 function extractComment(line: string): { code: string, comment: string | null } {
   let insideSingleQuote = false;
   let insideDoubleQuote = false;
@@ -90,7 +103,7 @@ export const formatRPGIV = (input: string, splitOffComments: boolean = false): s
   const result: string[] = [];
 
   const isValidRPGName = (token: string) =>
-    /^[A-Z#$@][A-Z0-9#$@_]{0,4095}$/i.test(token);
+    /^[A-Z#$@\u00C6\u00D8\u00E6\u00F8\u00A7\u00A3\u00E0\u00C0][A-Z0-9#$@_\u00C6\u00D8\u00E6\u00F8\u00A7\u00A3\u00E0\u00C0]{0,4095}$/i.test(token);
 
   const flushLine = (addLine = true, addIndent = true) => {
     if (addLine && currentLine.trim()) {
@@ -353,7 +366,7 @@ function tokenizeWithSpacing(line: string): { tokens: string[], spacers: string[
   const tokens: string[] = [];
   const spacers: string[] = [];
   // This regex matches quoted strings, identifiers, keywords, operators, punctuation, and whitespace.
-  const regex = /(%[A-Z][A-Z0-9]*\()|(%[A-Z][A-Z0-9]*)|([XB]'([^']|'')*')|('([^']|'')*')|(\*IN[A-Z0-9]{2})|(\*IN\([^)]+\))|(\*[A-Z#$@][A-Z0-9#$@_]*)|[A-Z#$@][A-Z0-9#$@_]*|(\+=|-=|\*=|\/=|%=|==|<=|>=|<>|!=)|[(){}\[\]+\-*\/=<>:,;]|[^\sA-Z0-9_]+|\s+/gi;
+  const regex = /(%[A-Z][A-Z0-9]*\()|(%[A-Z][A-Z0-9]*)|([XB]'([^']|'')*')|('([^']|'')*')|(\*IN[A-Z0-9]{2})|(\*IN\([^)]+\))|(\*[A-Z#$@\u00C6\u00D8\u00E6\u00F8\u00A7\u00A3\u00E0\u00C0][A-Z0-9#$@_\u00C6\u00D8\u00E6\u00F8\u00A7\u00A3\u00E0\u00C0]*)|[A-Z#$@\u00C6\u00D8\u00E6\u00F8\u00A7\u00A3\u00E0\u00C0][A-Z0-9#$@_\u00C6\u00D8\u00E6\u00F8\u00A7\u00A3\u00E0\u00C0]*|(\+=|-=|\*=|\/=|%=|==|<=|>=|<>|!=)|[(){}\[\]+\-*\/=<>:,;]|[^\sA-Z0-9_\u00C6\u00D8\u00E6\u00F8\u00A7\u00A3\u00E0\u00C0]+|\s+/gi;
 
   let match: RegExpExecArray | null;
   let lastIndex = 0;
@@ -392,7 +405,7 @@ function tokenizeWithSpacing_ALT2(line: string): { tokens: string[], spacers: st
   const tokens: string[] = [];
   const spacers: string[] = [];
   // Regex: match quoted strings, identifiers, numbers, keywords, operators, and punctuation, then any following whitespace (including none)
-  const regex = /('([^']|'')*'|\*IN\d{2}|\*[A-Z0-9_]+|[A-Z#$@][A-Z0-9#$@_]*|\d+(\.\d+)?|(\+=|-=|\*=|\/=|%=|==|<=|>=|<>|!=)|[(){}\[\]+\-*/=<>:,;]|[^\sA-Z0-9_]+)(\s*)/gi;
+  const regex = /('([^']|'')*'|\*IN\d{2}|\*[A-Z0-9_]+|[A-Z#$@\u00C6\u00D8\u00E6\u00F8\u00A7\u00A3\u00E0\u00C0][A-Z0-9#$@_\u00C6\u00D8\u00E6\u00F8\u00A7\u00A3\u00E0\u00C0]*|\d+(\.\d+)?|(\+=|-=|\*=|\/=|%=|==|<=|>=|<>|!=)|[(){}\[\]+\-*/=<>:,;]|[^\sA-Z0-9_\u00C6\u00D8\u00E6\u00F8\u00A7\u00A3\u00E0\u00C0]+)(\s*)/gi;
 
   let match: RegExpExecArray | null;
   while ((match = regex.exec(line)) !== null) {

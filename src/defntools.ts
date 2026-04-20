@@ -95,7 +95,7 @@ export function getFieldAttr(
             );
 
             // Find the dcl-s/dcl-ds line and extract the variable name
-            const dclMatch = line.match(/dcl-(s|ds)\s+([a-zA-Z0-9_]+)/i);
+            const dclMatch = line.match(/dcl-(s|ds)\s+([a-zA-Z0-9_#$@\u00C6\u00D8\u00E6\u00F8\u00A7\u00A3\u00E0\u00C0]+)/i);
             if (dclMatch) {
                 const [, , name] = dclMatch;
                 if (name.toLowerCase() === nameUpper) {
