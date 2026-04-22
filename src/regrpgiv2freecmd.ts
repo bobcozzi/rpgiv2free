@@ -24,6 +24,8 @@
 
 import * as vscode from 'vscode';
 import { collectStmt } from './collectStmts';
+import { getPARMIndexes, collectInlinePARMs, buildEntryOnExitBlock, findPARMParent, findOnExitInsertPosition,
+  clearConversionState, getPendingPatches, findPRBlock, buildParmLines } from './opcodes';
 import { collectCondCalc } from './collectCondCalc';
 import { expandCompoundRange } from './compoundStmt';
 import { convertHSpec } from './HSpec';
@@ -46,6 +48,7 @@ export function registerConvertToRPGFreeCommand(context: vscode.ExtensionContext
     }
 
     const doc = editor.document;
+    clearConversionState();
     const allLines = doc.getText().split(rpgiv.getEOL());
     let specType = '';
     let newBeginIndex = -1;
@@ -73,7 +76,15 @@ export function registerConvertToRPGFreeCommand(context: vscode.ExtensionContext
     const expandedLineIndexes = new Set<number>();
     let condIndy: ReturnType<typeof collectCondCalc> | undefined;
 
+    // If the cursor/selection sits on a PARM line, redirect to the parent
+    // PLIST / CALL / CALLB so the entire group is processed together.
+    const remappedLineIndexes = new Set<number>();
     for (const lineNbr of selectedLineIndexes) {
+      const parent = findPARMParent(allLines, lineNbr);
+      remappedLineIndexes.add(parent >= 0 ? parent : lineNbr);
+    }
+
+    for (const lineNbr of remappedLineIndexes) {
       if (expandedLineIndexes.has(lineNbr)) continue;
       const expanded = expandCompoundRange(allLines, lineNbr);
       for (const idx of expanded) {
@@ -130,6 +141,46 @@ export function registerConvertToRPGFreeCommand(context: vscode.ExtensionContext
         extraIndexes.length = 0;
       }
 
+      // For PLIST / CALL / CALLB: absorb following PARM lines into this
+      // group so they are replaced (deleted) as part of the same edit and
+      // are not processed individually by later loop iterations.
+      if (!isSQL && !isCollected && specLines.length > 0) {
+        const firstLine = specLines[0].padEnd(80, ' ');
+        const lineSpecType = firstLine.length > 5 ? firstLine.charAt(5).toLowerCase().trim() : '';
+        if (lineSpecType === 'c') {
+          const rawOp = rpgiv.getRawOpcode(firstLine).toUpperCase();
+          if (rawOp === 'PLIST' || rawOp === 'CALL' || rawOp === 'CALLB') {
+            const parmIdxs = getPARMIndexes(allLines, i);
+            for (const idx of parmIdxs) {
+              if (!indexes.includes(idx)) {
+                indexes.push(idx);
+              }
+            }
+
+            // *ENTRY PLIST with Factor 2 PARMs: schedule an ON-EXIT block
+            // insertion at the last C-spec line before any BEGSR subroutine.
+            if (rawOp === 'PLIST' && rpgiv.getCol(firstLine, 12, 25).trim().toUpperCase() === '*ENTRY') {
+              const entryParms = collectInlinePARMs(allLines, i);
+              const { insertAt: onExitInsertAt, existingOnExit } = findOnExitInsertPosition(allLines, i);
+              const onExitLines = buildEntryOnExitBlock(entryParms, !existingOnExit);
+              if (onExitLines.length > 0) {
+                // Insert as a direct edit at the original source position so
+                // it lands at the bottom of the main calc body — NOT via
+                // insertExtraDCLLinesBatch (which scans backward for DCL-
+                // lines and would place it in the declaration area).
+                // When merging into an existing on-exit, insert on the line
+                // immediately after it; otherwise insert after the last mainline C-spec.
+                const insertLine = Math.min(onExitInsertAt + 1, doc.lineCount - 1);
+                const formattedOnExit = onExitLines.flatMap(l => formatRPGIV(l, false));
+                const onExitText = formattedOnExit.join(eol) + eol;
+                const onExitPos = new vscode.Position(insertLine, 0);
+                edits.push({ range: new vscode.Range(onExitPos, onExitPos), text: onExitText });
+              }
+            }
+          }
+        }
+      }
+
       indexes.forEach(idx => processedLines.add(idx));
       let bIsCondStmt = false;
       if (condIndy && Array.isArray(condIndy.indexes)) {
@@ -157,8 +208,9 @@ export function registerConvertToRPGFreeCommand(context: vscode.ExtensionContext
           const condIndyForC = collectCondCalc(allLines, i);
           const condStmt = condIndyForC?.condStmt ?? '';
           converted = await convertCSpec(specLines, comments, condStmt, extraDCL, allLines, i);
-          // If convertCSpec returned nothing (empty array or non-array), fall back to original lines
-          if (!Array.isArray(converted) || converted.length === 0) {
+          // If convertCSpec returned nothing AND there is no pending extraDCL
+          // (e.g. dcl-pi/dcl-pr to insert), fall back to leaving the original line.
+          if ((!Array.isArray(converted) || converted.length === 0) && extraDCL.length === 0) {
             continue;
           }
 
@@ -219,6 +271,22 @@ export function registerConvertToRPGFreeCommand(context: vscode.ExtensionContext
       insertAt: block.insertAt + block.netLineChangeAtInsert,
       lines: formatBlockLines(block.lines)
     }));
+
+    // Apply any pending prototype patches (augmenting dcl-pr blocks already
+    // written to the document in a previous command invocation).
+    const patches = getPendingPatches();
+    if (patches.length > 0) {
+      const eol = rpgiv.getEOL();
+      for (const { name, additionalParms } of patches) {
+        const block = findPRBlock(name, allLines);
+        if (block) {
+          const newParmLines = buildParmLines(additionalParms, true);
+          const formatted = formatBlockLines(newParmLines);
+          const insertPos = new vscode.Position(block.endLine, 0);
+          edits.push({ range: new vscode.Range(insertPos, insertPos), text: formatted.join(eol) + eol });
+        }
+      }
+    }
 
     if (edits.length > 0) {
       try {

@@ -1,6 +1,6 @@
 {
   "name": "rpgiv2free",
-  "displayName": "Bob Cozzi's RPG IV to RPG Free Conversion",
+  "displayName": "Bob Cozzi's RPGLE / RPG IV to RPG Free Conversion",
   "description": "Bob Cozzi's Convert RPG IV fixed-format code to free-format code.",
   "author": {
     "name": "Bob Cozzi",
@@ -10,7 +10,7 @@
   "icon": "images/rpgiv2free.png",
   "preview": false,
   "private": false,
-  "version": "1.12.24",
+  "version": "1.12.25",
   "license": "MIT",
   "engines": {
     "vscode": "^1.70.0",
@@ -164,6 +164,12 @@
           "default": true,
           "description": "Add INZ keyword to data structures that do not have one."
         },
+        "rpgiv2free.parenthesizeANDOR": {
+          "type": "boolean",
+          "title": "Parenthesize Mixed AND/OR Conditions",
+          "default": false,
+          "description": "When enabled, wraps each AND-group in parentheses when a condition mixes ANDxx and ORxx opcodes. For example: (A and B) or (C and D). Pure-AND or pure-OR chains are not affected."
+        },
         "rpgiv2free.rightMargin": {
           "type": "number",
           "title": "Right margin for converted free format code",
@@ -311,18 +317,42 @@
     "semanticTokenScopes": [
       {
         "scopes": {
-          "specType": ["storage.type.spec.rpgiv"],
-          "fieldName": ["entity.name.variable.rpgiv"],
-          "opcode": ["keyword.operator.opcode.rpgiv"],
-          "factor1": ["variable.other.factor1.rpgiv"],
-          "factor2": ["variable.other.factor2.rpgiv"],
-          "resultField": ["variable.other.result.rpgiv"],
-          "indicator": ["constant.numeric.indicator.rpgiv"],
-          "keyword": ["keyword.other.rpgiv"],
-          "constant": ["string.quoted.rpgiv"],
-          "dataType": ["storage.type.rpgiv"],
-          "positions": ["constant.numeric.rpgiv"],
-          "reserved": ["comment.rpgiv"]
+          "specType": [
+            "storage.type.spec.rpgiv"
+          ],
+          "fieldName": [
+            "entity.name.variable.rpgiv"
+          ],
+          "opcode": [
+            "keyword.operator.opcode.rpgiv"
+          ],
+          "factor1": [
+            "variable.other.factor1.rpgiv"
+          ],
+          "factor2": [
+            "variable.other.factor2.rpgiv"
+          ],
+          "resultField": [
+            "variable.other.result.rpgiv"
+          ],
+          "indicator": [
+            "constant.numeric.indicator.rpgiv"
+          ],
+          "keyword": [
+            "keyword.other.rpgiv"
+          ],
+          "constant": [
+            "string.quoted.rpgiv"
+          ],
+          "dataType": [
+            "storage.type.rpgiv"
+          ],
+          "positions": [
+            "constant.numeric.rpgiv"
+          ],
+          "reserved": [
+            "comment.rpgiv"
+          ]
         }
       }
     ]
@@ -349,7 +379,7 @@
   "devDependencies": {
     "@eslint/json": "^0.12.0",
     "@eslint/markdown": "^6.4.0",
-    "@types/node": "^22.15.3",
+    "@types/node": "^22.19.17",
     "@types/vscode": "^1.70.0",
     "@typescript-eslint/eslint-plugin": "^8.32.0",
     "@typescript-eslint/parser": "^8.32.0",

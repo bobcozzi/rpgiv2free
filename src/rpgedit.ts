@@ -115,6 +115,7 @@ export interface configSettings {
   tempVar1STG: string;
   tempVar2DO: string;
   verifyCODE4i: boolean;
+  parenthesizeANDOR: boolean;
 }
 
 export function getRPGIVFreeSettings(): configSettings {
@@ -136,7 +137,8 @@ export function getRPGIVFreeSettings(): configSettings {
     replaceCOPYinSQLRPG: config.get<boolean>('ReplaceCOPYwithINCLUDE_SQLRPG', false),
     tempVar1STG: config.get<string>('tempVarName1', 'rpg2ff_tempSTG'),
     tempVar2DO: config.get<string>('tempVarName2', 'rpg2ff_tempDO'),
-    verifyCODE4i: config.get<boolean>('VerifyCode4IBMi', false)
+    verifyCODE4i: config.get<boolean>('VerifyCode4IBMi', false),
+    parenthesizeANDOR: config.get<boolean>('parenthesizeANDOR', false)
 
   };
 }
@@ -1165,8 +1167,9 @@ export function isReservedWord(id: string): boolean {
 
 export function isUnSupportedOpcode(id: string): boolean {
   // List of valid opcodes (operation extenders not included)
+  // Note: CALL, CALLB, PLIST, PARM are handled by refactor.ts and are NOT listed here.
   const oldRPGOpcodes = new Set([
-    "CALL", "CALLB", "PLIST", "PARM", "KLIST", "KFLD", "FREE", "DEBUG", "TAG"
+    "KLIST", "KFLD", "FREE", "DEBUG", "TAG"
   ]);
   // Strip off operation extenders like "(EHMR)" from the ID
   const baseOpcode = id.replace(/\([A-Z]+\)$/i, "").toUpperCase();

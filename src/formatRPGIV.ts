@@ -79,7 +79,7 @@ function shouldIndentStatement(firstToken: string): boolean {
     'BEGSR', 'ENDSR',
     'DCL-PROC', 'END-PROC',
     // Error handling
-    'MONITOR', 'ON-ERROR', 'ENDMON',
+    'MONITOR', 'ON-ERROR', 'ON-EXIT', 'ENDMON',
     // Jumps
     'GOTO', 'TAG',
     // Declarations

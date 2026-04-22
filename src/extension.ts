@@ -193,7 +193,7 @@ export async function activate(context: vscode.ExtensionContext) {
   registerConvertToRPGFreeCommand(context, config);
   registerCommentStatementCommand(context);
   registerUncommentStatementCommand(context);
-  registerSyntaxHighlighting(context);
+  // registerSyntaxHighlighting(context);  // Temporarily disabled — conflicts with fixed-format RPG IV syntax highlighter
 
   // Resolve the Code for IBM i API and store it globally so it’s available elsewhere
   try {

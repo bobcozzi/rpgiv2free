@@ -73,6 +73,8 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number, con
   let compOp = '';
   let comparison = '';
   let booleanExpr = '';
+  let useParen = false;
+  let groupOpen = false;
 
   if (!isSelect && opcode !== 'OTHER') {
     compOp = opcode.slice(-2); // Last 2 characters
@@ -101,7 +103,23 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number, con
       ffOpcode = opcode;  // 'OTHER'?
     }
     lines.push(ffOpcode);
-    booleanExpr = `${factor1} ${comparison} ${factor2}`;
+    // Pre-scan to detect mixed AND/OR for optional parenthesization
+    const settings = rpgiv.getRPGIVFreeSettings();
+    let hasAND = false;
+    let hasOR = false;
+    for (let j = i + 1; j < allLines.length; j++) {
+      const scanLine = allLines[j];
+      if (rpgiv.isSkipStmt(scanLine)) continue;
+      if (!rpgiv.isOpcodeANDxxORxx(scanLine)) break;
+      const scanOp = rpgiv.getRawOpcode(scanLine);
+      if (scanOp.startsWith('AND')) hasAND = true;
+      if (scanOp.startsWith('OR')) hasOR = true;
+      if (hasAND && hasOR) break;
+    }
+    useParen = settings.parenthesizeANDOR && hasAND && hasOR;
+    // Open a paren for the first group only if that group itself contains an AND
+    groupOpen = useParen && groupHasAND(allLines, i + 1);
+    booleanExpr = groupOpen ? `(${factor1} ${comparison} ${factor2}` : `${factor1} ${comparison} ${factor2}`;
   }
 
   i++;
@@ -152,10 +170,20 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number, con
     if (effectiveComment && effectiveComment.trim() !== '') {
       comments.push(effectiveComment.trim());
     }
-    booleanExpr += ` ${logicOp} ${contFactor1} ${compSymbol} ${contFactor2}`;
+    if (useParen && logicOp === 'or') {
+      const nextOpen = groupHasAND(allLines, i + 1);
+      booleanExpr += groupOpen ? `) or ` : ` or `;
+      booleanExpr += nextOpen ? `(${contFactor1} ${compSymbol} ${contFactor2}` : `${contFactor1} ${compSymbol} ${contFactor2}`;
+      groupOpen = nextOpen;
+    } else {
+      booleanExpr += ` ${logicOp} ${contFactor1} ${compSymbol} ${contFactor2}`;
+    }
 
 
     i++;
+  }
+  if (useParen && groupOpen && booleanExpr !== '') {
+    booleanExpr += ')';
   }
   if (condIndyStmt && condIndyStmt.trim() !== '') {
     // remove opcode from conditioning indicator in free format
@@ -176,6 +204,22 @@ export function collectBooleanOpcode(allLines: string[], startIndex: number, con
     comments: comments.length > 0 ? comments : null
   };
 
+}
+
+/**
+ * Returns true if the next AND opcode appears before the next OR opcode (or end of chain)
+ * starting from fromIndex. Used to decide whether to wrap an OR-group in parentheses.
+ */
+function groupHasAND(allLines: string[], fromIndex: number): boolean {
+  for (let j = fromIndex; j < allLines.length; j++) {
+    const scanLine = allLines[j];
+    if (rpgiv.isSkipStmt(scanLine)) continue;
+    if (!rpgiv.isOpcodeANDxxORxx(scanLine)) break;
+    const scanOp = rpgiv.getRawOpcode(scanLine);
+    if (scanOp.startsWith('AND')) return true;
+    if (scanOp.startsWith('OR')) break;
+  }
+  return false;
 }
 
 function getBooleanConnector(opcode: string): string {

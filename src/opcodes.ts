@@ -33,3 +33,4 @@ export * from './opcodes/movezn';
 export * from './opcodes/scan';
 export * from './opcodes/subst';
 export * from './opcodes/test';
+export * from './refactor';
