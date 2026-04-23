@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented in this file.
 
-## [1.12.26] - 2026-04-22
+## [1.12.27] - 2026-04-22
 
 ### What's New
 - **Overtype (replace) mode in fixed-format columns**: Typing any character in a fixed-format spec column (cols 1–80) now replaces the character under the cursor instead of inserting it, preserving column alignment. Columns 81+ (comments area) always use normal insert mode. Works identically on Mac, Windows, and Linux.

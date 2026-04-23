@@ -179,12 +179,13 @@ export function registerOvertypeCommands(
     99   // one step left of Smart Tab (priority 100)
   );
   statusBarItem.command = 'rpgiv2free.toggleOvertype';
-  statusBarItem.tooltip = 'Click to toggle RPG overtype mode (replace vs insert in fixed-format columns)';
   context.subscriptions.push(statusBarItem);
 
   function updateStatusBar(inFixedFormatContext: boolean): void {
     const on = getEnabled();
     statusBarItem.text = on ? 'OVR' : 'INS';
+      statusBarItem.tooltip =
+       'Insert (INS) and Overtype (OVR) mode toggle — fixed-format RPG only.\nClick to toggle mode. Alternatively, use the INS key (Cmd+I on Mac) to switch modes.';
     // Grey out text when the cursor is not on a fixed-format line so the
     // button appears visually disabled in that context.
     statusBarItem.color = inFixedFormatContext
