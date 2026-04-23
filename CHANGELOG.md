@@ -2,8 +2,27 @@
 
 All notable changes to this project are documented in this file.
 
-## [1.12.25] - 2026-04-21
+## [1.12.26] - 2026-04-22
+
+### What's New
+- **Overtype (replace) mode in fixed-format columns**: Typing any character in a fixed-format spec column (cols 1–80) now replaces the character under the cursor instead of inserting it, preserving column alignment. Columns 81+ (comments area) always use normal insert mode. Works identically on Mac, Windows, and Linux.
+
+- **OVR / INS status bar button**: A new `OVR` / `INS` button appears next to the Smart Tab button whenever a fixed-format RPG source file is active. `OVR` indicates overtype mode; `INS` indicates insert mode. Click it (or press `Insert` on Windows/Linux, `Cmd+I` on Mac) to toggle; last-used state persists across sessions. The button greys out when the cursor is on a free-format line within the file and is hidden entirely when the feature is disabled.
+
+- **New `rpgiv2free.overtypeOnStart` setting**: Boolean (default `false`) — controls the initial overtype state on first activation. Insert mode is the default; subsequent toggles are remembered via workspace storage.
+- **New `rpgiv2free.enableOvertypeInFixedFormat` setting**: Boolean (default `true`) — set to `false` to disable the overtype feature entirely, for example if a keybinding conflict with another extension is detected.
+
+- **Comprehensive IBM i national-variant character support (all CCSIDs)**: All known IBM i single-byte EBCDIC code pages are now covered. Characters such as `§`, `Æ`, `Ø`, `Å`, `Ä`, `Ö`, `Ñ`, `Ð`, `Ş`, `İ`, `£`, `¥`, and `à` are recognised as valid RPG IV identifier characters, so field names like `§Betrag` or `ØrendsNr` convert correctly regardless of which CCSID your IBM i system uses. Thanks to @chrjorgensen for providing the full character sets.
+
+- **New `rpgiv2free.nationalVariantChars` setting**: The national-variant character set is now user-configurable (default `§ÆØÅÄÖÑÐŞİ£¥à`). Sites on a single CCSID can narrow the set; sites with a non-standard EBCDIC mapping can extend it — without rebuilding the extension.
+
 - **New `parenthesizeANDOR` setting**: When enabled, the converter wraps each AND-group in parentheses when a conditional statement mixes `ANDxx` and `ORxx` opcodes — e.g. `(OHPAY <> 'H' and PSIG <> 'Y') or (OHPAY = 'H' and PSIG = 'Y')`. Only groups that actually contain an `AND` condition receive parentheses; pure-OR or single-condition segments are left bare. Pure-AND and pure-OR chains are never affected. Defaults to `false` (current behavior preserved).
+
+### What's Fixed
+- **Identifier underscore (`_`) start position**: `_` is valid in RPG IV identifiers only *after* the first character. All identifier validation patterns now correctly reject names that begin with an underscore.
+
+## [1.12.25] - 2026-04-21
+
 - **`*ENTRY PLIST` `ON-EXIT` block generation**: When a `*ENTRY PLIST` PARM statement has a Factor 2 value, those values must be copied back to the caller's parameter fields on program exit. The converter now generates an `on-exit;` block at the bottom of the mainline calc section (before the first `BEGSR` or subprocedure) containing the required assignments. If an `on-exit;` block already exists in the source, the assignments are merged into it rather than generating a duplicate opcode. A `// Copy Factor 2 values back to returning parameter fields` comment is included before the assignments.
 - **`ON-EXIT` added to free-format formatter**: `on-exit` is now treated as a structural keyword in `formatRPGIV`, placing it at the configured left margin (same level as `BEGSR`, `MONITOR`, etc.) with action statements inside indented by the standard 2-space offset.
 - **Cursor-on-PARM conversion**: Placing the cursor on any `PARM` line and invoking the converter now correctly identifies and processes the entire `CALL`/`CALLB`/`PLIST` + `PARM` group. Previously only the PLIST/CALL line itself triggered full group conversion; a cursor on a subordinate PARM line produced no output. A new `findPARMParent()` helper in `refactor.ts` walks backward from the PARM line to locate the parent opcode.

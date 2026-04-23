@@ -116,6 +116,34 @@ export interface configSettings {
   tempVar2DO: string;
   verifyCODE4i: boolean;
   parenthesizeANDOR: boolean;
+  nationalVariantChars: string;
+}
+
+/** Default national-variant chars covering all known IBM i single-byte CCSIDs. */
+export const DEFAULT_VARIANT_CHARS = '\u00A7\u00C6\u00D8\u00C5\u00C4\u00D6\u00D1\u00D0\u015E\u0130\u00A3\u00A5\u00E0'; // §ÆØÅÄÖÑÐŞİ£¥à
+
+/**
+ * Escape a string for safe use inside a regex character class `[...]`.
+ * Only characters with special meaning inside `[...]` are escaped.
+ */
+export function escapeForCharClass(s: string): string {
+  return s.replace(/[\]\\^\-]/g, '\\$&');
+}
+
+/**
+ * Build the inner content (without brackets) of the start and continuation
+ * character classes for RPG IV identifier patterns, given the national-variant
+ * character string from the `nationalVariantChars` setting.
+ *
+ * RPG IV rule: `_` (underscore) is valid AFTER the first character only.
+ * The start class therefore never includes `_`.
+ */
+export function getIdentClasses(variantChars: string): { start: string; cont: string } {
+  const v = escapeForCharClass(variantChars);
+  return {
+    start: `A-Za-z#$@${v}`,
+    cont:  `A-Za-z0-9_#$@${v}`,
+  };
 }
 
 export function getRPGIVFreeSettings(): configSettings {
@@ -138,8 +166,8 @@ export function getRPGIVFreeSettings(): configSettings {
     tempVar1STG: config.get<string>('tempVarName1', 'rpg2ff_tempSTG'),
     tempVar2DO: config.get<string>('tempVarName2', 'rpg2ff_tempDO'),
     verifyCODE4i: config.get<boolean>('VerifyCode4IBMi', false),
-    parenthesizeANDOR: config.get<boolean>('parenthesizeANDOR', false)
-
+    parenthesizeANDOR: config.get<boolean>('parenthesizeANDOR', false),
+    nationalVariantChars: config.get<string>('nationalVariantChars', DEFAULT_VARIANT_CHARS),
   };
 }
 
@@ -275,7 +303,9 @@ export function convertCmt(line: string): string {
 
 export function getDclVarName(line: string): string | null {
   // Match optional spaces, case-insensitive dcl-s, then the variable name (identifier)
-  const match = line.match(/^\s*dcl-s\s+([A-Z0-9_#$@\u00C6\u00D8\u00E6\u00F8\u00A7\u00A3\u00E0\u00C0]+)\b/i);
+  const { start, cont } = getIdentClasses(getRPGIVFreeSettings().nationalVariantChars);
+  const re = new RegExp(`^\\s*dcl-s\\s+([${start}][${cont}]*)\\b`, 'i');
+  const match = line.match(re);
   return match ? match[1] : null;
 }
 
@@ -651,7 +681,8 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
       }
 
       // Procedure call: myFoo('Hello') or myFoo ('Hello')
-      if (/^[A-Z0-9_#$@\u00C6\u00D8\u00E6\u00F8\u00A7\u00A3\u00E0\u00C0]+\s*\(/i.test(trimmed)) {
+      const { start: s654, cont: c654 } = getIdentClasses(getRPGIVFreeSettings().nationalVariantChars);
+      if (new RegExp(`^[${s654}][${c654}]*\\s*\\(`, 'i').test(trimmed)) {
         break;
       }
       // RPG built-in function: %SUBST(...)
@@ -1009,7 +1040,8 @@ export function isFreeFormCalcStmt(line: string): boolean {
   }
 
   // Procedure call: identifier(...) - semicolon is optional for multi-line statements
-  if (/^[A-Za-z_\u00C6\u00D8\u00E6\u00F8\u00A7\u00A3\u00E0\u00C0][A-Za-z0-9_#$@\u00C6\u00D8\u00E6\u00F8\u00A7\u00A3\u00E0\u00C0]*\s*\(.*\);?$/.test(s)) {
+  const { start: s1012, cont: c1012 } = getIdentClasses(getRPGIVFreeSettings().nationalVariantChars);
+  if (new RegExp(`^[${s1012}][${c1012}]*\\s*\\(.*\\);?$`).test(s)) {
     return true;
   }
 
@@ -1125,7 +1157,8 @@ export function isAssignmentStmt(line: string): boolean {
   if (!lhs) return false;
 
   // LHS validators:
-  const ident = '[A-Za-z_\u00C6\u00D8\u00E6\u00F8\u00A7\u00A3\u00E0\u00C0][A-Za-z0-9_#$@\u00C6\u00D8\u00E6\u00F8\u00A7\u00A3\u00E0\u00C0]*';
+  const { start: s1128, cont: c1128 } = getIdentClasses(getRPGIVFreeSettings().nationalVariantChars);
+  const ident = `[${s1128}][${c1128}]*`;
   const seg = `${ident}(\\s*\\([^)]*\\))?`;               // name or name(...)
   const dotted = new RegExp(`^${seg}(\\.${seg})*$`);      // a, a(i), a.b, a(i).b(j).c
   const builtIn = /^%[A-Za-z0-9_]+\s*\(.*\)$/;            // %SUBST(...)

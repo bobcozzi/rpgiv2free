@@ -10,7 +10,7 @@
   "icon": "images/rpgiv2free.png",
   "preview": false,
   "private": false,
-  "version": "1.12.25",
+  "version": "1.12.26",
   "license": "MIT",
   "engines": {
     "vscode": "^1.70.0",
@@ -84,6 +84,12 @@
         "key": "shift+tab",
         "command": "rpgsmarttab.shiftTab",
         "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && !suggestWidgetVisible && !inSnippetMode && rpgiv2free.isFixedFormat && config.rpgiv2free.enableRPGSmartTab"
+      },
+      {
+        "key": "insert",
+        "mac": "cmd+i",
+        "command": "rpgiv2free.toggleOvertype",
+        "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && rpgiv2free.isFixedFormat && config.rpgiv2free.enableOvertypeInFixedFormat"
       }
     ],
     "menus": {
@@ -163,6 +169,22 @@
           "title": "Include INZ when converting data structures",
           "default": true,
           "description": "Add INZ keyword to data structures that do not have one."
+        },
+        "rpgiv2free.enableOvertypeInFixedFormat": {
+          "type": "boolean",
+          "title": "Overtype Mode in Fixed-Format Columns",
+          "default": true,
+          "description": "When enabled (and RPG Smart Tab is on), typing a character in a fixed-format RPG spec column (cols 1–80) replaces the character under the cursor instead of inserting it. This preserves column alignment without displacing surrounding field values. Disable if you prefer standard insert behaviour or if a conflict with another extension is reported."
+        },        "rpgiv2free.overtypeOnStart": {
+          "type": "boolean",
+          "title": "Start in Overtype Mode",
+          "default": false,
+          "description": "Controls the initial state of the OVR (overtype) mode when the extension first activates. When true, overtype mode is on at startup. The OVR status bar button shows the current state and can toggle it at any time; that last-used state is remembered across sessions."
+        },        "rpgiv2free.nationalVariantChars": {
+          "type": "string",
+          "title": "RPG IV National Variant Identifier Characters",
+          "default": "§ÆØÅÄÖÑÐŞİ£¥à",
+          "markdownDescription": "Additional characters that are valid in RPG IV identifier names when source was written on an IBM i system using a non-CCSID-37 locale. Each character listed here corresponds to one of the three EBCDIC byte positions (`X'5B'`, `X'7B'`, `X'7C'`) that differ between CCSIDs, and which IBM i compilers accept as valid name characters (equivalent to `$`, `#`, and `@` in CCSID 37). The default covers all known IBM i single-byte CCSIDs: `§` (CCSID 273/280/423), `Æ`/`Ø` (277), `Å` (277/278/1122), `Ä` (278/1122), `Ö` (278/905/1026/1122), `Ñ` (284), `£` (280/285/297/423), `Ð` (871), `Ş` (905/1026), `İ` (905/1026), `¥` (290/836), `à` (297). Lowercase equivalents are recognised automatically. Note: `_` (underscore) is valid only after the first character and is always included regardless of this setting."
         },
         "rpgiv2free.parenthesizeANDOR": {
           "type": "boolean",

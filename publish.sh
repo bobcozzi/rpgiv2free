@@ -60,7 +60,12 @@ git push origin "$TAG" || exit 1
 
 # Publish to Microsoft Marketplace
 echo "📤 Publishing to VS Code Marketplace..."
-vsce publish || {
+if [ -z "${VSCE_PAT:-}" ]; then
+  echo "❌ Error: VSCE_PAT environment variable is not set."
+  echo "Run: export VSCE_PAT=<your-personal-access-token>"
+  exit 1
+fi
+vsce publish -p "$VSCE_PAT" || {
   echo "❌ Marketplace publish failed. Rolling back tag..."
   git tag -d "$TAG"
   git push --delete origin "$TAG"
@@ -69,9 +74,15 @@ vsce publish || {
 
 # Publish to Open VSX
 echo "📤 Publishing to Open VSX..."
-npx ovsx publish || {
-  echo "⚠️  Open VSX publish failed (VS Code Marketplace publish succeeded)"
-}
+if [ -z "${OVSX_PAT:-}" ]; then
+  echo "⚠️  Skipping Open VSX publish: OVSX_PAT environment variable is not set"
+  echo "    Set it with: export OVSX_PAT=your_token"
+  echo "    Get a token at: https://open-vsx.org/user-settings/tokens"
+else
+  npx ovsx publish "./rpgiv2free-${VERSION}.vsix" -p "$OVSX_PAT" || {
+    echo "⚠️  Open VSX publish failed (VS Code Marketplace publish succeeded)"
+  }
+fi
 
 # Create GitHub Release (auto-extracts changelog)
 echo "📝 Creating GitHub Release..."

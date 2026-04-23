@@ -47,10 +47,12 @@ import * as rpgiv from './rpgedit';
 import { registerConvertToRPGFreeCommand } from './regrpgiv2freecmd';
 import { registerSmartTabCommands } from './regsmarttabcmd';
 import { registerSmartEnterCommand } from './regsmartentercmd';
+import { registerOvertypeHandler, registerOvertypeCommands } from './overtype';
 import { registerCommentStatementCommand, registerUncommentStatementCommand } from './commentStmt';
 import { registerSyntaxHighlighting } from './syntaxHighlighter/index';
 
 let rpgSmartTabEnabled = true;  // ← In-memory toggle
+let rpgOvertypeEnabled = true;   // ← In-memory OVR toggle
 
 export async function activate(context: vscode.ExtensionContext) {
   console.log('[rpgiv2free] Extension activating...');
@@ -58,6 +60,9 @@ export async function activate(context: vscode.ExtensionContext) {
   // Load saved setting at startup
 
   rpgSmartTabEnabled = context.globalState.get<boolean>('rpgSmartTabEnabled', true);
+
+  const overtypeOnStart = vscode.workspace.getConfiguration('rpgiv2free').get<boolean>('overtypeOnStart', true);
+  rpgOvertypeEnabled = context.globalState.get<boolean>('rpgOvertypeEnabled', overtypeOnStart);
 
   const config = rpgiv.getRPGIVFreeSettings();
 
@@ -68,6 +73,8 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   registerSmartEnterCommand(context);
+  registerOvertypeCommands(context, () => rpgOvertypeEnabled, (val) => { rpgOvertypeEnabled = val; });
+  registerOvertypeHandler(context, () => rpgOvertypeEnabled);
 
   // Replace your updateFormatContext function:
   function updateFormatContext(editor?: vscode.TextEditor) {
