@@ -2,15 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
-## [1.12.27] - 2026-04-22
+## [1.12.28] - 2026-04-22
 
 ### What's New
 - **Overtype (replace) mode in fixed-format columns**: Typing any character in a fixed-format spec column (cols 1–80) now replaces the character under the cursor instead of inserting it, preserving column alignment. Columns 81+ (comments area) always use normal insert mode. Works identically on Mac, Windows, and Linux.
 
 - **OVR / INS status bar button**: A new `OVR` / `INS` button appears next to the Smart Tab button whenever a fixed-format RPG source file is active. `OVR` indicates overtype mode; `INS` indicates insert mode. Click it (or press `Insert` on Windows/Linux, `Cmd+I` on Mac) to toggle; last-used state persists across sessions. The button greys out when the cursor is on a free-format line within the file and is hidden entirely when the feature is disabled.
 
-- **New `rpgiv2free.overtypeOnStart` setting**: Boolean (default `false`) — controls the initial overtype state on first activation. Insert mode is the default; subsequent toggles are remembered via workspace storage.
-- **New `rpgiv2free.enableOvertypeInFixedFormat` setting**: Boolean (default `true`) — set to `false` to disable the overtype feature entirely, for example if a keybinding conflict with another extension is detected.
+- **New `rpgiv2free.overtypeStartupMode` setting**: Enum `"INS"` (default) or `"OVR"` — controls the OVR/INS mode on every VS Code startup. The user can toggle the mode at any time during the session, but it resets to this setting on the next launch.
+- **New `rpgiv2free.overtypeInFixedFormat` setting**: Enum `"enable"` (default) or `"disable"` — set to `"disable"` to turn off the overtype feature entirely, for example if a keybinding conflict with another extension is detected.
 
 - **Comprehensive IBM i national-variant character support (all CCSIDs)**: All known IBM i single-byte EBCDIC code pages are now covered. Characters such as `§`, `Æ`, `Ø`, `Å`, `Ä`, `Ö`, `Ñ`, `Ð`, `Ş`, `İ`, `£`, `¥`, and `à` are recognised as valid RPG IV identifier characters, so field names like `§Betrag` or `ØrendsNr` convert correctly regardless of which CCSID your IBM i system uses. Thanks to @chrjorgensen for providing the full character sets.
 

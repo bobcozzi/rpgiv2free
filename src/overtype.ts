@@ -110,7 +110,7 @@ export async function handleOvertypeChar(
  * Note: VS Code allows only one extension to own the `type` command at a time.
  * If a conflict is reported, it means another installed extension also overrides
  * `type`.  In that case disable the conflicting extension or set
- * `rpgiv2free.enableOvertypeInFixedFormat` to `false`.
+ * `rpgiv2free.overtypeInFixedFormat` to `'disable'`.
  */
 export function registerOvertypeHandler(
   context: vscode.ExtensionContext,
@@ -131,7 +131,7 @@ export function registerOvertypeHandler(
 
       // Check whether the feature is permitted (conflict-avoidance setting)
       const cfg = vscode.workspace.getConfiguration('rpgiv2free');
-      const featureEnabled = cfg.get<boolean>('enableOvertypeInFixedFormat', true);
+      const featureEnabled = cfg.get<string>('overtypeInFixedFormat', 'enable') === 'enable';
       if (!featureEnabled || !getOvertypeEnabled()) {
         await vscode.commands.executeCommand('default:type', args);
         return;
@@ -196,7 +196,7 @@ export function registerOvertypeCommands(
   function showOrHide(editor: vscode.TextEditor | undefined): void {
     const featureEnabled = vscode.workspace
       .getConfiguration('rpgiv2free')
-      .get<boolean>('enableOvertypeInFixedFormat', true);
+      .get<string>('overtypeInFixedFormat', 'enable') === 'enable';
     const langId = editor?.document.languageId;
     if (
       featureEnabled &&
@@ -225,7 +225,6 @@ export function registerOvertypeCommands(
     'rpgiv2free.toggleOvertype',
     async () => {
       setEnabled(!getEnabled());
-      await context.globalState.update('rpgOvertypeEnabled', getEnabled());
       const editor = vscode.window.activeTextEditor;
       updateStatusBar(editor ? isOvertypePosition(editor) : false);
       // Return focus to the editor so the user can type immediately after

@@ -10,7 +10,7 @@
   "icon": "images/rpgiv2free.png",
   "preview": false,
   "private": false,
-  "version": "1.12.27",
+  "version": "1.12.28",
   "license": "MIT",
   "engines": {
     "vscode": "^1.70.0",
@@ -89,7 +89,7 @@
         "key": "insert",
         "mac": "cmd+i",
         "command": "rpgiv2free.toggleOvertype",
-        "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && rpgiv2free.isFixedFormat && config.rpgiv2free.enableOvertypeInFixedFormat"
+        "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && rpgiv2free.isFixedFormat && config.rpgiv2free.overtypeInFixedFormat == 'enable'"
       }
     ],
     "menus": {
@@ -170,16 +170,26 @@
           "default": true,
           "description": "Add INZ keyword to data structures that do not have one."
         },
-        "rpgiv2free.enableOvertypeInFixedFormat": {
-          "type": "boolean",
+        "rpgiv2free.overtypeInFixedFormat": {
+          "type": "string",
+          "enum": ["enable", "disable"],
+          "enumDescriptions": [
+            "Enable overtype mode in fixed-format RPG spec columns (default)",
+            "Disable overtype mode entirely — use if a keybinding conflict with another extension is reported"
+          ],
           "title": "Overtype Mode in Fixed-Format Columns",
-          "default": true,
-          "description": "When enabled (and RPG Smart Tab is on), typing a character in a fixed-format RPG spec column (cols 1–80) replaces the character under the cursor instead of inserting it. This preserves column alignment without displacing surrounding field values. Disable if you prefer standard insert behaviour or if a conflict with another extension is reported."
-        },        "rpgiv2free.overtypeOnStart": {
-          "type": "boolean",
-          "title": "Start in Overtype Mode",
-          "default": false,
-          "description": "Controls the initial state of the OVR (overtype) mode when the extension first activates. When true, overtype mode is on at startup. The OVR status bar button shows the current state and can toggle it at any time; that last-used state is remembered across sessions."
+          "default": "enable",
+          "description": "When set to 'enable' (and RPG Smart Tab is on), typing a character in a fixed-format RPG spec column (cols 1–80) replaces the character under the cursor instead of inserting it. This preserves column alignment without displacing surrounding field values. Set to 'disable' if you prefer standard insert behaviour or if a conflict with another extension is reported."
+        },        "rpgiv2free.overtypeStartupMode": {
+          "type": "string",
+          "enum": ["INS", "OVR"],
+          "enumDescriptions": [
+            "Start in Insert mode (default)",
+            "Start in Overtype mode"
+          ],
+          "title": "Startup Overtype Mode",
+          "default": "INS",
+          "description": "Controls whether the editor starts in Insert (INS) or Overtype (OVR) mode each time VS Code launches. The user can toggle the mode at any time during the session using the OVR/INS status bar button or the Insert key (Cmd+I on Mac), but that choice is not remembered across sessions — this setting always determines the starting mode."
         },        "rpgiv2free.nationalVariantChars": {
           "type": "string",
           "title": "RPG IV National Variant Identifier Characters",

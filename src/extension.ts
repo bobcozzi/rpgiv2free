@@ -61,8 +61,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
   rpgSmartTabEnabled = context.globalState.get<boolean>('rpgSmartTabEnabled', true);
 
-  const overtypeOnStart = vscode.workspace.getConfiguration('rpgiv2free').get<boolean>('overtypeOnStart', true);
-  rpgOvertypeEnabled = context.globalState.get<boolean>('rpgOvertypeEnabled', overtypeOnStart);
+  const startupOvertypeMode = vscode.workspace.getConfiguration('rpgiv2free').get<string>('overtypeStartupMode', 'INS');
+  rpgOvertypeEnabled = startupOvertypeMode === 'OVR';
 
   const config = rpgiv.getRPGIVFreeSettings();
 
