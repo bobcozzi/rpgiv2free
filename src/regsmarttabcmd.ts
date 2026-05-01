@@ -24,7 +24,7 @@
 
 import * as vscode from 'vscode';
 import { handleSmartTab, applyColumnarDecorations } from './smartTab';
-import * as rpgiv from './rpgedit';
+import * as rpgiv from './rpgtools';
 
 export function registerSmartTabCommands(
   context: vscode.ExtensionContext,

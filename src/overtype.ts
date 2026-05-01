@@ -23,7 +23,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as rpgiv from './rpgedit';
+import * as rpgiv from './rpgtools';
 
 // RPG IV fixed-format specs occupy columns 1–80 (0-indexed: 0–79).
 // The comments area starts at column 81 (0-indexed: 80) — normal insert

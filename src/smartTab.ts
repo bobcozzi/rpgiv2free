@@ -23,7 +23,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as rpgiv from './rpgedit';
+import * as rpgiv from './rpgtools';
 import * as types from './types'; // <-- restore the types import so setSuppressTabZoneUpdate works
 
 // helper to accept suggestions if present

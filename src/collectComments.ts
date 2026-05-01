@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-import * as rpgiv from './rpgedit';
+import * as rpgiv from './rpgtools';
 import { stmtLines } from './types';
 
 export function collectComments(allLines: string[], startIndex: number): stmtLines {

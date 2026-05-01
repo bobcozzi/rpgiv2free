@@ -42,7 +42,7 @@ import { convertToFreeFormSQL } from './collectSQLSpec';
 import { getIBMiAPI } from './codeforibmi';
 
 import * as types from './types';
-import * as rpgiv from './rpgedit';
+import * as rpgiv from './rpgtools';
 
 import { registerConvertToRPGFreeCommand } from './regrpgiv2freecmd';
 import { registerSmartTabCommands } from './regsmarttabcmd';
@@ -50,6 +50,7 @@ import { registerSmartEnterCommand } from './regsmartentercmd';
 import { registerOvertypeHandler, registerOvertypeCommands } from './overtype';
 import { registerCommentStatementCommand, registerUncommentStatementCommand } from './commentStmt';
 import { registerSyntaxHighlighting } from './syntaxHighlighter/index';
+import { registerFormatRPGFreeCommand } from './regformatrpgfreecmd';
 
 let rpgSmartTabEnabled = true;  // ← In-memory toggle
 let rpgOvertypeEnabled = true;   // ← In-memory OVR toggle
@@ -200,6 +201,7 @@ export async function activate(context: vscode.ExtensionContext) {
   registerConvertToRPGFreeCommand(context, config);
   registerCommentStatementCommand(context);
   registerUncommentStatementCommand(context);
+  registerFormatRPGFreeCommand(context);
   // registerSyntaxHighlighting(context);  // Temporarily disabled — conflicts with fixed-format RPG IV syntax highlighter
 
   // Resolve the Code for IBM i API and store it globally so it’s available elsewhere

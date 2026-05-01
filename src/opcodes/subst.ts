@@ -25,7 +25,7 @@
 import * as vscode from 'vscode';
 import { commands, ExtensionContext, Uri, window } from "vscode";
 
-import * as rpgiv from '../rpgedit';
+import * as rpgiv from '../rpgtools';
 import * as vartypes from '../vartype';
 import { getStructTypeInfo } from '../calcStructLen';
 

@@ -35,7 +35,7 @@ import { convertPSpec } from './PSpec';
 import { convertCSpec } from './CSpec';
 import { convertToFreeFormSQL } from './collectSQLSpec';
 import { formatRPGIV } from './formatRPGIV';
-import * as rpgiv from './rpgedit';
+import * as rpgiv from './rpgtools';
 import { applyColumnarDecorations, drawTabStopLines } from './smartTab';
 
 export function registerConvertToRPGFreeCommand(context: vscode.ExtensionContext, config: any) {

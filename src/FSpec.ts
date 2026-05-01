@@ -23,7 +23,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as rpgiv from './rpgedit'
+import * as rpgiv from './rpgtools'
 
 export function convertFSpec(lines: string[]): string[] {
   if (!Array.isArray(lines) || lines.length === 0) return [];

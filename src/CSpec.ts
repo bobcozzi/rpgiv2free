@@ -23,7 +23,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as rpgiv from './rpgedit';
+import * as rpgiv from './rpgtools';
 import * as op from './opcodes';
 
 import { keyListCache, getKLISTSize, collectKLIST, getKeyList } from './collectKList';

@@ -23,10 +23,11 @@
  */
 
 import * as vscode from 'vscode';
-import * as rpgiv from './rpgedit';
+import * as rpgiv from './rpgtools';
+import { wrapSQLBody } from './collectSQLSpec';
 
 // The national-variant identifier characters are now driven by the
-// `rpgiv2free.nationalVariantChars` VS Code setting (see rpgedit.ts).
+// `rpgiv2free.nationalVariantChars` VS Code setting (see rpgtools.ts).
 // The default covers all known IBM i single-byte CCSIDs; the constant
 // below is kept only as a named reference for any code that still needs
 // a plain string (e.g. for display).  All regex patterns use
@@ -55,6 +56,31 @@ function extractComment(line: string): { code: string, comment: string | null } 
   return { code: line.trimEnd(), comment: null };
 }
 
+// Structural / control-flow / declarative keywords that are recognized as
+// RPG IV keywords but do NOT trigger an extra indent level.
+// Kept at module scope so applyLineCasing can also use it.
+const NO_INDENT_KEYWORDS = new Set([
+  // Conditionals and loops
+  'IF', 'ELSEIF', 'ELSE', 'ENDIF',
+  'DOW', 'DOU', 'DO', 'ENDDO',
+  'FOR', 'FOR-EACH', 'ENDFOR',
+  'SELECT', 'WHEN', 'OTHER', 'ENDSL',
+  'ITER', 'LEAVE',
+  // Subroutines / procedures
+  'BEGSR', 'ENDSR',
+  'DCL-PROC', 'END-PROC',
+  // Error handling
+  'MONITOR', 'ON-ERROR', 'ON-EXIT', 'ENDMON',
+  // Jumps
+  'GOTO', 'TAG',
+  // Declarations / control options
+  'CTL-OPT',
+  'DCL-S', 'DCL-DS', 'DCL-C', 'DCL-F',
+  'DCL-PR', 'DCL-PI', 'DCL-SUBF', 'DCL-ENUM',
+  'END-DS', 'END-PR', 'END-PI', 'END-ENUM',
+  'WHEN-IS', 'WHEN-IN',
+]);
+
 function shouldIndentStatement(firstToken: string): boolean {
   if (!firstToken) return false;
   const tok = firstToken.toUpperCase().replace(/\(.*\)$/, '').replace(/;$/, '');
@@ -63,32 +89,12 @@ function shouldIndentStatement(firstToken: string): boolean {
   // Boolean comparison opcodes (IFxx, DOWxx, DOUxx, WHENxx, ANDxx, ORxx, CASxx)
   if (/^(IF|DOW|DOU|WHEN|AND|OR)(EQ|NE|GT|LT|GE|LE)$/.test(tok)) return false;
   if (/^CAS(EQ|NE|GT|LT|GE|LE)?$/.test(tok)) return false;
-  // Structural / control-flow / declarative keywords — no extra indent
-  const noIndentKeywords = new Set([
-    // Conditionals and loops
-    'IF', 'ELSEIF', 'ELSE', 'ENDIF',
-    'DOW', 'DOU', 'DO', 'ENDDO',
-    'FOR', 'FOR-EACH', 'ENDFOR',
-    'SELECT', 'WHEN', 'OTHER', 'ENDSL',
-    'ITER', 'LEAVE',
-    // Subroutines / procedures
-    'BEGSR', 'ENDSR',
-    'DCL-PROC', 'END-PROC',
-    // Error handling
-    'MONITOR', 'ON-ERROR', 'ON-EXIT', 'ENDMON',
-    // Jumps
-    'GOTO', 'TAG',
-    // Declarations
-    'DCL-S', 'DCL-DS', 'DCL-C', 'DCL-F',
-    'DCL-PR', 'DCL-PI', 'DCL-SUBF',
-    'END-DS', 'END-PR', 'END-PI',
-  ]);
-  if (noIndentKeywords.has(tok)) return false;
+  if (NO_INDENT_KEYWORDS.has(tok)) return false;
   // Everything else is an action statement — indent it
   return true;
 }
 
-export const formatRPGIV = (input: string, splitOffComments: boolean = false): string[] => {
+export const formatRPGIV = (input: string, splitOffComments: boolean = false, indentOffset: number = 0, skipAutoIndent: boolean = false): string[] => {
   const config = rpgiv.getRPGIVFreeSettings();
   let firstIndentLen = config.leftMargin - 1;
   let contIndentLen = config.leftMarginContinued - 1;
@@ -238,13 +244,15 @@ export const formatRPGIV = (input: string, splitOffComments: boolean = false): s
   let { code, comment } = extractComment(input);
 
   const bIsDir = rpgiv.isDirective(input, true); // check free format style for directives, only
-  if (!bIsDir) {
+  if (!bIsDir && !skipAutoIndent) {
     const firstToken = code.trim().split(/\s+/)[0] ?? '';
     if (shouldIndentStatement(firstToken)) {
       firstIndentLen += 2;
       contIndentLen += 2;
     }
   }
+  firstIndentLen += indentOffset;
+  contIndentLen += indentOffset;
 
   let currentLine = indent(firstIndentLen);
   let currentLength = firstIndentLen;
@@ -401,6 +409,409 @@ function tokenizeWithSpacing(line: string, variantChars: string): { tokens: stri
   while (spacers.length < tokens.length) spacers.push('');
 
   return { tokens, spacers };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Free-format document formatter helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Compound single-word RPG IV keywords split into [prefix, suffix] for
+// case styling.  prefix = structural part (end/else/beg), suffix = semantic part.
+// camel  → prefix lower  + suffix initcap  → endIf, elseIf, begSr
+// initcap → prefix initcap + suffix initcap → EndIf, ElseIf, BegSr
+const COMPOUND_KEYWORD_PARTS: Record<string, [string, string]> = {
+  'ENDIF':  ['end',  'If'],
+  'ENDDO':  ['end',  'Do'],
+  'ENDFOR': ['end',  'For'],
+  'ENDSL':  ['end',  'Sl'],
+  'ENDMON': ['end',  'Mon'],
+  'ENDSR':  ['end',  'Sr'],
+  'ENDPROC':['end',  'Proc'],
+  'ELSEIF': ['else', 'If'],
+  'BEGSR':  ['beg',  'Sr'],
+};
+
+/** Apply the configured opcode case style to a single token. */
+export function applyOpcodeCase(token: string, style: string): string {
+  const up = token.toUpperCase();
+  switch (style) {
+    case 'upper': return up;
+    case 'lower': return token.toLowerCase();
+    case 'camel': {
+      // Compound single-word keywords: prefix lowercase + suffix initcap
+      // e.g. ENDIF → endIf, ELSEIF → elseIf, BEGSR → begSr
+      if (COMPOUND_KEYWORD_PARTS[up]) {
+        const [pre, suf] = COMPOUND_KEYWORD_PARTS[up];
+        return pre + suf;
+      }
+      // hyphenated tokens: first segment lowercase, rest initcap → dcl-Ds, end-Ds
+      const parts = up.split('-');
+      if (parts.length > 1) {
+        return parts.map((p, i) =>
+          i === 0 ? p.toLowerCase() : p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()
+        ).join('-');
+      }
+      // plain single-word tokens: initcap → Eval, Chain, If
+      return parts[0].charAt(0).toUpperCase() + parts[0].slice(1).toLowerCase();
+    }
+    case 'initcap': {
+      // Compound single-word keywords: both prefix and suffix initcap
+      // e.g. ENDIF → EndIf, ELSEIF → ElseIf, BEGSR → BegSr
+      if (COMPOUND_KEYWORD_PARTS[up]) {
+        const [pre, suf] = COMPOUND_KEYWORD_PARTS[up];
+        return pre.charAt(0).toUpperCase() + pre.slice(1) + suf;
+      }
+      // hyphenated or plain: capitalise first letter of each segment, rest lowercase
+      return up.split('-').map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join('-');
+    }
+    default: return token.toLowerCase();
+  }
+}
+
+type TokenRole = 'opener' | 'closer' | 'midblock' | 'action';
+
+const OPENERS = new Set([
+  'IF', 'DOW', 'DOU', 'DO', 'FOR', 'FOR-EACH',
+  'SELECT', 'MONITOR', 'BEGSR', 'DCL-PROC',
+  'DCL-DS', 'DCL-PR', 'DCL-PI', 'DCL-ENUM',
+]);
+const CLOSERS = new Set([
+  'ENDIF', 'ENDDO', 'ENDFOR', 'ENDSL', 'ENDMON',
+  'ENDSR', 'END-PROC', 'END-DS', 'END-PR', 'END-PI', 'END-ENUM',
+]);
+const MIDBLOCKS = new Set([
+  'ELSEIF', 'ELSE',
+  'WHEN', 'WHEN-IS', 'WHEN-IN', 'OTHER',
+  'ON-ERROR', 'ON-EXIT',
+]);
+
+// Legacy Boolean-comparison opcodes (IFxx, DOWxx etc.) are openers
+const BOOL_OPENER_RX = /^(IF|DOW|DOU|WHEN|AND|OR)(EQ|NE|GT|LT|GE|LE)$/;
+
+function getTokenRole(tok: string): TokenRole {
+  const up = tok.toUpperCase().replace(/[;(].*/, '').replace(/\(.*\)$/, '');
+  if (CLOSERS.has(up)) return 'closer';
+  if (MIDBLOCKS.has(up)) return 'midblock';
+  if (OPENERS.has(up) || BOOL_OPENER_RX.test(up)) return 'opener';
+  return 'action';
+}
+
+/** Apply opcode case to the first token of a free-format RPG IV line,
+ *  but only when that token is a recognized RPG IV keyword/opcode.
+ *  User-defined names (subfield names, variable names, etc.) are never
+ *  case-converted. */
+function applyLineCasing(line: string, style: string): string {
+  if (style === 'lower' || !line.trim()) return line;
+  const trimmed = line.trimStart();
+  const leadingSpaces = line.length - trimmed.length;
+  const m = trimmed.match(/^([A-Z][A-Z0-9\-]*)/i);
+  if (!m) return line;
+  const tok = m[1];
+  const up = tok.toUpperCase();
+  // Only restyle the token when it is a known RPG IV keyword/opcode.
+  // Variable names and subfield names that happen to be first on a line
+  // must never have their case altered.
+  const isKnownKeyword =
+    OPENERS.has(up) ||
+    CLOSERS.has(up) ||
+    MIDBLOCKS.has(up) ||
+    BOOL_OPENER_RX.test(up) ||
+    NO_INDENT_KEYWORDS.has(up) ||   // DCL-F, DCL-S, DCL-C, GOTO, etc.
+    shouldIndentStatement(up);       // action opcodes like CHAIN, EVAL, etc.
+  if (!isKnownKeyword) return line;
+  const rest = trimmed.slice(tok.length);
+  return ' '.repeat(leadingSpaces) + applyOpcodeCase(tok, style) + rest;
+}
+
+// Match both free-format (exec sql) and column-7 (/exec sql) starts
+const EXEC_SQL_LINE_RX = /^\s*(?:\/\s*)?exec\s+sql\b/i;
+const END_EXEC_LINE_RX = /^\s*\/\s*end-exec\b/i;
+// Fixed-format spec: column 6 (0-based index 5) is a spec letter
+const FIXED_SPEC_RX = /^.{5}[HFDICOPcdfhiopcn]/i;
+// Classic directive: col 7 (0-based index 6) is '/'
+const COL7_DIR_RX = /^.{6}\//;
+// **FREE line
+const FREE_DIR_RX = /^\*\*FREE\s*$/i;
+
+/**
+ * Returns true when the already-collected logical statement `stmtText`
+ * contains the matching END-xx for the given DCL-xx opener, meaning the
+ * declaration is self-contained (no child statements follow).
+ */
+function isInlineDeclaration(stmtText: string, openerTok: string): boolean {
+  const closerMap: Record<string, string> = {
+    'DCL-DS':   'END-DS',
+    'DCL-PR':   'END-PR',
+    'DCL-PI':   'END-PI',
+    'DCL-ENUM': 'END-ENUM',
+  };
+  const closer = closerMap[openerTok];
+  if (!closer) return false;
+  const closerRx = new RegExp(`(?<![A-Z0-9_-])${closer.replace('-', '\\-')}(?![A-Z0-9_-])`);
+  return closerRx.test(stmtText.toUpperCase());
+}
+
+/**
+ * Returns true when `text` ends inside an open RPG IV single-quoted string
+ * literal, i.e. there is an odd number of unescaped single-quote characters.
+ */
+function isInsideOpenString(text: string): boolean {
+  let inStr = false;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === "'") {
+      // A doubled quote ('') inside a string is an escaped quote — skip the pair.
+      if (inStr && i + 1 < text.length && text[i + 1] === "'") {
+        i++;
+      } else {
+        inStr = !inStr;
+      }
+    }
+  }
+  return inStr;
+}
+
+/**
+ * Collects physical lines starting at `startIndex` that together form one
+ * RPG IV free-format logical *statement* — everything up to and including
+ * the physical line whose code portion (after stripping any trailing inline
+ * comment) ends with `;`.
+ *
+ * Collection stops early (without consuming the triggering line) when a
+ * continuation line would start a new context: blank line, comment-only
+ * line, EXEC SQL opener, fixed-format spec, **FREE, or column-7 directive.
+ * A comment-only line as the very first line is returned as a standalone
+ * single-line statement.
+ */
+function collectFreeStmt(lines: string[], startIndex: number): { stmtText: string; nextIndex: number } {
+  const parts: string[] = [];
+  let i = startIndex;
+
+  while (i < lines.length) {
+    const raw = lines[i];
+    const trimmed = raw.trim();
+
+    // Comment-only lines are always standalone — return immediately if first
+    // line, or stop collection if encountered mid-statement.
+    if (trimmed.startsWith('//')) {
+      if (parts.length === 0) {
+        parts.push(trimmed);
+        i++;
+      }
+      break;
+    }
+
+    // Mid-collection: stop before any line that starts a new context.
+    if (parts.length > 0) {
+      if (trimmed === '') break;
+      if (EXEC_SQL_LINE_RX.test(trimmed)) break;
+      if (END_EXEC_LINE_RX.test(trimmed)) break;
+      if (raw.length >= 6 && FIXED_SPEC_RX.test(raw)) break;
+      if (FREE_DIR_RX.test(trimmed)) break;
+      if (raw.length >= 7 && COL7_DIR_RX.test(raw)) break;
+    }
+
+    // Strip inline comment to find the real statement terminator.
+    const { code } = extractComment(trimmed);
+    parts.push(trimmed);
+    i++;
+
+    if (code.trimEnd().endsWith(';')) break;
+  }
+
+  // Join physical lines into one logical statement, respecting RPG IV
+  // continuation conventions:
+  //   '...'  at end of a line  — name continuation:   strip '...', join directly
+  //   '+'    at end of code    — string continuation:  strip '+',   join directly
+  //   '-'    at end of code    — string continuation:  strip '-',   join with next part leading-whitespace trimmed
+  let stmtText = '';
+  for (const part of parts) {
+    if (stmtText === '') {
+      stmtText = part;
+      continue;
+    }
+    // Name-continuation marker
+    if (stmtText.trimEnd().endsWith('...')) {
+      stmtText = stmtText.trimEnd().slice(0, -3) + part;
+      continue;
+    }
+    // String-literal continuation: only applies when we are inside an open string
+    const prevCode = extractComment(stmtText).code.trimEnd();
+    if (isInsideOpenString(prevCode)) {
+      if (prevCode.endsWith('+')) {
+        // Strip the trailing '+' (the continuation marker, not string content)
+        stmtText = stmtText.slice(0, prevCode.length - 1) + part;
+        continue;
+      }
+      if (prevCode.endsWith('-')) {
+        // Strip the trailing '-' and concatenate the next part as-is, preserving
+        // its leading whitespace (position 1 of the next physical line is the
+        // next character in the string value).
+        stmtText = stmtText.slice(0, prevCode.length - 1) + part;
+        continue;
+      }
+    }
+    // Default: join with a single space
+    stmtText = stmtText + ' ' + part;
+  }
+  stmtText = stmtText.replace(/\s+/g, ' ').trim();
+
+  return { stmtText, nextIndex: i };
+}
+
+/**
+ * Format an entire RPG IV free-format document with nesting-aware indentation.
+ * Returns the new lines array.  The caller is responsible for replacing the
+ * document content.
+ */
+export function formatRPGIVDocument(lines: string[]): string[] {
+  const config = rpgiv.getRPGIVFreeSettings();
+  const INDENT = config.indentSize;
+  const caseStyle = config.opcodeCase;
+  const result: string[] = [];
+  let depth = 0;
+  let i = 0;
+
+  while (i < lines.length) {
+    const raw = lines[i];
+    const trimmed = raw.trim();
+
+    // Blank line
+    if (trimmed === '') {
+      result.push('');
+      i++;
+      continue;
+    }
+
+    // **FREE directive — preserve as-is
+    if (FREE_DIR_RX.test(trimmed)) {
+      result.push(raw);
+      i++;
+      continue;
+    }
+
+    // Fixed-format spec (col 6 is a spec letter) — round-trip
+    if (raw.length >= 6 && FIXED_SPEC_RX.test(raw)) {
+      result.push(raw);
+      i++;
+      continue;
+    }
+
+    // Column-7 classic directive (e.g. /COPY, /INCLUDE, /EJECT) — round-trip
+    if (raw.length >= 7 && COL7_DIR_RX.test(raw) && !EXEC_SQL_LINE_RX.test(trimmed) && !END_EXEC_LINE_RX.test(trimmed)) {
+      result.push(raw);
+      i++;
+      continue;
+    }
+
+    // EXEC SQL block — collect body, reformat via wrapSQLBody, shift by nesting depth
+    if (EXEC_SQL_LINE_RX.test(trimmed)) {
+      // Strip the "exec sql" opener and any trailing RPG-statement semicolon from that same line.
+      // A bare `exec sql;` has the `;` as the RPG statement terminator, not SQL content.
+      const inlineSQL = trimmed
+        .replace(/^\/?\s*exec\s+sql\b\s*/i, '')
+        .replace(/;\s*$/, '')
+        .trim();
+
+      const sqlParts: string[] = [];
+      if (inlineSQL) sqlParts.push(inlineSQL);
+
+      let hasEndExec = false;
+      i++;
+
+      // Collect body lines.  Stop on whichever comes first:
+      //   1. /END-EXEC  — explicit block terminator (set hasEndExec, advance i)
+      //   2. A new EXEC SQL line — implicit start of next block; do NOT consume it
+      //   3. A body line ending with `;` — SQL statement terminator (collect it, then stop)
+      //   4. EOF
+      while (i < lines.length) {
+        const sqlRaw = lines[i];
+        const sqlTrimmed = sqlRaw.trim();
+
+        if (END_EXEC_LINE_RX.test(sqlTrimmed)) {
+          hasEndExec = true;
+          i++;
+          break;
+        }
+
+        // Next EXEC SQL encountered — leave it for the outer loop to handle
+        if (EXEC_SQL_LINE_RX.test(sqlTrimmed)) {
+          break;
+        }
+
+        if (sqlTrimmed) sqlParts.push(sqlTrimmed);
+        i++;
+
+        // SQL statement terminator — body ends here (no /END-EXEC style)
+        if (sqlTrimmed.endsWith(';')) break;
+      }
+
+      const flatSQL = sqlParts.join(' ').replace(/\s+/g, ' ').trim();
+      if (flatSQL) {
+        const wrappedSQL = wrapSQLBody(flatSQL);
+        const extraIndent = ' '.repeat(depth * INDENT);
+        result.push(...wrappedSQL.map(ln => extraIndent + ln));
+      }
+      if (hasEndExec) {
+        result.push('/END-EXEC');
+      }
+      continue;
+    }
+
+    // Free-format directive (e.g. /IF, /DEFINE, /INCLUDE in free-format style)
+    if (rpgiv.isDirective(trimmed, true)) {
+      // Use formatRPGIV with skipAutoIndent so directive indent is applied normally
+      const formatted = formatRPGIV(trimmed, false, 0, true);
+      result.push(...formatted);
+      i++;
+      continue;
+    }
+
+    // Regular free-format statement.
+    // The first token is on the first physical line — enough for role analysis.
+    // Then collect ALL physical lines of this logical statement so the full
+    // text is passed to formatRPGIV as one unit (avoids spurious semicolons on
+    // continuation lines of multi-line statements like long DCL-S names).
+    const firstTok = (trimmed.split(/\s+/)[0] ?? '').toUpperCase().replace(/[;(].*/, '').replace(/\(.*\)$/, '');
+
+    const { stmtText, nextIndex: nextI } = collectFreeStmt(lines, i);
+
+    let role: TokenRole = getTokenRole(firstTok);
+    if (firstTok === 'DCL-DS' || firstTok === 'DCL-PR' || firstTok === 'DCL-PI' || firstTok === 'DCL-ENUM') {
+      if (isInlineDeclaration(stmtText, firstTok)) {
+        role = 'action';
+      }
+    }
+
+    // Keywords that must always sit at the left margin (depth 0), regardless
+    // of what block depth the surrounding code is at.
+    const ALWAYS_ZERO_DEPTH = new Set(['CTL-OPT']);
+
+    let displayDepth: number;
+    if (ALWAYS_ZERO_DEPTH.has(firstTok)) {
+      displayDepth = 0;
+    } else switch (role) {
+      case 'closer':
+        depth = Math.max(0, depth - 1);
+        displayDepth = depth;
+        break;
+      case 'midblock':
+        displayDepth = Math.max(0, depth - 1);
+        break;
+      case 'opener':
+        displayDepth = depth;
+        depth++;
+        break;
+      default: // action
+        displayDepth = depth;
+    }
+
+    const casedStmt = applyLineCasing(stmtText, caseStyle);
+    const formatted = formatRPGIV(casedStmt, false, displayDepth * INDENT, true);
+    result.push(...formatted);
+    i = nextI;
+  }
+
+  return result;
 }
 
 function tokenizeWithSpacing_ALT2(line: string, variantChars: string): { tokens: string[], spacers: string[] } {

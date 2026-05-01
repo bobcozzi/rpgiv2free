@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-import * as rpgiv from './rpgedit';
+import * as rpgiv from './rpgtools';
 import { stmtLines } from './types';
 
 export function collectBooleanOpcode(allLines: string[], startIndex: number, condIndyStmt: string): stmtLines {

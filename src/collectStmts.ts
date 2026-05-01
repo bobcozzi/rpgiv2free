@@ -35,7 +35,7 @@ import { collectDirectives } from './collectDirectives';
 import { collectCaseOpcode } from './collectCASEBlock';
 import { collectExtOpcode } from './collectExtOpcode';
 
-import * as rpgiv from './rpgedit';
+import * as rpgiv from './rpgtools';
 
 export { }; // forces module scope
 

@@ -10,7 +10,7 @@
   "icon": "images/rpgiv2free.png",
   "preview": false,
   "private": false,
-  "version": "1.12.28",
+  "version": "1.12.30",
   "license": "MIT",
   "engines": {
     "vscode": "^1.70.0",
@@ -67,6 +67,10 @@
       {
         "command": "rpgiv2free.uncommentStatement",
         "title": "Uncomment RPG IV Source Line"
+      },
+      {
+        "command": "rpgiv2free.formatRPGFree",
+        "title": "Format RPG IV Free Format Code"
       }
     ],
     "keybindings": [
@@ -96,6 +100,11 @@
       "editor/context": [
         {
           "command": "rpgiv2free.convertToRPGFree",
+          "when": "resourceExtname =~ /\\.rpg(le)?|\\.sqlrpgle|\\.rpgleinc/i",
+          "group": "navigation"
+        },
+        {
+          "command": "rpgiv2free.formatRPGFree",
           "when": "resourceExtname =~ /\\.rpg(le)?|\\.sqlrpgle|\\.rpgleinc/i",
           "group": "navigation"
         },
@@ -172,7 +181,10 @@
         },
         "rpgiv2free.overtypeInFixedFormat": {
           "type": "string",
-          "enum": ["enable", "disable"],
+          "enum": [
+            "enable",
+            "disable"
+          ],
           "enumDescriptions": [
             "Enable overtype mode in fixed-format RPG spec columns (default)",
             "Disable overtype mode entirely — use if a keybinding conflict with another extension is reported"
@@ -180,9 +192,13 @@
           "title": "Overtype Mode in Fixed-Format Columns",
           "default": "enable",
           "description": "When set to 'enable' (and RPG Smart Tab is on), typing a character in a fixed-format RPG spec column (cols 1–80) replaces the character under the cursor instead of inserting it. This preserves column alignment without displacing surrounding field values. Set to 'disable' if you prefer standard insert behaviour or if a conflict with another extension is reported."
-        },        "rpgiv2free.overtypeStartupMode": {
+        },
+        "rpgiv2free.overtypeStartupMode": {
           "type": "string",
-          "enum": ["INS", "OVR"],
+          "enum": [
+            "INS",
+            "OVR"
+          ],
           "enumDescriptions": [
             "Start in Insert mode (default)",
             "Start in Overtype mode"
@@ -190,7 +206,8 @@
           "title": "Startup Overtype Mode",
           "default": "INS",
           "description": "Controls whether the editor starts in Insert (INS) or Overtype (OVR) mode each time VS Code launches. The user can toggle the mode at any time during the session using the OVR/INS status bar button or the Insert key (Cmd+I on Mac), but that choice is not remembered across sessions — this setting always determines the starting mode."
-        },        "rpgiv2free.nationalVariantChars": {
+        },
+        "rpgiv2free.nationalVariantChars": {
           "type": "string",
           "title": "RPG IV National Variant Identifier Characters",
           "default": "§ÆØÅÄÖÑÐŞİ£¥à",
@@ -233,6 +250,35 @@
           "minimum": 7,
           "maximum": 32,
           "description": "Number of columns to indent /include, /copy etc."
+        },
+        "rpgiv2free.indentSize": {
+          "type": "number",
+          "title": "Indent Size for Free Format Formatter",
+          "default": 2,
+          "minimum": 1,
+          "maximum": 8,
+          "description": "Number of spaces per nesting level when formatting free-format RPG IV code."
+        },
+        "rpgiv2free.opcodeCase": {
+          "type": "string",
+          "title": "Opcode Case Style",
+          "enum": ["lower", "upper", "camel", "initcap"],
+          "enumDescriptions": [
+            "Lowercase: dcl-ds, chain",
+            "Uppercase: DCL-DS, CHAIN",
+            "Camel (first segment lower, rest upper): dcl-DS, dcl-PROC",
+            "Initial-cap each segment: Dcl-Ds, Dcl-Proc"
+          ],
+          "default": "lower",
+          "description": "Case style applied to RPG IV opcodes and keywords when formatting free-format code."
+        },
+        "rpgiv2free.sqlIndent": {
+          "type": "number",
+          "title": "SQL Body Base Indent",
+          "default": 8,
+          "minimum": 0,
+          "maximum": 32,
+          "description": "Number of spaces to indent the SQL body inside an EXEC SQL block."
         },
         "rpgiv2free.AddEXTDeviceFlag": {
           "type": "boolean",
@@ -411,6 +457,7 @@
   "devDependencies": {
     "@eslint/json": "^0.12.0",
     "@eslint/markdown": "^6.4.0",
+    "@halcyontech/vscode-ibmi-types": "^2.18.0",
     "@types/node": "^22.19.17",
     "@types/vscode": "^1.70.0",
     "@typescript-eslint/eslint-plugin": "^8.32.0",
@@ -419,7 +466,6 @@
     "typescript": "^4.8.0"
   },
   "dependencies": {
-    "@halcyontech/vscode-ibmi-types": "^2.15.3",
     "odbc": "^2.4.9",
     "sql-formatter": "^15.5.2"
   },

@@ -117,6 +117,9 @@ export interface configSettings {
   verifyCODE4i: boolean;
   parenthesizeANDOR: boolean;
   nationalVariantChars: string;
+  indentSize: number;
+  opcodeCase: string;
+  sqlIndent: number;
 }
 
 /** Default national-variant chars covering all known IBM i single-byte CCSIDs. */
@@ -168,6 +171,9 @@ export function getRPGIVFreeSettings(): configSettings {
     verifyCODE4i: config.get<boolean>('VerifyCode4IBMi', false),
     parenthesizeANDOR: config.get<boolean>('parenthesizeANDOR', false),
     nationalVariantChars: config.get<string>('nationalVariantChars', DEFAULT_VARIANT_CHARS),
+    indentSize: config.get<number>('indentSize', 2),
+    opcodeCase: config.get<string>('opcodeCase', 'lower'),
+    sqlIndent: config.get<number>('sqlIndent', 8),
   };
 }
 

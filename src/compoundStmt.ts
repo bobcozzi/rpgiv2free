@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-import * as rpgiv from './rpgedit'
+import * as rpgiv from './rpgtools'
 
 export function expandCompoundRange(lines: string[], selectedIndex: number): number[] {
   const expanded: number[] = [];

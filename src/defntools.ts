@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-import * as rpgiv from './rpgedit';
+import * as rpgiv from './rpgtools';
 
 export function getFieldAttr(
     varName: string,

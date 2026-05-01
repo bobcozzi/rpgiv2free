@@ -2,6 +2,64 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.30] - 2026-05-01
+
+### What's New
+
+- **Preserved trailing comments in columns 81–100 during fixed-to-free conversion**: Source lines in RPG IV fixed-format commonly carry developer comments in columns 81–100. These comments are now collected and emitted as `//` comment lines immediately before the converted free-format declaration — for every line of a multi-line continued spec (D-spec, F-spec, P-spec), not just the first line. H-spec (control spec) comments in columns 81–100 are appended inline to the resulting `ctl-opt` statement.
+
+## [1.12.29] - 2026-04-29
+
+### What's New
+
+- **Free-format RPG IV document formatter** (`rpgiv2free.formatRPGFree` command): Formats an entire free-format RPG IV source file (or the current selection) in-place. Statements are indented according to their structural role — block openers (`IF`, `DOW`, `DCL-PROC`, `DCL-DS`, …) establish a new indent level, mid-block keywords (`ELSE`, `ELSEIF`, `WHEN`, `ON-ERROR`, …) sit at the enclosing level, and closers (`ENDIF`, `ENDDO`, `END-DS`, …) dedent before rendering. Action statements inside a block are indented one extra level. `CTL-OPT` and global declarations are always pinned to the left margin regardless of surrounding depth. Multi-line logical statements (continuation lines joined with `...`, `+`, or `-`) are collected into a single unit before formatting so continuation lines never receive spurious semicolons or incorrect indentation.
+
+- **New `rpgiv2free.opcodeCase` setting**: Controls the case style applied to the **leading opcode or declarative keyword** of each statement when the free-format formatter runs (e.g. `IF`, `EVAL`, `DCL-S`, `DCL-DS`, `ENDIF`). Only the first token of a statement is ever examined; everything that follows — data type keywords (`CHAR`, `PACKED`, `VARCHAR`, …), built-in functions (`%TRIM`, `%LEN`, …), operands, named constants, and all user-defined names — is left exactly as written.
+
+  | Style | Single-word opcode | Hyphenated keyword | Compound keyword |
+  |---|---|---|---|
+  | `upper` | `EVAL` | `DCL-DS` | `ENDIF` |
+  | `lower` | `eval` | `dcl-ds` | `endif` |
+  | `camel` | `Eval` | `dcl-Ds` | `endIf` |
+  | `initcap` | `Eval` | `Dcl-Ds` | `EndIf` |
+
+  Full reference for all block opcodes categories:
+
+  **Compound (single-word) keywords**
+
+  | Keyword | `upper` | `lower` | `camel` | `initcap` |
+  |---|---|---|---|---|
+  | `ENDIF` | `ENDIF` | `endif` | `endIf` | `EndIf` |
+  | `ELSEIF` | `ELSEIF` | `elseif` | `elseIf` | `ElseIf` |
+  | `ENDDO` | `ENDDO` | `enddo` | `endDo` | `EndDo` |
+  | `ENDFOR` | `ENDFOR` | `endfor` | `endFor` | `EndFor` |
+  | `ENDSL` | `ENDSL` | `endsl` | `endSl` | `EndSl` |
+  | `ENDMON` | `ENDMON` | `endmon` | `endMon` | `EndMon` |
+  | `ENDSR` | `ENDSR` | `endsr` | `endSr` | `EndSr` |
+  | `BEGSR` | `BEGSR` | `begsr` | `begSr` | `BegSr` |
+
+  **Hyphenated `DCL-` / `END-` / `CTL-` keywords**
+
+  | Keyword | `upper` | `lower` | `camel` | `initcap` |
+  |---|---|---|---|---|
+  | `DCL-S` | `DCL-S` | `dcl-s` | `dcl-S` | `Dcl-S` |
+  | `DCL-DS` | `DCL-DS` | `dcl-ds` | `dcl-Ds` | `Dcl-Ds` |
+  | `DCL-C` | `DCL-C` | `dcl-c` | `dcl-C` | `Dcl-C` |
+  | `DCL-F` | `DCL-F` | `dcl-f` | `dcl-F` | `Dcl-F` |
+  | `DCL-PR` | `DCL-PR` | `dcl-pr` | `dcl-Pr` | `Dcl-Pr` |
+  | `DCL-PI` | `DCL-PI` | `dcl-pi` | `dcl-Pi` | `Dcl-Pi` |
+  | `DCL-SUBF` | `DCL-SUBF` | `dcl-subf` | `dcl-Subf` | `Dcl-Subf` |
+  | `DCL-ENUM` | `DCL-ENUM` | `dcl-enum` | `dcl-Enum` | `Dcl-Enum` |
+  | `DCL-PROC` | `DCL-PROC` | `dcl-proc` | `dcl-Proc` | `Dcl-Proc` |
+  | `END-DS` | `END-DS` | `end-ds` | `end-Ds` | `End-Ds` |
+  | `END-PR` | `END-PR` | `end-pr` | `end-Pr` | `End-Pr` |
+  | `END-PI` | `END-PI` | `end-pi` | `end-Pi` | `End-Pi` |
+  | `END-ENUM` | `END-ENUM` | `end-enum` | `end-Enum` | `End-Enum` |
+  | `END-PROC` | `END-PROC` | `end-proc` | `end-Proc` | `End-Proc` |
+  | `CTL-OPT` | `CTL-OPT` | `ctl-opt` | `ctl-Opt` | `Ctl-Opt` |
+  | `FOR-EACH` | `FOR-EACH` | `for-each` | `for-Each` | `For-Each` |
+
+
 ## [1.12.28] - 2026-04-22
 
 ### What's New
@@ -16,7 +74,7 @@ All notable changes to this project are documented in this file.
 
 - **New `rpgiv2free.nationalVariantChars` setting**: The national-variant character set is now user-configurable (default `§ÆØÅÄÖÑÐŞİ£¥à`). Sites on a single CCSID can narrow the set; sites with a non-standard EBCDIC mapping can extend it — without rebuilding the extension.
 
-- **New `parenthesizeANDOR` setting**: When enabled, the converter wraps each AND-group in parentheses when a conditional statement mixes `ANDxx` and `ORxx` opcodes — e.g. `(OHPAY <> 'H' and PSIG <> 'Y') or (OHPAY = 'H' and PSIG = 'Y')`. Only groups that actually contain an `AND` condition receive parentheses; pure-OR or single-condition segments are left bare. Pure-AND and pure-OR chains are never affected. Defaults to `false` (current behavior preserved).
+- **New `parenthesizeANDOR` setting**: When enabled, the converter wraps each AND-group in parentheses when a conditional statement mixes `ANDxx` and `ORxx` opcodes — e.g. `(OHPAY <> 'H' and PSIG <> 'Y') or (OHPAY = 'H' and PSIG = 'Y')`. Only groups that actually contain an `AND` condition receive parentheses; pure-OR or single-condition segments are left bare. Pure-AND and pure-OR chains are never affected. Defaults to `false` (current behavior preserved). This parenthesizing provides visual clarity to the order of evaluation, it does not alter the conditional priority.
 
 ### What's Fixed
 - **Identifier underscore (`_`) start position**: `_` is valid in RPG IV identifiers only *after* the first character. All identifier validation patterns now correctly reject names that begin with an underscore.

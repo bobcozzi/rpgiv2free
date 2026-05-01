@@ -23,7 +23,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as rpgiv from '../rpgedit';
+import * as rpgiv from '../rpgtools';
 
 export function convertCAT(
   opcode: string,
@@ -70,12 +70,12 @@ export function convertCAT(
     lines.push(`${result} = ${fullExpr};`);
   } else {
     // Rule: If no extender (P), wrap in %SUBST
-    const lenVar = config.tempVar1STG;
-    lines.push(`${lenVar} = %LEN(${fullExpr});  // workfield ${lenVar} for CAT opcode`);
-    lines.push(`${lenVar} = %MIN(${lenVar} : %LEN(${result})); // Avoid overlow error`);
-    lines.push(`%SUBST(${result} : 1 : ${lenVar}) = ${fullExpr};`);
-    if (!rpgiv.isVarDcl(lenVar)) { // If not already declared, declare work field
-      extraDCL.push(`DCL-S ${lenVar} INT(10); // Ad hoc length field used by CAT opcode `);
+    const temp_LenVar = config.tempVar1STG;
+    lines.push(`${temp_LenVar} = %LEN(${fullExpr});  // workfield ${temp_LenVar} for CAT opcode`);
+    lines.push(`${temp_LenVar} = %MIN(${temp_LenVar} : %LEN(${result})); // Avoid overlow error`);
+    lines.push(`%SUBST(${result} : 1 : ${temp_LenVar}) = ${fullExpr};`);
+    if (!rpgiv.isVarDcl(temp_LenVar)) { // If not already declared, declare work field
+      extraDCL.push(`DCL-S ${temp_LenVar} INT(10); // Ad hoc length field used by CAT opcode `);
       }
   }
 

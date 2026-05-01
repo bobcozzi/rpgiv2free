@@ -24,20 +24,31 @@
 
 import * as vscode from 'vscode';
 
+// Minimal interface reflecting the real Code for IBM i extension export shape.
+// See: https://github.com/codefori/vscode-ibmi/blob/master/src/typings.ts
+// Connection methods mirror IBMi.ts signatures exactly.
 interface CodeForIBMiAPI {
-  version?: string;
-  runCommand?(command: string, options?: {
-    environment?: 'ile' | 'qsh' | 'pase';
-    cwd?: string;
-    env?: Record<string, string>;
-    onStdout?: (data: Buffer) => void;
-    onStderr?: (data: Buffer) => void;
-    stdin?: string;
-  }): Promise<{ code: number; signal?: string | null; stdout: string; stderr: string; command?: string }>;
-  getContent?(): {
-    read?(path: string): Promise<string>;
-    downloadStream?(path: string): Promise<Buffer>;
+  instance?: {
+    getConnection?(): {
+      // Matches IBMi.runCommand(data: RemoteCommand): Promise<CommandResult>
+      runCommand?(params: {
+        command: string;
+        environment?: 'ile' | 'qsh' | 'pase';
+        noLibList?: boolean;
+        singleUserLibraryList?: string[];
+      }): Promise<{ code: number; stdout: string; stderr: string }>;
+      // Matches IBMi.runSQL(statements, options?): Promise<Tools.DB2Row[]>
+      runSQL?(statements: string | string[], options?: {
+        bindings?: unknown[];
+      }): Promise<Record<string, string | number | boolean | null>[]>;
+      getContent?(): unknown;
+    };
   };
+  connectionManager?: unknown;
+  deployTools?: unknown;
+  searchTools?: unknown;
+  tools?: unknown;
+  componentRegistry?: unknown;
 }
 
 const EXT_ID = 'halcyontechltd.code-for-ibmi';
@@ -54,7 +65,8 @@ function findCodeForIBMiExtension(): vscode.Extension<unknown> | undefined {
 function isValidApi(api: unknown): api is CodeForIBMiAPI {
   if (!api || typeof api !== 'object') return false;
   const maybe = api as CodeForIBMiAPI;
-  return typeof maybe.runCommand === 'function' || typeof maybe.getContent === 'function';
+  // Check for properties that actually exist on the real Code for IBM i export
+  return maybe.instance !== undefined || maybe.connectionManager !== undefined;
 }
 
 // Debug helpers to describe the export shape when validation fails
@@ -67,7 +79,7 @@ function buildExportDiagnostics(exportsVal: unknown): string {
   const parts: string[] = [];
   const rootKeys = safeKeys(root);
   parts.push(`exports type=${typeof root} keys=[${rootKeys.join(', ')}]`);
-  if (typeof root?.runCommand === 'function' || typeof root?.getContent === 'function') {
+  if (root?.instance !== undefined || root?.connectionManager !== undefined) {
     parts.push('exports has known API members');
   }
   if (root?.default) {
@@ -142,7 +154,7 @@ export async function getIBMiAPI(): Promise<CodeForIBMiAPI | undefined> {
     const diag = buildExportDiagnostics(ext.exports as unknown);
     console.warn(
       `[rpgiv2free] Code for IBM i did not export a compatible API from ${info}. ` +
-      `Expected runCommand() or getContent(). ${diag}`
+      `Expected instance or connectionManager properties. ${diag}`
     );
     return undefined;
   }

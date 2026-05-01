@@ -23,7 +23,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as rpgiv from './rpgedit';
+import * as rpgiv from './rpgtools';
 
 export async function handleSmartEnter(editor: vscode.TextEditor, position: vscode.Position) {
   const mode = rpgiv.getSmartEnterMode();

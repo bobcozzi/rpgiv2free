@@ -23,7 +23,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as rpgiv from '../rpgedit';
+import * as rpgiv from '../rpgtools';
 
 // Convert a GOTO that is within a Subroutine (SR) to a LEAVESR
 // if, and only if that GOTO targets the "tag" named on the ENDSR opcode.
@@ -69,13 +69,13 @@ export function getNextENDSR(startLine: number, factor2: string): boolean {
 
   for (let ln = startLine + 1; ln < doc.lineCount; ln++) {
     const raw = doc.lineAt(ln).text;
-    // Skip blank lines, comments and directives using rpgedit helper
+    // Skip blank lines, comments and directives using rpgtools helper
       if (rpgiv.isSkipStmt(raw)) continue;
 
       // If end of RPG source (e.g., ** or **ctdata) then return
       if (rpgiv.isEndSrc(raw)) return false;
 
-    // Detect fixed-format statement using rpgedit helper
+    // Detect fixed-format statement using rpgtools helper
     if (rpgiv.isValidFixedFormat(raw)) {
       const opcode = (rpgiv.getRawOpcode(raw) || '').toUpperCase();
       if (opcode === 'ENDSR') {

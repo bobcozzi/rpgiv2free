@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { getSpecType } from '../rpgedit';
+import { getSpecType } from '../rpgtools';
 import { getStmtVariant } from '../smartTab';
 import { rpgivLegend, RPGIV_TOKEN_TYPES } from './legend';
 import { getTokenRangesForLine } from './specFields';

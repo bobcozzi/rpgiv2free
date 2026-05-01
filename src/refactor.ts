@@ -46,7 +46,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as rpgiv from './rpgedit';
+import * as rpgiv from './rpgtools';
 
 // ---------------------------------------------------------------------------
 // Types

@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-import * as rpgiv from './rpgedit';
+import * as rpgiv from './rpgtools';
 import { collectedStmt } from './types';
 
 function isDefnSpecLine(line: string): boolean {
@@ -231,6 +231,14 @@ export function collectDSpecs(
     c--;
   }
 
+
+  // Collect trailing comments from columns 81–100 of each source spec line
+  for (const idx of indexes) {
+    const srcLine = allLines[idx];
+    if (rpgiv.isComment(srcLine)) continue; // full-line * comment already captured
+    const trailingCmt = rpgiv.getCol(srcLine, 81, 100).trim();
+    if (trailingCmt) comments.push(trailingCmt);
+  }
 
   return {
     specType: 'D',

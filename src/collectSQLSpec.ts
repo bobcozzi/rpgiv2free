@@ -23,8 +23,8 @@
  * SOFTWARE.
  */
 
-import { formatSQL } from './SQLFormatter';
-import * as rpgiv from './rpgedit';
+import { formatSQL } from './formatSQL';
+import * as rpgiv from './rpgtools';
 import * as vscode from 'vscode';
 
 

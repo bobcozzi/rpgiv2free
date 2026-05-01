@@ -24,7 +24,7 @@
 
 import * as vscode from 'vscode';
 import { handleSmartEnter } from './smartEnter';
-import * as rpgiv from './rpgedit';
+import * as rpgiv from './rpgtools';
 
 export function registerSmartEnterCommand(context: vscode.ExtensionContext) {
   const disposable = vscode.commands.registerTextEditorCommand('rpgiv2free.smartEnter', async (editor, edit) => {

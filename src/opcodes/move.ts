@@ -23,7 +23,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as rpgiv from '../rpgedit';
+import * as rpgiv from '../rpgtools';
 import { commands, ExtensionContext, Uri, window } from "vscode";
 import * as vartypes from '../vartype';
 import { getStructTypeInfo } from '../calcStructLen';

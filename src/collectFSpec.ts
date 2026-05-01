@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-import * as rpgiv from './rpgedit';
+import * as rpgiv from './rpgtools';
 import { collectedStmt } from './types';
 
 export function collectFSpecs(
@@ -147,6 +147,14 @@ export function collectFSpecs(
     comments.pop(); // <-- Remove the last collected ("embedded") comment as well
     i--;
     c--;
+  }
+
+  // Collect trailing comments from columns 81–100 of each source spec line
+  for (const idx of indexes) {
+    const srcLine = allLines[idx];
+    if (rpgiv.isComment(srcLine)) continue; // full-line * comment already captured
+    const trailingCmt = rpgiv.getCol(srcLine, 81, 100).trim();
+    if (trailingCmt) comments.push(trailingCmt);
   }
 
   return {

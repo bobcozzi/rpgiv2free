@@ -23,7 +23,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as rpgiv from './rpgedit';
+import * as rpgiv from './rpgtools';
 import { combineKwdAreaLines } from './DSpec'; // borrow some DSpec functions
 
 // Function to convert D specs from fixed-format to free-format

@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-import * as rpgiv from './rpgedit';
+import * as rpgiv from './rpgtools';
 import { collectedStmt } from './types'
 
 export function collectCondCalc(allLines: string[], startIndex: number): {

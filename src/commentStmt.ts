@@ -23,7 +23,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as rpgiv from './rpgedit';
+import * as rpgiv from './rpgtools';
 
 export function registerCommentStatementCommand(context: vscode.ExtensionContext) {
   const disposable = vscode.commands.registerCommand('rpgiv2free.commentStatement', async () => {

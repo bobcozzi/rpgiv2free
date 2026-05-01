@@ -23,7 +23,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as rpgiv from './rpgedit';
+import * as rpgiv from './rpgtools';
 import { convertChildVar } from './convertChildVar';
 
 const isDigits = (s: string) => /^\d+$/.test(s);

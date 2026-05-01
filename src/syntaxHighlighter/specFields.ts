@@ -1,4 +1,4 @@
-import { getColUpper } from '../rpgedit';
+import { getColUpper } from '../rpgtools';
 
 /** A single named token range within a source line (1-based columns). */
 export interface TokenRange {

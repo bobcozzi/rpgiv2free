@@ -24,7 +24,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as rpgiv from '../rpgedit';
+import * as rpgiv from '../rpgtools';
 
 function binToList(str: string): string {
     // Remove quotes if present
