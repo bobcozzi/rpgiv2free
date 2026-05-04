@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.31] - 2026-05-04
+
+### Changed
+
+- **INS/OVR overtype mode now delegates entirely to the VS Code built-in command `editor.action.toggleOvertypeInsertMode`** (requires VS Code 1.96 or later). The custom status bar `INS`/`OVR` indicator has been removed; VS Code's own native `OVR` status bar button is the sole mode indicator. The macOS keybinding **Cmd+I** to toggle between Insert and Overtype mode is still provided by this extension for fixed-format RPG source files.
+
 ## [1.12.30] - 2026-05-01
 
 ### What's New

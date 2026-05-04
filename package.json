@@ -10,10 +10,10 @@
   "icon": "images/rpgiv2free.png",
   "preview": false,
   "private": false,
-  "version": "1.12.30",
+  "version": "1.12.31",
   "license": "MIT",
   "engines": {
-    "vscode": "^1.70.0",
+    "vscode": "^1.96.0",
     "node": ">=16.0.0"
   },
   "keywords": [
@@ -90,10 +90,10 @@
         "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && !suggestWidgetVisible && !inSnippetMode && rpgiv2free.isFixedFormat && config.rpgiv2free.enableRPGSmartTab"
       },
       {
-        "key": "insert",
+        "key": "cmd+i",
         "mac": "cmd+i",
         "command": "rpgiv2free.toggleOvertype",
-        "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && rpgiv2free.isFixedFormat && config.rpgiv2free.overtypeInFixedFormat == 'enable'"
+        "when": "editorTextFocus && isMac && (editorLangId == 'rpg' || editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc')"
       }
     ],
     "menus": {
@@ -191,7 +191,7 @@
           ],
           "title": "Overtype Mode in Fixed-Format Columns",
           "default": "enable",
-          "description": "When set to 'enable' (and RPG Smart Tab is on), typing a character in a fixed-format RPG spec column (cols 1–80) replaces the character under the cursor instead of inserting it. This preserves column alignment without displacing surrounding field values. Set to 'disable' if you prefer standard insert behaviour or if a conflict with another extension is reported."
+          "description": "macOS only — on Windows, VS Code's built-in overtype mode (Insert key) handles this natively. When enabled, the OVR/INS status bar indicator is shown for fixed-format RPG files, and Cmd+I toggles between Insert and Overtype modes using VS Code's built-in editor.toggleOvertype command."
         },
         "rpgiv2free.overtypeStartupMode": {
           "type": "string",
@@ -205,7 +205,7 @@
           ],
           "title": "Startup Overtype Mode",
           "default": "INS",
-          "description": "Controls whether the editor starts in Insert (INS) or Overtype (OVR) mode each time VS Code launches. The user can toggle the mode at any time during the session using the OVR/INS status bar button or the Insert key (Cmd+I on Mac), but that choice is not remembered across sessions — this setting always determines the starting mode."
+          "description": "macOS only — on Windows, VS Code's built-in overtype mode handles this natively. Controls whether the editor starts in Insert (INS) or Overtype (OVR) mode each time VS Code launches. The user can toggle the mode at any time during the session using the OVR/INS status bar button or Cmd+I, but that choice is not remembered across sessions — this setting always determines the starting mode."
         },
         "rpgiv2free.nationalVariantChars": {
           "type": "string",

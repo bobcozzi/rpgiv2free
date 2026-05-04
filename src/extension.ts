@@ -47,7 +47,7 @@ import * as rpgiv from './rpgtools';
 import { registerConvertToRPGFreeCommand } from './regrpgiv2freecmd';
 import { registerSmartTabCommands } from './regsmarttabcmd';
 import { registerSmartEnterCommand } from './regsmartentercmd';
-import { registerOvertypeHandler, registerOvertypeCommands } from './overtype';
+import { registerOvertypeCommands } from './overtype';
 import { registerCommentStatementCommand, registerUncommentStatementCommand } from './commentStmt';
 import { registerSyntaxHighlighting } from './syntaxHighlighter/index';
 import { registerFormatRPGFreeCommand } from './regformatrpgfreecmd';
@@ -62,8 +62,14 @@ export async function activate(context: vscode.ExtensionContext) {
 
   rpgSmartTabEnabled = context.globalState.get<boolean>('rpgSmartTabEnabled', true);
 
-  const startupOvertypeMode = vscode.workspace.getConfiguration('rpgiv2free').get<string>('overtypeStartupMode', 'INS');
-  rpgOvertypeEnabled = startupOvertypeMode === 'OVR';
+  // Overtype (INS/OVR) is macOS-only: on Windows, VS Code's built-in
+  // overtype mode handles the Insert key natively and conflicts with this
+  // extension's type-command override.
+  if (process.platform === 'darwin') {
+    const startupOvertypeMode = vscode.workspace.getConfiguration('rpgiv2free').get<string>('overtypeStartupMode', 'INS');
+    rpgOvertypeEnabled = startupOvertypeMode === 'OVR';
+    registerOvertypeCommands(context, () => rpgOvertypeEnabled, (val) => { rpgOvertypeEnabled = val; });
+  }
 
   const config = rpgiv.getRPGIVFreeSettings();
 
@@ -74,8 +80,6 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   registerSmartEnterCommand(context);
-  registerOvertypeCommands(context, () => rpgOvertypeEnabled, (val) => { rpgOvertypeEnabled = val; });
-  registerOvertypeHandler(context, () => rpgOvertypeEnabled);
 
   // Replace your updateFormatContext function:
   function updateFormatContext(editor?: vscode.TextEditor) {
