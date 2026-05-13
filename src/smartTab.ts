@@ -58,14 +58,14 @@ const RPG_TAB_STOPS: Record<string, number[]> = {
   CX: [1, 6, 7, 9, 26, 36, 81],
   I:    [1, 6, 7, 17, 19, 20, 21, 23, 28, 29, 30, 31, 36, 37, 38, 39, 44, 45, 46, 47, 81],  // Prog-described record: name, seq, num, opt, RI, 3× Pos/N/CC
   IAnd: [1, 6, 16, 21, 23, 28, 29, 30, 31, 36, 37, 38, 39, 44, 45, 46, 47, 81],             // AND/OR continuation: connector, RI, 3× Pos/N/CC
-  IX:   [1, 6, 31, 35, 37, 42, 47, 49, 63, 65, 67, 69, 71, 73, 75, 81],                      // Prog-described field: fmt, from, to, dec, name, level/match/relation, indicators
-  IER:  [1, 6, 7, 17, 21, 23, 81],                                                            // Ext-described record: record name, RI indicator
-  IEF:  [1, 6, 21, 31, 49, 63, 65, 69, 71, 73, 75, 81],                                      // Ext-described field: ext name, RPG name, level/match, indicators
+  IF:   [1, 6, 31, 35, 37, 42, 47, 49, 63, 65, 67, 69, 71, 73, 75, 81],                      // Prog-described field: fmt, from, to, dec, name, level/match/relation, indicators
+  IXR:  [1, 6, 7, 17, 21, 23, 81],                                                            // Ext-described record: record name, RI indicator
+  IXF:  [1, 6, 21, 31, 49, 63, 65, 69, 71, 73, 75, 81],                                      // Ext-described field: ext name, RPG name, level/match, indicators
   O:    [1, 6, 7, 17, 18, 21, 24, 27, 30, 40, 43, 46, 49],  // Record ID: name, type, flag, 3× indicators, EXCEPT, spacing
   OAnd: [1, 6, 16, 21, 24, 27, 30],                          // AND/OR continuation: AND keyword, 3× indicators, EXCEPT name
-  OX:   [1, 6, 21, 24, 27, 30, 44, 45, 47, 52, 53],         // Prog-described field: indicators, name, edit code, end pos, constant
+  OF:   [1, 6, 21, 24, 27, 30, 44, 45, 47, 52, 53],         // Prog-described field: indicators, name, edit code, end pos, constant
   OFC:  [1, 6, 53],                                          // Field constant continuation
-  OEF:  [1, 6, 21, 24, 27, 30, 45],                         // Ext-described field: indicators, name, blank-after
+  OXF:  [1, 6, 21, 24, 27, 30, 45],                         // Ext-described field: indicators, name, blank-after
   P: [1, 6, 7, 24, 44, 81]
 };
 
@@ -183,9 +183,9 @@ export function getStmtVariant(line: string, specType: string): string {
       } else if (rpgiv.getCol(line, 7, 52).trim() === '') {
         varient = 'OFC';                             // Constant continuation
       } else if (rpgiv.getCol(line, 47, 51).trim() !== '') {
-        varient = 'OX';                              // Program-described field
+        varient = 'OF';                              // Program-described field
       } else {
-        varient = 'OEF';                             // Externally-described field
+        varient = 'OXF';                             // Externally-described field
       }
       break;
     }
@@ -201,11 +201,11 @@ export function getStmtVariant(line: string, specType: string): string {
       if (!iCols715 && (iConxn === 'AND' || iConxn === 'OR')) {
         varient = 'IAnd';                            // AND/OR continuation
       } else if (iName716) {
-        varient = iCols1720 ? 'I' : 'IER';          // Prog- or ext-described record
+        varient = iCols1720 ? 'I' : 'IXR';          // Prog- or ext-described record
       } else if (iExtName) {
-        varient = 'IEF';                             // Ext-described field
+        varient = 'IXF';                             // Ext-described field
       } else if (iProgFld) {
-        varient = 'IX';                              // Prog-described field
+        varient = 'IF';                              // Prog-described field
       }
       break;
     }

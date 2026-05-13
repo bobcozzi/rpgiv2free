@@ -164,9 +164,9 @@ const VARIANT_FIELDS: Record<string, TokenRange[]> = {
     { start: 46, end: 46, tokenType: 'constant' },    // Compare char 3
   ],
 
-  // ── IX – Input Spec: Program-Described Field ─────────────────────────────
+  // ── IF – Input Spec: Program-Described Field ─────────────────────────────
   // .....I........................Fmt+SPFrom+To+++DcField+++++++++L1M1FrPlMnZr......Comments++++++++++++
-  IX: [
+  IF: [
     { start: 6,  end: 6,  tokenType: 'specType' },
     { start: 31, end: 34, tokenType: 'dataType' },    // Format / data type (Fmt+)
     { start: 35, end: 36, tokenType: 'indicator' },   // Date/time separator (SP)
@@ -182,17 +182,17 @@ const VARIANT_FIELDS: Record<string, TokenRange[]> = {
     { start: 73, end: 74, tokenType: 'indicator' },   // Zero indicator
   ],
 
-  // ── IER – Input Spec: Externally-Described Record ────────────────────────
+  // ── IXR – Input Spec: Externally-Described Record ────────────────────────
   // .....IRcdname+++....Ri..........................................................Comments++++++++++++
-  IER: [
+  IXR: [
     { start: 6,  end: 6,  tokenType: 'specType' },
     { start: 7,  end: 16, tokenType: 'fieldName' },   // Record name
     { start: 21, end: 22, tokenType: 'indicator' },   // Record identifying indicator
   ],
 
-  // ── IEF – Input Spec: Externally-Described Field ─────────────────────────
+  // ── IXF – Input Spec: Externally-Described Field ─────────────────────────
   // .....I..............Ext-field+..................Field+++++++++L1M1..PlMnZr......Comments++++++++++++
-  IEF: [
+  IXF: [
     { start: 6,  end: 6,  tokenType: 'specType' },
     { start: 21, end: 30, tokenType: 'fieldName' },   // External field name
     { start: 49, end: 62, tokenType: 'fieldName' },   // RPG field name
@@ -221,9 +221,9 @@ const VARIANT_FIELDS: Record<string, TokenRange[]> = {
     { start: 49, end: 51, tokenType: 'positions' },   // Skip after
   ],
 
-  // ── OX – Output Spec: Program-Described Field ────────────────────────────
+  // ── OF – Output Spec: Program-Described Field ────────────────────────────
   //  .....O..............N01N02N03Field+++++++++YB.End++PConstant/editword/DTformat++
-  OX: [
+  OF: [
     { start: 6,  end: 6,  tokenType: 'specType' },
     { start: 21, end: 23, tokenType: 'indicator' },   // Not + indicator 1
     { start: 24, end: 26, tokenType: 'indicator' },   // Not + indicator 2
@@ -255,9 +255,9 @@ const VARIANT_FIELDS: Record<string, TokenRange[]> = {
     { start: 53, end: 80, tokenType: 'constant' },    // Constant / edit word continuation
   ],
 
-  // ── OEF – Output Spec: Externally-Described Field ────────────────────────
+  // ── OXF – Output Spec: Externally-Described Field ────────────────────────
   //  .....O..............N01N02N03Field+++++++++.B
-  OEF: [
+  OXF: [
     { start: 6,  end: 6,  tokenType: 'specType' },
     { start: 21, end: 23, tokenType: 'indicator' },   // Not + indicator 1
     { start: 24, end: 26, tokenType: 'indicator' },   // Not + indicator 2
@@ -296,9 +296,9 @@ function getDSpecVariantKey(line: string): string {
  * Determine the Input spec line subtype from column content.
  *   I    – Program-described record identification (name + sequence in 7-18)
  *   IAnd – AND/OR continuation (AND/OR keyword at cols 16-18)
- *   IX   – Program-described field (cols 7-30 blank; data from col 31)
- *   IER  – Externally-described record (name in 7-16; cols 17-20 blank)
- *   IEF  – Externally-described field (ext-field name in cols 21-30)
+ *   IF   – Program-described field (cols 7-30 blank; data from col 31)
+ *   IXR  – Externally-described record (name in 7-16; cols 17-20 blank)
+ *   IXF  – Externally-described field (ext-field name in cols 21-30)
  */
 function getInputVariantKey(line: string): string {
   // AND/OR continuation: cols 7-15 blank, AND or OR keyword at cols 16-18
@@ -309,12 +309,12 @@ function getInputVariantKey(line: string): string {
   // Record identification: name present in cols 7-16
   if (getColUpper(line, 7, 16).trim()) {
     // Prog-described has sequence in 17-18; ext-described has blank 17-20
-    return getColUpper(line, 17, 20).trim() ? 'I' : 'IER';
+    return getColUpper(line, 17, 20).trim() ? 'I' : 'IXR';
   }
   // Ext-described field: external field name in cols 21-30
-  if (getColUpper(line, 21, 30).trim()) return 'IEF';
+  if (getColUpper(line, 21, 30).trim()) return 'IXF';
   // Prog-described field: data in cols 31-74
-  if (getColUpper(line, 31, 74).trim()) return 'IX';
+  if (getColUpper(line, 31, 74).trim()) return 'IF';
   return 'I';
 }
 
@@ -338,10 +338,10 @@ function getOutputVariantKey(line: string): string {
   }
   // Program-described field: has end position in cols 47-51
   if (getColUpper(line, 47, 51).trim()) {
-    return 'OX';
+    return 'OF';
   }
   // Externally-described field
-  return 'OEF';
+  return 'OXF';
 }
 
 /**

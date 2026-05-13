@@ -1,18 +1,20 @@
-# Bob Cozzi's RPG IV to Free Format Conversion (rpgiv2free) Extension for VS CODE for i
+# Bob Cozzi's RPG IV to Free Format Conversion (rpgiv2free) Extension for use with Visual Studio CODE and IBM Bob
 
-This Visual Studio Code extension helps developers convert RPG IV fixed-format statements into free-format RPG IV code effortlessly. Your input and feedback is extremely valuable. Please [use this link to submit your bugs or feedback](https://github.com/bobcozzi/rpgiv2free/issues).
+This Visual Studio Code extension helps developers convert RPG IV fixed-format statements into free-format RPG IV code effortlessly. It is compatible with both Microsoft Visual Studio CODE with the `CODE FOR IBM i` extension, as well as `IBM Bob`.
+
+Your input and feedback is extremely valuable. Please [use this link to submit your bugs or feedback](https://github.com/bobcozzi/rpgiv2free/issues).
 
 Download RPGIV2FREE from the Visual Studio CODE Marketplace: [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/CozziResearch.rpgiv2free.svg?label=VS%20Code%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=CozziResearch.rpgiv2free).
 
 For a list of changes and release notes, see the [Changelog](https://github.com/bobcozzi/rpgiv2free/blob/main/CHANGELOG.md).
 
 This extension is an **RPG IV fixed-format to Free Format** statement converter. Select the RPG IV fixed format line or lines (or all lines) that you want to convert to free format, right-click and select **Convert RPG IV to Free Format** and the statements are converted. Use the UNDO function (CMD+Z on Apple/MacOS or Ctrl+Z on Windows) to revert the conversion back to fixed format.
-Note there are other extensions that have a similar "command name". Si be certain to select the one worded exactly as **Convert RPG IV to Free Format** to evoke this extension. It will be the first context menu option listed.
+Note there are other extensions that have a similar "command name". Be sure to select the one worded titled **Convert RPG IV to Free Format** to evoke this extension. It should be the first option listed on your context menu.
 
-This extension is **NOT a refactoring or modernization tool**. Its only purpose is to convert RPG IV fixed-format statements to compatible free format RPG IV syntax. It `does not convert` legacy RPG II Cycle code. Also note that some RPG IV operation codes (`opcodes`) may not be converted directly to free format. When something cannot be converted, that code is untouched by this extension.
+This extension is **NOT a refactoring or modernization tool**. Its only purpose is to convert RPG IV fixed-format statements to compatible free format RPG IV syntax. It `does not convert` legacy RPG II Cycle code. Also note that some RPG IV operation codes (`opcodes`) may not be converted directly to free format. When something cannot be converted, that code is untouched by this extension. Currently the `GOTO opcode` is the only know opcode that does not convert to free format.
 
 
-## Also Check Out my IBM i CL Prompter and Formatter for VS Code
+## Also Check Out my IBM i CL Prompter and Formatter for VS Code and IBM Bob
 
 If you work on IBM i, you will also want to install the **CL Prompter and Formatter** extension for VS Code. It provides interactive command prompting for IBM i CL commands directly inside VS Code — similar to prompting on the green screen. Position your cursor anywhere on any CL command, press F4 and the CL prompter is invoked. Press Enter when finished and the CL command is formatted. It is a natural companion to this extension for developers working in the IBM i development environment. Find it on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=CozziResearch.clprompter).
 
@@ -48,7 +50,7 @@ If you work on IBM i, you will also want to install the **CL Prompter and Format
 ## Special/Limited Support for GOTO within Subroutines
 When an `ENDSR` statement includes a TAG label in Factor 1, this extension converts any `GOTO` statement within that subroutine that targets the same label to a `LEAVESR` opcode. The label is then commented out on the `ENDSR` statement. `GOTO` statements targeting labels other than that of the `ENDSR` statement are not converted.
 
-**Extended RPG IV Fixed Format Keyboard Features**
+## Extended RPG IV Fixed Format Keyboard Features
 
 ## Smart RPG Tab
 - The RPG IV Smart Tab feature appears in the status bar at the bottom of the VS CODE editor window (right side). When RPGLE or SQLRPGLE are detected and the source is NOT **FREE, this feature is enabled for Fixed Format code. It gives you the abilit to forward TAB or backwards TAB within the lines (such as going from Factor 1 to the Opcode to Factor 2, etc.) in a non-distructive way. It also outlines columnar boundaries on each fixed-format line in a non-intrusive mannor, and highlights the "column" in which the cursor is located. For example, if your cursor is in the Opcode area, that entire 10-byte area is highlighted. The highlight follows your cursor in any fixed format line, to help you insure you've place the code in the right place.
@@ -178,11 +180,6 @@ The name used as a work field by this extension. This field name is used when co
 - `<your-custom-name>` — A user-specified variable name to use, **must NOT contain** special symbols such as @#$
 
 Default: `f2f_tempDO`
-
-## In Development:
-
-- **Calculation (C) Specs**
-  The conversion of Calc Specs is in progress and is being updated in each release. Currently many calc specs convert fine, while others may or may not convert. Be ready with your Ctrl+Z (cmd+Z on Mac) to **undo** the conversion if it does not produce the desired results.
 
 ## Limitations
 - Level Break Indicators are NOT converted.
