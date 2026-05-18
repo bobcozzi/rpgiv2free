@@ -2,9 +2,11 @@
 
 All notable changes to this project are documented in this file.
 
-## [1.12.32] - 2026-05-18
+## [1.12.34] - 2026-05-18
 
 ### What's Fixed
+
+- **Smart Tab status bar no longer appears during VS Code startup or session restore**: The RPG Smart Tab status bar item was briefly visible on the status bar while VS Code was loading — including during the Code for IBM i connection sequence — even when no RPG file was active. This was caused by three compounding bugs: (1) the status bar was unconditionally shown during extension activation regardless of the active editor; (2) the `onDidChangeActiveTextEditor` listener that was supposed to hide it was never added to `context.subscriptions`, so it could leak or misbehave; and (3) there were no listeners for document-close or visible-editor-change events, meaning the bar stayed visible when VS Code silently flushed the session-restored remote tabs after determining the IBM i connection was not yet available. All three issues are now corrected: the status bar only shows when a fixed-format RPG file is genuinely the active editor, and it correctly hides whenever that editor is closed or replaced.
 
 - **IBM Bob Compatibility and Fixes**: Changed several features to enhance interoperability with IBM Bob.
 - Corrected an issue with data structure conversion where `end-ds` was being placed incorrectly when the data structure being converted was followed by another data structure with an RPG long name.
