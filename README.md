@@ -4,7 +4,11 @@ This Visual Studio Code extension helps developers convert RPG IV fixed-format s
 
 Your input and feedback is extremely valuable. Please [use this link to submit your bugs or feedback](https://github.com/bobcozzi/rpgiv2free/issues).
 
-Download RPGIV2FREE from the Visual Studio CODE Marketplace: [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/CozziResearch.rpgiv2free.svg?label=VS%20Code%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=CozziResearch.rpgiv2free).
+
+[Available on the VS CODE Marketplace](https://marketplace.visualstudio.com/items?itemName=CozziResearch.rpgiv2free)
+
+[Available the the Open VSX marketplace](https://open-vsx.org/extension/CozziResearch/rpgiv2free)
+
 
 For a list of changes and release notes, see the [Changelog](https://github.com/bobcozzi/rpgiv2free/blob/main/CHANGELOG.md).
 
