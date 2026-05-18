@@ -42,9 +42,11 @@ export function registerSmartTabCommands(
     if (
       editor &&
       (
+      editor.document.languageId === 'rpg' ||
       editor.document.languageId === 'rpgle' ||
       editor.document.languageId === 'sqlrpgle' ||
-      editor.document.languageId === 'rpginc'
+      editor.document.languageId === 'rpginc' ||
+      editor.document.languageId === 'rpgleinc'
       ) &&
       rpgiv.isFixedFormatRPG()
     ) {

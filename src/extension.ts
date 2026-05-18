@@ -62,14 +62,13 @@ export async function activate(context: vscode.ExtensionContext) {
 
   rpgSmartTabEnabled = context.globalState.get<boolean>('rpgSmartTabEnabled', true);
 
-  // Overtype (INS/OVR) is macOS-only: on Windows, VS Code's built-in
-  // overtype mode handles the Insert key natively and conflicts with this
-  // extension's type-command override.
-  if (process.platform === 'darwin') {
-    const startupOvertypeMode = vscode.workspace.getConfiguration('rpgiv2free').get<string>('overtypeStartupMode', 'INS');
-    rpgOvertypeEnabled = startupOvertypeMode === 'OVR';
-    registerOvertypeCommands(context, () => rpgOvertypeEnabled, (val) => { rpgOvertypeEnabled = val; });
-  }
+  // Register overtype on all platforms. The keybinding (Cmd+I) is mac-only
+  // so it won't conflict with Windows' built-in Insert key overtype handling.
+  // Registering unconditionally ensures the command is available in remote
+  // extension hosts (e.g. IBM Bob / Linux) where process.platform !== 'darwin'.
+  const startupOvertypeMode = vscode.workspace.getConfiguration('rpgiv2free').get<string>('overtypeStartupMode', 'INS');
+  rpgOvertypeEnabled = startupOvertypeMode === 'OVR';
+  registerOvertypeCommands(context, () => rpgOvertypeEnabled, (val) => { rpgOvertypeEnabled = val; });
 
   const config = rpgiv.getRPGIVFreeSettings();
 
@@ -105,7 +104,7 @@ export async function activate(context: vscode.ExtensionContext) {
       if (!editor) return;
       const langId = editor.document.languageId;
 
-      if (langId !== 'rpgle' && langId !== 'sqlrpgle' && langId !== 'rpginc') {
+      if (langId !== 'rpg' && langId !== 'rpgle' && langId !== 'sqlrpgle' && langId !== 'rpginc' && langId !== 'rpgleinc') {
         // Remove RPG decorations from this editor
         applyColumnarDecorations(editor, false);
       }
@@ -274,7 +273,7 @@ export function deactivate() {
 }
 
 function evaluateAndApplyFeatures(document: vscode.TextDocument) {
-  if (!['rpgle', 'sqlrpgle','rpginc'].includes(document.languageId)) return;
+  if (!['rpg', 'rpgle', 'sqlrpgle', 'rpginc', 'rpgleinc'].includes(document.languageId)) return;
 
   const editor = vscode.window.visibleTextEditors.find(e => e.document === document);
   if (!editor) return;

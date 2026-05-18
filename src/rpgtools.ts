@@ -642,6 +642,10 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
   // next line is the actual DS/PR/PI definition — treat it as a continuation so we don't
   // break out of the scan prematurely and place end-ds in the wrong location.
   let inNameContinuation = dNameContinues(allLines[startIndex]);
+  // Saved insertPoint from just before a '...' continuation line was encountered.
+  // Used to restore the correct insert position if the continuation turns out to
+  // be the start of a new DS/PR/PI/S/C declaration rather than a subfield.
+  let preContinuationInsertPoint = -1;
   for (i = startIndex + 1; i < allLines.length; i++) {
     const line = allLines[i]; // Use original line for column-based checks
     const lineUpper = line.toUpperCase();
@@ -649,6 +653,13 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
     if (!line || line.trim() === '') continue;
     if (isComment(line)) continue;
     if (isDirective(line)) break;
+
+    // A blank fixed-format spec line (e.g. "     D" with nothing in cols 8-80) acts as
+    // a visual separator between declarations.  isValidFixedFormat() returns false for it
+    // (isEmptyStmt is true), so without this guard it would fall into the free-format
+    // branch and incorrectly advance insertPoint past the separator.
+    // Skip it without advancing insertPoint so the scan stays within the current DS.
+    if (isEmptyStmt(line)) continue;
 
 
     // Check for END-xxx (xxx must be alpha only, case-insensitive)
@@ -709,12 +720,31 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
     // Skip continuation lines and continue processing
     // Also skip if previous line was a name continuation (this line completes it)
     if (bNameContinues || bKwdContinues || inNameContinuation) {
+      // When completing a name continuation, check whether this line is the start
+      // of a brand-new declaration (DS/S/C/PI/PR).  If so, the '...' line we just
+      // passed belongs to the NEXT entity, not to the one being scanned.  Restore
+      // insertPoint to where it was before the '...' line and break.
+      if (inNameContinuation && !bNameContinues && !bKwdContinues) {
+        const completionDclType = getColUpper(line, 24, 25).trim();
+        if (completionDclType && ["DS", "S", "C", "PI", "PR"].includes(completionDclType)) {
+          if (preContinuationInsertPoint >= 0) {
+            insertPoint = preContinuationInsertPoint;
+          }
+          break;
+        }
+        // Confirmed subfield with a long name — commit the advance
+        preContinuationInsertPoint = -1;
+      } else if (bNameContinues && !inNameContinuation) {
+        // First '...' line seen — save current insertPoint in case we need to roll back
+        preContinuationInsertPoint = insertPoint;
+      }
       insertPoint = i;
       inNameContinuation = bNameContinues; // Update state for next iteration
       continue;
     }
 
     // Reset continuation state since we're not in a continuation
+    preContinuationInsertPoint = -1;
     inNameContinuation = false;
 
     // Additional check: is this a continuation line completing a long name?
@@ -1068,7 +1098,7 @@ export function isRPGDocument(document?: vscode.TextDocument): boolean {
     doc = editor.document;
   }
   const langId = doc.languageId.toLowerCase();
-  return langId === 'rpgle' || langId.startsWith('sqlrpg') || langId.startsWith('rpginc');
+  return langId === 'rpg' || langId === 'rpgle' || langId.startsWith('sqlrpg') || langId.startsWith('rpginc') || langId.startsWith('rpgleinc');
 }
 
 export function isFixedFormatRPG(document?: vscode.TextDocument): boolean {

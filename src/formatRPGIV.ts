@@ -76,7 +76,7 @@ const NO_INDENT_KEYWORDS = new Set([
   // Declarations / control options
   'CTL-OPT',
   'DCL-S', 'DCL-DS', 'DCL-C', 'DCL-F',
-  'DCL-PR', 'DCL-PI', 'DCL-SUBF', 'DCL-ENUM',
+  'DCL-PR', 'DCL-PI', 'DCL-ENUM',
   'END-DS', 'END-PR', 'END-PI', 'END-ENUM',
   'WHEN-IS', 'WHEN-IN',
 ]);
