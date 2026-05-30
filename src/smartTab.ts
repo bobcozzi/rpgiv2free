@@ -1,26 +1,6 @@
-/**
- * MIT License
- *
- * Copyright (c) 2025 Robert Cozzi, Jr.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 1996-2026 by R. Cozzi, Jr.
+// @author BobCozzi
 
 import * as vscode from 'vscode';
 import * as rpgiv from './rpgtools';
@@ -61,11 +41,11 @@ const RPG_TAB_STOPS: Record<string, number[]> = {
   IF:   [1, 6, 31, 35, 37, 42, 47, 49, 63, 65, 67, 69, 71, 73, 75, 81],                      // Prog-described field: fmt, from, to, dec, name, level/match/relation, indicators
   IXR:  [1, 6, 7, 17, 21, 23, 81],                                                            // Ext-described record: record name, RI indicator
   IXF:  [1, 6, 21, 31, 49, 63, 65, 69, 71, 73, 75, 81],                                      // Ext-described field: ext name, RPG name, level/match, indicators
-  O:    [1, 6, 7, 17, 18, 21, 24, 27, 30, 40, 43, 46, 49],  // Record ID: name, type, flag, 3× indicators, EXCEPT, spacing
-  OAnd: [1, 6, 16, 21, 24, 27, 30],                          // AND/OR continuation: AND keyword, 3× indicators, EXCEPT name
-  OF:   [1, 6, 21, 24, 27, 30, 44, 45, 47, 52, 53],         // Prog-described field: indicators, name, edit code, end pos, constant
-  OFC:  [1, 6, 53],                                          // Field constant continuation
-  OXF:  [1, 6, 21, 24, 27, 30, 45],                         // Ext-described field: indicators, name, blank-after
+  O:    [1, 6, 7, 17, 18, 21, 24, 27, 30, 40, 43, 46, 49, 81],  // Record ID: name, type, flag, 3× indicators, EXCEPT, spacing
+  OAnd: [1, 6, 16, 21, 24, 27, 30, 81],                          // AND/OR continuation: AND keyword, 3× indicators, EXCEPT name
+  OF:   [1, 6, 21, 24, 27, 30, 44, 45, 47, 52, 53, 81],         // Prog-described field: indicators, name, edit code, end pos, constant
+  OFC:  [1, 6, 53, 81],                                          // Field constant continuation
+  OXF:  [1, 6, 21, 24, 27, 30, 45, 81],                         // Ext-described field: indicators, name, blank-after
   P: [1, 6, 7, 24, 44, 81]
 };
 

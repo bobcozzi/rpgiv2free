@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.35] - 2026-05-30
+
+### Licensing Update
+
+- License updated from MIT to Apache 2.0. All source files now include the Apache 2.0 SPDX header and the full license text is included in license.txt.
+
 ## [1.12.34] - 2026-05-18
 
 ### What's Fixed

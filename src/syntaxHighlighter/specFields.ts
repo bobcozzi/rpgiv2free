@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 1996-2026 by R. Cozzi, Jr.
+// @author BobCozzi
+
 import { getColUpper } from '../rpgtools';
 
 /** A single named token range within a source line (1-based columns). */

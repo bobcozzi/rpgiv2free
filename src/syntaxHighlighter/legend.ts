@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 1996-2026 by R. Cozzi, Jr.
+// @author BobCozzi
+
 import * as vscode from 'vscode';
 
 export const RPGIV_TOKEN_TYPES = [

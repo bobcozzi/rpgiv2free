@@ -10,8 +10,8 @@
   "icon": "images/rpgiv2free.png",
   "preview": false,
   "private": false,
-  "version": "1.12.34",
-  "license": "MIT",
+  "version": "1.12.35",
+  "license": "Apache-2.0",
   "engines": {
     "vscode": "^1.96.0",
     "node": ">=16.0.0"

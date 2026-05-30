@@ -7,7 +7,7 @@ Your input and feedback is extremely valuable. Please [use this link to submit y
 
 [Available on the VS CODE Marketplace](https://marketplace.visualstudio.com/items?itemName=CozziResearch.rpgiv2free)
 
-[Available the the Open VSX marketplace](https://open-vsx.org/extension/CozziResearch/rpgiv2free)
+[Available the The Open VSX marketplace](https://open-vsx.org/extension/CozziResearch/rpgiv2free)
 
 
 For a list of changes and release notes, see the [Changelog](https://github.com/bobcozzi/rpgiv2free/blob/main/CHANGELOG.md).
@@ -242,8 +242,8 @@ If you want to disable inline suggestions only for RPGLE and/or SQLRPGLE files, 
 
 ## License
 
-This project is licensed. See the LICENSE.txt file for details.
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+This project is licensed under the Apache License, Version 2.0. See the LICENSE.txt file for details.
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
 ## Support
 
