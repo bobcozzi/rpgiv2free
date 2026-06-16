@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.36] - 2026-06-16
+
+### Changed
+
+- **Comment/Uncomment RPG IV Source Line commands have been removed**: This functionality has been migrated to the main `vscode-rpgle` extension where it belongs. The Comment and Uncomment commands are now available natively in the vscode-rpgle extension with improved support including Cmd+/ (Mac) / Ctrl+/ (Windows/Linux) keyboard shortcuts for toggling comments. Unlike prevously support in vscode-rpgle the migrated comments supports both fixed and free-format comment-awareness.
+
 ## [1.12.35] - 2026-05-30
 
 ### Licensing Update

@@ -10,7 +10,7 @@
   "icon": "images/rpgiv2free.png",
   "preview": false,
   "private": false,
-  "version": "1.12.35",
+  "version": "1.12.36",
   "license": "Apache-2.0",
   "engines": {
     "vscode": "^1.96.0",
@@ -61,14 +61,6 @@
         "title": "Code for IBM i Settings"
       },
       {
-        "command": "rpgiv2free.commentStatement",
-        "title": "Comment RPG IV Source Line"
-      },
-      {
-        "command": "rpgiv2free.uncommentStatement",
-        "title": "Uncomment RPG IV Source Line"
-      },
-      {
         "command": "rpgiv2free.formatRPGFree",
         "title": "Format RPG IV Free Format Code"
       }
@@ -107,16 +99,6 @@
           "command": "rpgiv2free.formatRPGFree",
           "when": "resourceExtname =~ /\\.rpg(le)?|\\.sqlrpgle|\\.rpgleinc/i",
           "group": "navigation"
-        },
-        {
-          "command": "rpgiv2free.commentStatement",
-          "when": "resourceExtname =~ /\\.rpg(le)?|\\.sqlrpgle|\\.rpgleinc/i",
-          "group": "rpgiv2free@1"
-        },
-        {
-          "command": "rpgiv2free.uncommentStatement",
-          "when": "resourceExtname =~ /\\.rpg(le)?|\\.sqlrpgle|\\.rpgleinc/i",
-          "group": "rpgiv2free@2"
         },
         {
           "command": "rpgiv2free.openSettings",

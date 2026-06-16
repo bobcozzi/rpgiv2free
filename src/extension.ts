@@ -28,7 +28,8 @@ import { registerConvertToRPGFreeCommand } from './regrpgiv2freecmd';
 import { registerSmartTabCommands } from './regsmarttabcmd';
 import { registerSmartEnterCommand } from './regsmartentercmd';
 import { registerOvertypeCommands } from './overtype';
-import { registerCommentStatementCommand, registerUncommentStatementCommand } from './commentStmt';
+// DISABLED: Comment/Uncomment feature migrated to vscode-rpgle extension
+// import { registerCommentStatementCommand, registerUncommentStatementCommand } from './commentStmt';
 import { registerSyntaxHighlighting } from './syntaxHighlighter/index';
 import { registerFormatRPGFreeCommand } from './regformatrpgfreecmd';
 
@@ -182,8 +183,9 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   registerConvertToRPGFreeCommand(context, config);
-  registerCommentStatementCommand(context);
-  registerUncommentStatementCommand(context);
+  // DISABLED: Comment/Uncomment feature migrated to vscode-rpgle extension
+  // registerCommentStatementCommand(context);
+  // registerUncommentStatementCommand(context);
   registerFormatRPGFreeCommand(context);
   // registerSyntaxHighlighting(context);  // Temporarily disabled — conflicts with fixed-format RPG IV syntax highlighter
 
