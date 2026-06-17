@@ -2,12 +2,18 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.37] - 2026-06-17
+
+### What's Changed
+
+- **Convert to Free Format/Format RPG IV Free Format" context menu options relocated**: This functionality has been moved on the context menu (right-click menu) from the first 2 entries, to the menu group that applies to document formatting. This makes their functions appear in context with the other formatting options.
+
+
 ## [1.12.36] - 2026-06-16
 
-### Changed
+### What's Changed
 
 - **Comment/Uncomment RPG IV Source Line commands have been removed**: This functionality has been migrated to the main `vscode-rpgle` extension where it belongs. The Comment and Uncomment commands are now available natively in the vscode-rpgle extension with improved support including Cmd+/ (Mac) / Ctrl+/ (Windows/Linux) keyboard shortcuts for toggling comments. Unlike prevously support in vscode-rpgle the migrated comments supports both fixed and free-format comment-awareness.
-
 ## [1.12.35] - 2026-05-30
 
 ### Licensing Update

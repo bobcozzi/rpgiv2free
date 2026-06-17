@@ -10,7 +10,7 @@
   "icon": "images/rpgiv2free.png",
   "preview": false,
   "private": false,
-  "version": "1.12.36",
+  "version": "1.12.37",
   "license": "Apache-2.0",
   "engines": {
     "vscode": "^1.96.0",
@@ -93,12 +93,12 @@
         {
           "command": "rpgiv2free.convertToRPGFree",
           "when": "resourceExtname =~ /\\.rpg(le)?|\\.sqlrpgle|\\.rpgleinc/i",
-          "group": "navigation"
+          "group": "1_modification@10"
         },
         {
           "command": "rpgiv2free.formatRPGFree",
           "when": "resourceExtname =~ /\\.rpg(le)?|\\.sqlrpgle|\\.rpgleinc/i",
-          "group": "navigation"
+          "group": "1_modification@11"
         },
         {
           "command": "rpgiv2free.openSettings",
