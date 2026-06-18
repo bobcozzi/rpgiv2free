@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.38] - 2026-06-18
+
+### What's Fixed
+
+- Minor fixes and improvements. Removed spurious Debug Console log messages that were used purely for development purposes.
+
 ## [1.12.37] - 2026-06-17
 
 ### What's Changed

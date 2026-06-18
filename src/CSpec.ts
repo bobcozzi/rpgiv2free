@@ -928,11 +928,11 @@ async function convertOpcodeToFreeFormat(
     default:
       freeFormat = `${fullOpcode} ${factor1} ${factor2} ${result}`;
       newLines.push(freeFormat);
-      console.log(`default Opcode conversion: rawOpcode="${rawOpcode}"`);
+      // console.log(`default Opcode conversion: rawOpcode="${rawOpcode}"`);
       break;
   }
 
-  console.log(`convertCSpec: opcode="${opcode}", rawOpcode="${rawOpcode}"`);
+  // console.log(`convertCSpec: opcode="${opcode}", rawOpcode="${rawOpcode}"`);
 
   if (cmt && cmt.trim() !== '') {
     if (newLines.length > 0 && !newLines[0].includes(cmt)) {

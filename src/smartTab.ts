@@ -257,7 +257,6 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
 
   const lastTabStop = stops[stops.length - 1];
   let newCol = getNextStop(cursor.character, stops, reverse);
-  console.log('Current/New columns:', cursor.character + 1, newCol, 'stops:', stops);
 
   // 1. If there is a next tab stop, move to it (including the last one)
   if (typeof newCol === "number" && newCol > cursor.character) {

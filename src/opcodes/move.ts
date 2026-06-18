@@ -64,10 +64,10 @@ export async function convertMOVE(
     const f2a = vartypes.getTypeInfo(symbols, f2);
     const rfa = vartypes.getTypeInfo(symbols, result);
 
-    console.log(`${f1} ${opcode} ${f2}  ${result})`);
-    console.log(`${opcode} Factor 1 ${f1} is ${f1a?.type}(${f1a?.length})`);
-    console.log(`${opcode} Factor 2 ${f2} is ${f2a?.type}(${f2a?.length})`);
-    console.log(`${opcode} Result   ${result} is ${rfa?.type}(${rfa?.length})`);
+    // console.log(`${f1} ${opcode} ${f2}  ${result})`);
+    // console.log(`${opcode} Factor 1 ${f1} is ${f1a?.type}(${f1a?.length})`);
+    // console.log(`${opcode} Factor 2 ${f2} is ${f2a?.type}(${f2a?.length})`);
+    // console.log(`${opcode} Result   ${result} is ${rfa?.type}(${rfa?.length})`);
 
     const bF2IsLiteral = vartypes.isLiteral(f2);
     const bF2DecLiteral = (bF2IsLiteral && vartypes.isDecLiteral(f2));
