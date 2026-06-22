@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.39] - 2026-06-22
+
+### What's Fixed
+
+- **Incorrect fixed-format column guides no longer appear for legacy RPG source member types**: Source members with extensions `.rpg`, `.rpg36`, `.rpg38`, `.sqlrpg`, and `.sqlrpg38` are now excluded from RPGIV2FREE language-triggered editor features that rely on fixed-format column-guide rendering. When column guides are enabled, these legacy source members no longer show incorrect RPG IV column rulers or related context-specific behavior.
+
 ## [1.12.38] - 2026-06-18
 
 ### What's Fixed

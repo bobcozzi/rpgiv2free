@@ -30,7 +30,7 @@ async function acceptAnySuggestionIfShown(): Promise<void> {
 // C     baseText      CAT       A:1           X
 // CL0N01Factor1+++++++Opcode&ExtExtended-factor2++++++++++++++++++++++++++
 // C                   IF        A = B
-const RPG_TAB_STOPS: Record<string, number[]> = {
+const RPGIV_TAB_STOPS: Record<string, number[]> = {
   H: [1, 6, 7, 81],
   F: [1, 6, 7, 17, 18, 19, 20, 21, 22, 23, 28, 29, 34, 36, 43, 44, 81],
   D: [1, 6, 7, 22, 23, 24, 26, 33, 40, 41, 43, 44, 81],
@@ -49,6 +49,44 @@ const RPG_TAB_STOPS: Record<string, number[]> = {
   P: [1, 6, 7, 24, 44, 81]
 };
 
+const RPG_RULERS: {[spec: string]: string} = {
+  R:   '*.. v ...1... v ...2... v ...3... v ...4... v ...5... v ...6... v ...7... v ...8',
+  H:   `.....H........1..CDYI....S..............1.F...............................PgmID+`,
+  F:   `.....FFilenameIPEAF....RlenLK1AIOvKlocEDevice+......KExit++Entry+A....UC..`,
+  FC:  `.....F............Ext-record..................RcdnbrKOptionEntry+++`,
+  E:   `.....E....FromfileTofile++Name++N/rN/tbLenPDSArrnamLenPDSComments+++++++++`,
+  L:   `.....LFilename066Fl060Ol...`,
+  I:   `.....IFilenameSqNORiPos1NCCPos2NCCPos3NCC...`,
+  IJ:  `.....I....................................PFromTo++DFldnmeL1M1FrPlMnZr...`,
+  IX:  `.....IRcdname+....In...`,
+  JX:  `.....I..............Ext-Field+......................Field+L1M1..PlMnZr...`,
+  DS:  `.....IDsname....NSDsExt-File++.............OccrLen+...........`,
+  DJ:  `.....I..............Ext-Field+............PFromTo++DField+....`,
+  DK:  `.....I.....................................KeyWorkd.Field+....`,
+  NC:  `.....I..............NamedConstantValue++++C.........Field+...`,
+  NCC: `.....I..............NamedConstantValue++++...................`,
+  C: `.....CL0N01N02N03Factor1+++OpcdeFactor2+++Result+++LenDXHiLoEq............`,
+  O: `.....OFilename+DTAAIndIndIndField++++EBPAAADCONSTANT/EDITWORD+++++++......`
+};
+
+const RPG_TAB_STOPS: Record<string, number[]> = {
+  H: [1, 6, 7, 81],
+  F: [1, 6, 7, 17, 18, 19, 20, 21, 22, 23, 28, 29, 34, 36, 43, 44, 81],
+  D: [1, 6, 7, 22, 23, 24, 26, 33, 40, 41, 43, 44, 81],
+  C: [1, 6, 7, 9, 12, 26, 36, 50, 64, 69, 71, 73, 75, 77, 81],
+  CX: [1, 6, 7, 9, 26, 36, 81],
+  I:    [1, 6, 7, 17, 19, 20, 21, 23, 28, 29, 30, 31, 36, 37, 38, 39, 44, 45, 46, 47, 81],  // Prog-described record: name, seq, num, opt, RI, 3× Pos/N/CC
+  IAnd: [1, 6, 16, 21, 23, 28, 29, 30, 31, 36, 37, 38, 39, 44, 45, 46, 47, 81],             // AND/OR continuation: connector, RI, 3× Pos/N/CC
+  IF:   [1, 6, 31, 35, 37, 42, 47, 49, 63, 65, 67, 69, 71, 73, 75, 81],                      // Prog-described field: fmt, from, to, dec, name, level/match/relation, indicators
+  IXR:  [1, 6, 7, 17, 21, 23, 81],                                                            // Ext-described record: record name, RI indicator
+  IXF:  [1, 6, 21, 31, 49, 63, 65, 69, 71, 73, 75, 81],                                      // Ext-described field: ext name, RPG name, level/match, indicators
+  O:    [1, 6, 7, 17, 18, 21, 24, 27, 30, 40, 43, 46, 49, 81],  // Record ID: name, type, flag, 3× indicators, EXCEPT, spacing
+  OAnd: [1, 6, 16, 21, 24, 27, 30, 81],                          // AND/OR continuation: AND keyword, 3× indicators, EXCEPT name
+  OF:   [1, 6, 21, 24, 27, 30, 44, 45, 47, 52, 53, 81],         // Prog-described field: indicators, name, edit code, end pos, constant
+  OFC:  [1, 6, 53, 81],                                          // Field constant continuation
+  OXF:  [1, 6, 21, 24, 27, 30, 45, 81],                         // Ext-described field: indicators, name, blank-after
+  P: [1, 6, 7, 24, 44, 81]
+};
 // Map from editor.document.uri.toString() to an array of ranges per line
 const tabStopRangesPerEditor: Map<string, vscode.Range[][]> = new Map();
 
@@ -93,7 +131,7 @@ const verticalLineDecoration = vscode.window.createTextEditorDecorationType({
 function getTabStops(line: string): number[] {
   const specChar = getStmtRule(line);
   if (!specChar) return [];
-  const stops = RPG_TAB_STOPS[specChar] || [];
+  const stops = RPGIV_TAB_STOPS[specChar] || [];
   return stops.map(stop => Math.max(0, stop - 1));
 }
 
@@ -198,8 +236,7 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
   if (!editor) return;
 
   const doc = editor.document;
-  const langId = doc.languageId;
-  if (langId !== 'rpg' && langId !== 'rpgle' && langId !== 'sqlrpgle' && langId !== 'rpginc' && langId !== 'rpgleinc') return;
+  if (!rpgiv.isRPGDocument(doc)) return;
 
   // Read config at runtime to respect user setting changes
   const runtimeConfig = vscode.workspace.getConfiguration('rpgiv2free');
@@ -244,7 +281,7 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
 
   // Is it a Fixed Format statement?
   const specChar = getStmtRule(lineText);
-  if (lineText.length < 6 || !specChar || !RPG_TAB_STOPS[specChar]) {
+  if (lineText.length < 6 || !specChar || !RPGIV_TAB_STOPS[specChar]) {
     await vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
     return;
   }
@@ -359,8 +396,7 @@ export async function highlightCurrentTabZone(editor: vscode.TextEditor): Promis
   const doc = editor.document;
 
   if (!editor) return;
-  const langId = editor.document.languageId;
-  if (langId !== 'rpg' && langId !== 'rpgle' && langId !== 'sqlrpgle' && langId !== 'rpginc' && langId !== 'rpgleinc') {
+  if (!rpgiv.isRPGDocument(editor.document)) {
     // Optionally: clear decorations here
     return;
   }
@@ -374,7 +410,7 @@ export async function highlightCurrentTabZone(editor: vscode.TextEditor): Promis
   }
 
   const specChar = getStmtRule(lineText);
-  if (!specChar || !RPG_TAB_STOPS[specChar]) {
+  if (!specChar || !RPGIV_TAB_STOPS[specChar]) {
     editor.setDecorations(tabBoxDecoration, []);
     return;
   }
@@ -416,8 +452,7 @@ export function drawTabStopLines(editor: vscode.TextEditor, lineNbr: number): vo
   if (!editor || rpgiv.isFreeFormatRPG()) {
     return;
   }
-  const langId = editor.document.languageId;
-  if (langId !== 'rpg' && langId !== 'rpgle' && langId !== 'sqlrpgle' && langId !== 'rpginc' && langId !== 'rpgleinc') {
+  if (!rpgiv.isRPGDocument(editor.document)) {
     // Optionally: clear decorations here
     return;
   }
@@ -464,8 +499,7 @@ export function drawTabStopLines(editor: vscode.TextEditor, lineNbr: number): vo
 
 export function applyColumnarDecorations(editor: vscode.TextEditor, smartTabEnabled: boolean) {
   if (!editor || rpgiv.isFreeFormatRPG()) return;
-  const langId = editor.document.languageId;
-  if (langId !== 'rpg' && langId !== 'rpgle' && langId !== 'sqlrpgle' && langId !== 'rpginc' && langId !== 'rpgleinc') {
+  if (!rpgiv.isRPGDocument(editor.document)) {
     // Optionally: clear decorations here
     return;
   }

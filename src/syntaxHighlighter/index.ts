@@ -4,12 +4,11 @@
 
 import * as vscode from 'vscode';
 import { RPGIVSemanticTokensProvider, rpgivLegend } from './provider';
+import * as rpgiv from '../rpgtools';
 
 const RPG_LANGUAGES: vscode.DocumentSelector = [
-  { language: 'rpg' },
   { language: 'rpgle' },
   { language: 'sqlrpgle' },
-  { language: 'rpginc' },
   { language: 'rpgleinc' },
 ];
 
@@ -32,8 +31,7 @@ export function registerSyntaxHighlighting(context: vscode.ExtensionContext): vo
         // Trigger a no-op edit and undo on each visible RPG editor so that
         // VS Code re-requests semantic tokens from the provider.
         for (const editor of vscode.window.visibleTextEditors) {
-          const langId = editor.document.languageId;
-          if (langId === 'rpg' || langId === 'rpgle' || langId === 'sqlrpgle' || langId === 'rpginc' || langId === 'rpgleinc') {
+          if (rpgiv.isRPGDocument(editor.document)) {
             vscode.commands.executeCommand(
               'vscode.executeDocumentSemanticTokensProvider',
               editor.document.uri

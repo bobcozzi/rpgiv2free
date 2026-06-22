@@ -10,7 +10,7 @@
   "icon": "images/rpgiv2free.png",
   "preview": false,
   "private": false,
-  "version": "1.12.38",
+  "version": "1.12.39",
   "license": "Apache-2.0",
   "engines": {
     "vscode": "^1.96.0",
@@ -69,45 +69,45 @@
       {
         "key": "enter",
         "command": "rpgiv2free.smartEnter",
-        "when": "editorTextFocus && (editorLangId == 'rpg' || editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpginc' || editorLangId == 'rpgleinc') && !suggestWidgetVisible && !inSnippetMode && (rpgiv2free.isFixedFormat || config.rpgiv2free.enableRPGSmartEnter == 'fixedAndFree' || config.rpgiv2free.enableRPGSmartEnter == '*ALL') && config.rpgiv2free.enableRPGSmartEnter != 'disable'"
+        "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && !suggestWidgetVisible && !inSnippetMode && (rpgiv2free.isFixedFormat || config.rpgiv2free.enableRPGSmartEnter == 'fixedAndFree' || config.rpgiv2free.enableRPGSmartEnter == '*ALL') && config.rpgiv2free.enableRPGSmartEnter != 'disable'"
       },
       {
         "key": "tab",
         "command": "rpgsmarttab.tab",
-        "when": "editorTextFocus && (editorLangId == 'rpg' || editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpginc' || editorLangId == 'rpgleinc') && !suggestWidgetVisible && !inSnippetMode && rpgiv2free.isFixedFormat && config.rpgiv2free.enableRPGSmartTab"
+        "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && !suggestWidgetVisible && !inSnippetMode && rpgiv2free.isFixedFormat && config.rpgiv2free.enableRPGSmartTab"
       },
       {
         "key": "shift+tab",
         "command": "rpgsmarttab.shiftTab",
-        "when": "editorTextFocus && (editorLangId == 'rpg' || editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpginc' || editorLangId == 'rpgleinc') && !suggestWidgetVisible && !inSnippetMode && rpgiv2free.isFixedFormat && config.rpgiv2free.enableRPGSmartTab"
+        "when": "editorTextFocus && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc') && !suggestWidgetVisible && !inSnippetMode && rpgiv2free.isFixedFormat && config.rpgiv2free.enableRPGSmartTab"
       },
       {
         "key": "cmd+i",
         "mac": "cmd+i",
         "command": "rpgiv2free.toggleOvertype",
-        "when": "editorTextFocus && isMac && (editorLangId == 'rpg' || editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpginc' || editorLangId == 'rpgleinc')"
+        "when": "editorTextFocus && isMac && (editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc')"
       }
     ],
     "menus": {
       "editor/context": [
         {
           "command": "rpgiv2free.convertToRPGFree",
-          "when": "resourceExtname =~ /\\.rpg(le)?|\\.sqlrpgle|\\.rpgleinc/i",
+          "when": "resourceExtname =~ /\\.(rpgle|sqlrpgle|rpgleinc)$/i",
           "group": "1_modification@10"
         },
         {
           "command": "rpgiv2free.formatRPGFree",
-          "when": "resourceExtname =~ /\\.rpg(le)?|\\.sqlrpgle|\\.rpgleinc/i",
+          "when": "resourceExtname =~ /\\.(rpgle|sqlrpgle|rpgleinc)$/i",
           "group": "1_modification@11"
         },
         {
           "command": "rpgiv2free.openSettings",
-          "when": "editorLangId == 'rpg' || editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpginc' || editorLangId == 'rpgleinc'",
+          "when": "editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc'",
           "group": "rpgiv2free@5"
         },
         {
           "command": "rpgiv2free.openCode4iSettings",
-          "when": "editorLangId == 'rpg' || editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpginc' || editorLangId == 'rpgleinc'",
+          "when": "editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc'",
           "group": "rpgiv2free@6"
         }
       ],
@@ -419,15 +419,9 @@
   },
   "main": "./out/extension.js",
   "activationEvents": [
-    "onLanguage:rpg",
     "onLanguage:rpgle",
     "onLanguage:sqlrpgle",
-    "onLanguage:rpginc",
-    "onLanguage:rpgleinc",
-    "onCommand:rpgiv2free.convertToRPGFree",
-    "onCommand:rpgsmarttab.tab",
-    "onCommand:rpgsmarttab.shiftTab",
-    "onCommand:rpgiv2free.toggleRPGSmartTab"
+    "onLanguage:rpgleinc"
   ],
   "scripts": {
     "vscode:prepublish": "npm run compile",

@@ -1078,7 +1078,7 @@ export function isRPGDocument(document?: vscode.TextDocument): boolean {
     doc = editor.document;
   }
   const langId = doc.languageId.toLowerCase();
-  return langId === 'rpg' || langId === 'rpgle' || langId.startsWith('sqlrpg') || langId.startsWith('rpginc') || langId.startsWith('rpgleinc');
+  return langId === 'rpgle' || langId === 'sqlrpgle' || langId === 'rpgleinc';
 }
 
 export function isFixedFormatRPG(document?: vscode.TextDocument): boolean {
@@ -1088,6 +1088,7 @@ export function isFixedFormatRPG(document?: vscode.TextDocument): boolean {
     if (!editor) return false;
     doc = editor.document;
   }
+  if (!isRPGDocument(doc)) return false;
   if (doc.lineCount === 0) return true; // Treat empty document as fixed format
   const firstLine = doc.lineAt(0).text;
 
@@ -1102,7 +1103,7 @@ export function isFixedFormatRPG(document?: vscode.TextDocument): boolean {
 }
 
 export function isNOTFixedFormatRPG(document?: vscode.TextDocument): boolean {
-  return isFreeFormatRPG(document);
+  return !isFixedFormatRPG(document);
 }
 
 export function isFreeFormatRPG(document?: vscode.TextDocument): boolean {
@@ -1112,6 +1113,8 @@ export function isFreeFormatRPG(document?: vscode.TextDocument): boolean {
     if (!editor) return false;
     doc = editor.document;
   }
+
+  if (!isRPGDocument(doc)) return false;
 
   if (doc.lineCount === 0) return false; // Treat empty document as fixed format
   const firstLine = doc.lineAt(0).text;

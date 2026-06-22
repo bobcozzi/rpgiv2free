@@ -18,7 +18,7 @@ export function registerSmartTabCommands(
   smartTabStatusBarItem.tooltip = 'Click to toggle RPG Smart Tab (no reload)';
   context.subscriptions.push(smartTabStatusBarItem);
 
-  const RPG_LANG_IDS = new Set(['rpg', 'rpgle', 'sqlrpgle', 'rpginc', 'rpgleinc']);
+  const RPG_LANG_IDS = new Set(['rpgle', 'sqlrpgle', 'rpgleinc']);
 
   function isVisibleFixedRPGEditor(editor: vscode.TextEditor | undefined): boolean {
     if (!editor) { return false; }
