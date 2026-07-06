@@ -2,6 +2,29 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.41] - 2026-07-06
+
+### What's New
+
+- **SQL formatter modularization (`sqlfmt_`)**: SQL detection, collection, normalization, conversion, formatting, and selection-expansion logic are now organized in dedicated SQL formatter modules under `src/sql/sqlfmt_*.ts`. `collectSQLSpec.ts` now acts as an adaptor/conduit to the SQL formatter package.
+
+- **Optional I-spec conversion toggle (program-described input specs)**: The extension includes an optional feature (disabled by default) to convert legacy fixed-format Input specs (I-specs) into free-format `dcl-ds` and subfield declarations. Program-described input fields are converted using position-based attributes, and externally-described input mappings are emitted as free-format equivalents. This feature is controlled by `rpgiv2free.enableConvertISpecToDS` and ships **disabled by default**. Turn it on/off in Settings by right-clicking in the editor window and selected `RPGIV2FREE Settings` then search for **Enable Convert I Spec To DS** which should look like this:
+
+![Enable Convert I Spec To DS setting](images/ispec-toggle.png)
+
+### What's Fixed
+
+- **Embedded free-format SQL partial-selection expansion**: Selection expansion now prefers `/END-EXEC` as the statement boundary when present, and only falls back to the first terminating semicolon when no `/END-EXEC` exists. This prevents formatting a fractional SQL slice as if it were the complete statement.
+
+- **RPG free-format keyword-argument wrapping and margin handling**: Corrected formatter behavior around keyword parentheses (for example `EXTFILE(...)`) so wrapped continuations no longer carry embedded continuation spaces, continuation lines respect configured left margins, and right-margin handling remains enforced during reflow.
+
+## [1.12.40] - 2026-06-27
+
+### What's New
+
+- **Input specification (I-spec) conversion to free-format data structures**: Added support for converting RPG IV fixed-format Input specs to free-format `dcl-ds` / subfield output, including program-described record IDs (with AND/OR continuation handling), program-described fields, and externally-described record/field patterns. External field renames are emitted with `EXTFLD`, and externally-described records are emitted with `EXTNAME` placeholders to be finalized by the developer.
+Since RPG IV does NOT support free format Input or Output specs, this conversion is an **Optional feature** and is disabled by default. I-spec conversion can be enabled or disabled by the setting the `rpgiv2free.enableConvertISpecToDS` option to true/false. It is off by default. This was added as a helper function for the road to totally free format and not intended as a complete refactoring tool.
+
 ## [1.12.39] - 2026-06-22
 
 ### What's Fixed
@@ -61,47 +84,47 @@ All notable changes to this project are documented in this file.
 
 - **New `rpgiv2free.opcodeCase` setting**: Controls the case style applied to the **leading opcode or declarative keyword** of each statement when the free-format formatter runs (e.g. `IF`, `EVAL`, `DCL-S`, `DCL-DS`, `ENDIF`). Only the first token of a statement is ever examined; everything that follows — data type keywords (`CHAR`, `PACKED`, `VARCHAR`, …), built-in functions (`%TRIM`, `%LEN`, …), operands, named constants, and all user-defined names — is left exactly as written.
 
-  | Style | Single-word opcode | Hyphenated keyword | Compound keyword |
-  |---|---|---|---|
-  | `upper` | `EVAL` | `DCL-DS` | `ENDIF` |
-  | `lower` | `eval` | `dcl-ds` | `endif` |
-  | `camel` | `Eval` | `dcl-Ds` | `endIf` |
-  | `initcap` | `Eval` | `Dcl-Ds` | `EndIf` |
+  | Style     | Single-word opcode | Hyphenated keyword | Compound keyword |
+  | --------- | ------------------ | ------------------ | ---------------- |
+  | `upper`   | `EVAL`             | `DCL-DS`           | `ENDIF`          |
+  | `lower`   | `eval`             | `dcl-ds`           | `endif`          |
+  | `camel`   | `Eval`             | `dcl-Ds`           | `endIf`          |
+  | `initcap` | `Eval`             | `Dcl-Ds`           | `EndIf`          |
 
   Full reference for all block opcodes categories:
 
   **Compound (single-word) keywords**
 
-  | Keyword | `upper` | `lower` | `camel` | `initcap` |
-  |---|---|---|---|---|
-  | `ENDIF` | `ENDIF` | `endif` | `endIf` | `EndIf` |
-  | `ELSEIF` | `ELSEIF` | `elseif` | `elseIf` | `ElseIf` |
-  | `ENDDO` | `ENDDO` | `enddo` | `endDo` | `EndDo` |
-  | `ENDFOR` | `ENDFOR` | `endfor` | `endFor` | `EndFor` |
-  | `ENDSL` | `ENDSL` | `endsl` | `endSl` | `EndSl` |
-  | `ENDMON` | `ENDMON` | `endmon` | `endMon` | `EndMon` |
-  | `ENDSR` | `ENDSR` | `endsr` | `endSr` | `EndSr` |
-  | `BEGSR` | `BEGSR` | `begsr` | `begSr` | `BegSr` |
+  | Keyword  | `upper`  | `lower`  | `camel`  | `initcap` |
+  | -------- | -------- | -------- | -------- | --------- |
+  | `ENDIF`  | `ENDIF`  | `endif`  | `endIf`  | `EndIf`   |
+  | `ELSEIF` | `ELSEIF` | `elseif` | `elseIf` | `ElseIf`  |
+  | `ENDDO`  | `ENDDO`  | `enddo`  | `endDo`  | `EndDo`   |
+  | `ENDFOR` | `ENDFOR` | `endfor` | `endFor` | `EndFor`  |
+  | `ENDSL`  | `ENDSL`  | `endsl`  | `endSl`  | `EndSl`   |
+  | `ENDMON` | `ENDMON` | `endmon` | `endMon` | `EndMon`  |
+  | `ENDSR`  | `ENDSR`  | `endsr`  | `endSr`  | `EndSr`   |
+  | `BEGSR`  | `BEGSR`  | `begsr`  | `begSr`  | `BegSr`   |
 
   **Hyphenated `DCL-` / `END-` / `CTL-` keywords**
 
-  | Keyword | `upper` | `lower` | `camel` | `initcap` |
-  |---|---|---|---|---|
-  | `DCL-S` | `DCL-S` | `dcl-s` | `dcl-S` | `Dcl-S` |
-  | `DCL-DS` | `DCL-DS` | `dcl-ds` | `dcl-Ds` | `Dcl-Ds` |
-  | `DCL-C` | `DCL-C` | `dcl-c` | `dcl-C` | `Dcl-C` |
-  | `DCL-F` | `DCL-F` | `dcl-f` | `dcl-F` | `Dcl-F` |
-  | `DCL-PR` | `DCL-PR` | `dcl-pr` | `dcl-Pr` | `Dcl-Pr` |
-  | `DCL-PI` | `DCL-PI` | `dcl-pi` | `dcl-Pi` | `Dcl-Pi` |
+  | Keyword    | `upper`    | `lower`    | `camel`    | `initcap`  |
+  | ---------- | ---------- | ---------- | ---------- | ---------- |
+  | `DCL-S`    | `DCL-S`    | `dcl-s`    | `dcl-S`    | `Dcl-S`    |
+  | `DCL-DS`   | `DCL-DS`   | `dcl-ds`   | `dcl-Ds`   | `Dcl-Ds`   |
+  | `DCL-C`    | `DCL-C`    | `dcl-c`    | `dcl-C`    | `Dcl-C`    |
+  | `DCL-F`    | `DCL-F`    | `dcl-f`    | `dcl-F`    | `Dcl-F`    |
+  | `DCL-PR`   | `DCL-PR`   | `dcl-pr`   | `dcl-Pr`   | `Dcl-Pr`   |
+  | `DCL-PI`   | `DCL-PI`   | `dcl-pi`   | `dcl-Pi`   | `Dcl-Pi`   |
   | `DCL-SUBF` | `DCL-SUBF` | `dcl-subf` | `dcl-Subf` | `Dcl-Subf` |
   | `DCL-ENUM` | `DCL-ENUM` | `dcl-enum` | `dcl-Enum` | `Dcl-Enum` |
   | `DCL-PROC` | `DCL-PROC` | `dcl-proc` | `dcl-Proc` | `Dcl-Proc` |
-  | `END-DS` | `END-DS` | `end-ds` | `end-Ds` | `End-Ds` |
-  | `END-PR` | `END-PR` | `end-pr` | `end-Pr` | `End-Pr` |
-  | `END-PI` | `END-PI` | `end-pi` | `end-Pi` | `End-Pi` |
+  | `END-DS`   | `END-DS`   | `end-ds`   | `end-Ds`   | `End-Ds`   |
+  | `END-PR`   | `END-PR`   | `end-pr`   | `end-Pr`   | `End-Pr`   |
+  | `END-PI`   | `END-PI`   | `end-pi`   | `end-Pi`   | `End-Pi`   |
   | `END-ENUM` | `END-ENUM` | `end-enum` | `end-Enum` | `End-Enum` |
   | `END-PROC` | `END-PROC` | `end-proc` | `end-Proc` | `End-Proc` |
-  | `CTL-OPT` | `CTL-OPT` | `ctl-opt` | `ctl-Opt` | `Ctl-Opt` |
+  | `CTL-OPT`  | `CTL-OPT`  | `ctl-opt`  | `ctl-Opt`  | `Ctl-Opt`  |
   | `FOR-EACH` | `FOR-EACH` | `for-each` | `for-Each` | `For-Each` |
 
 

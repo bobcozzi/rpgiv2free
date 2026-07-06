@@ -10,6 +10,7 @@ import { collectHSpecs } from './collectHSpec';
 import { collectFSpecs } from './collectFSpec';
 import { collectPSpecs } from './collectPSpec';
 import { collectDSpecs } from './collectDSpec';
+import { collectISpecs } from './collectISpec';
 import { collectComments } from './collectComments';
 import { collectDirectives } from './collectDirectives';
 import { collectCaseOpcode } from './collectCASEBlock';
@@ -29,14 +30,15 @@ export interface collectSpecs {
 }
 
 // Add your actual regex patterns here
-const EXEC_SQL_RX = /^.{5}[cC]?[\/]{1}EXEC\s+SQL/i;
-const SQL_CONT_RX = /^.{5}[cC]?\+/;
-const END_EXEC_RX = /^.{5}[cC]?[\/]{1}END-EXEC/i;
+const EXEC_SQL_RX = /^.{5}[ cC]?[\/]{1}EXEC\s+SQL/i;
+const SQL_CONT_RX = /^.{5}[ cC]?\+/;
+const END_EXEC_RX = /^.{5}[ cC]?[\/]{1}END-EXEC/i;
 
 export function collectStmt(
   allLines: string[],
   startIndex: number,
   condIndyStmt: string | null,
+  selectedLineList: number[] = [],
 ): collectSpecs | null {
 
   const isLineEmpty = (line: string) => line.trim().length === 0;
@@ -60,15 +62,22 @@ export function collectStmt(
     // Handle SQL block separately and return its result
     const sqlBlockResult = collectSQLBlock(allLines, startIndex);
 
-    // Ensure the SQL result conforms to the CollectedSpec type
-    return {
-      entityName: null,  // No entity name for SQL blocks
-      lines: sqlBlockResult.lines,
-      indexes: sqlBlockResult.indexes,
-      comments: comments.length > 0 ? comments : null,
-      isSQL: true,
-      isCollected: false,
-    };
+    // If no valid EXEC SQL block was found, fall through and let normal
+    // fixed-format logic process the statement.
+    if (!sqlBlockResult.isSQL || sqlBlockResult.lines.length === 0) {
+      // continue with the regular collector chain below
+    } else {
+
+      // Ensure the SQL result conforms to the CollectedSpec type
+      return {
+        entityName: null,  // No entity name for SQL blocks
+        lines: sqlBlockResult.lines,
+        indexes: sqlBlockResult.indexes,
+        comments: comments.length > 0 ? comments : null,
+        isSQL: true,
+        isCollected: false,
+      };
+    }
   }
   if (rpgiv.isComment(startLine)) { // Converting a block of comments?
     const cmtBlock = collectComments(allLines, startIndex);
@@ -236,6 +245,17 @@ export function collectStmt(
       lines: defnSpecs.lines,
       indexes: defnSpecs.indexes,
       comments: defnSpecs.comments.length > 0 ? defnSpecs.comments : null,
+      isSQL: false,
+      isCollected: false,
+    };
+  }
+  else if (curSpec === 'i') {
+    const inputSpecs = collectISpecs(allLines, startIndex, selectedLineList);
+    return {
+      entityName: inputSpecs.entityName,
+      lines: inputSpecs.lines,
+      indexes: inputSpecs.indexes,
+      comments: inputSpecs.comments.length > 0 ? inputSpecs.comments : null,
       isSQL: false,
       isCollected: false,
     };

@@ -5,6 +5,7 @@
 import * as vscode from 'vscode';
 import * as rpgiv from './rpgtools';
 import { wrapSQLBody } from './collectSQLSpec';
+import { collectSQLStatement, convertCollectedToFreeSQL } from './sql/sqlfmt_index';
 
 // The national-variant identifier characters are now driven by the
 // `rpgiv2free.nationalVariantChars` VS Code setting (see rpgtools.ts).
@@ -117,6 +118,45 @@ export const formatRPGIV = (input: string, splitOffComments: boolean = false, in
 
     // If adding this token would exceed the right margin
     if (currentLength + tokenLen > rightMargin) {
+      // Never break immediately after an opening parenthesis.
+      // Example: EXTFILE('LIB/FILE') should not become EXTFILE( + newline.
+      // Prefer to keep this token with '(' while still respecting right margin.
+      if (currentLine.trimEnd().endsWith('(') && token !== ')') {
+        const lineTrimEnd = currentLine.trimEnd();
+        const splitAt = lineTrimEnd.lastIndexOf(' ');
+
+        // If possible, move the trailing "KEYWORD(" segment to the next
+        // continuation line, then append the first argument token there.
+        // This avoids both bad "(\nvalue" breaks and right-margin overflow.
+        if (splitAt > 0) {
+          const head = lineTrimEnd.slice(0, splitAt).trimEnd();
+          const tail = lineTrimEnd.slice(splitAt + 1); // e.g. EXTFILE(
+          const compactToken = token.trimStart();
+          const projected = contIndentLen + tail.length + compactToken.length + tokenSpacer.length;
+
+          if (head.length > 0 && projected <= rightMargin) {
+            currentLine = head;
+            currentLength = head.length;
+            // This reflow is always a logical continuation line and must
+            // honor the configured continuation margin.
+            flushLine(true, true);
+            currentLine += tail + compactToken + tokenSpacer;
+            currentLength += tail.length + compactToken.length + tokenSpacer.length;
+            return;
+          }
+        }
+
+        // Fallback: keep token adjacent to '(' and strip any carried
+        // continuation indentation spacing from the token itself.
+        // Do not preserve any carried spacer here; if the source had wrapped
+        // after '(', that spacer can be continuation indentation which must
+        // not become embedded spaces inside the parentheses.
+        const compactToken = token.trimStart();
+        currentLine += compactToken;
+        currentLength += compactToken.length;
+        return;
+      }
+
       // Keep closing parens with previous content even if exceeding margin
       if (isClosingParen && currentLine.trim().length > 0) {
         currentLine += token + tokenSpacer;
@@ -240,9 +280,9 @@ export const formatRPGIV = (input: string, splitOffComments: boolean = false, in
     result.push(indent(dirIndent) + input.trim());
   }
   else {
-      if (code.trim()!== '' && !code.trimEnd().endsWith(';')) {
-        code = code.trimEnd() + ';';
-      }
+    if (code.trim() !== '' && !code.trimEnd().endsWith(';')) {
+      code = code.trimEnd() + ';';
+    }
     // Separate comment from code
     // const tokens = code.match(/'([^']|'')*'|[^\s]+/g) || [];
     // If total line is < rightMargin, the don't extract the comments
@@ -305,33 +345,33 @@ export const formatRPGIV = (input: string, splitOffComments: boolean = false, in
       }
     }
 
-        flushLine();
+    flushLine();
 
-        // Post-process: if the final line is only a semicolon, move the previous token to a cont line with the semicolon.
-        // Conservative: only steals the last whitespace-separated token from the nearest non-comment non-empty line.
-        const lastIdx = result.length - 1;
-        if (lastIdx >= 0 && /^\s*;\s*$/.test(result[lastIdx])) {
-          for (let j = lastIdx - 1; j >= 0; j--) {
-            const cand = result[j];
-            if (!cand || cand.trim() === '') continue;
-            if (rpgiv.isComment(cand)) continue;
+    // Post-process: if the final line is only a semicolon, move the previous token to a cont line with the semicolon.
+    // Conservative: only steals the last whitespace-separated token from the nearest non-comment non-empty line.
+    const lastIdx = result.length - 1;
+    if (lastIdx >= 0 && /^\s*;\s*$/.test(result[lastIdx])) {
+      for (let j = lastIdx - 1; j >= 0; j--) {
+        const cand = result[j];
+        if (!cand || cand.trim() === '') continue;
+        if (rpgiv.isComment(cand)) continue;
 
-            const leading = (cand.match(/^\s*/) || [''])[0];
-            const body = cand.trimEnd();
-            const parts = body.split(/\s+/);
-            if (parts.length > 1) {
-              // move last token to a continuation line and append semicolon
-              const lastToken = parts.pop()!;
-              const leftPart = parts.join(' ');
-              result[j] = (leading + leftPart).trimEnd();
-              // remove the lone semicolon line and push the new continuation line
-              result.pop();
-              result.push(indent(contIndentLen) + lastToken + ';');
-              break;
-            }
-            // if only one token on this line, keep searching upward
-          }
+        const leading = (cand.match(/^\s*/) || [''])[0];
+        const body = cand.trimEnd();
+        const parts = body.split(/\s+/);
+        if (parts.length > 1) {
+          // move last token to a continuation line and append semicolon
+          const lastToken = parts.pop()!;
+          const leftPart = parts.join(' ');
+          result[j] = (leading + leftPart).trimEnd();
+          // remove the lone semicolon line and push the new continuation line
+          result.pop();
+          result.push(indent(contIndentLen) + lastToken + ';');
+          break;
         }
+        // if only one token on this line, keep searching upward
+      }
+    }
 
   }
 
@@ -400,15 +440,15 @@ function tokenizeWithSpacing(line: string, variantChars: string): { tokens: stri
 // camel  → prefix lower  + suffix initcap  → endIf, elseIf, begSr
 // initcap → prefix initcap + suffix initcap → EndIf, ElseIf, BegSr
 const COMPOUND_KEYWORD_PARTS: Record<string, [string, string]> = {
-  'ENDIF':  ['end',  'If'],
-  'ENDDO':  ['end',  'Do'],
-  'ENDFOR': ['end',  'For'],
-  'ENDSL':  ['end',  'Sl'],
-  'ENDMON': ['end',  'Mon'],
-  'ENDSR':  ['end',  'Sr'],
-  'ENDPROC':['end',  'Proc'],
+  'ENDIF': ['end', 'If'],
+  'ENDDO': ['end', 'Do'],
+  'ENDFOR': ['end', 'For'],
+  'ENDSL': ['end', 'Sl'],
+  'ENDMON': ['end', 'Mon'],
+  'ENDSR': ['end', 'Sr'],
+  'ENDPROC': ['end', 'Proc'],
   'ELSEIF': ['else', 'If'],
-  'BEGSR':  ['beg',  'Sr'],
+  'BEGSR': ['beg', 'Sr'],
 };
 
 /** Apply the configured opcode case style to a single token. */
@@ -506,6 +546,9 @@ function applyLineCasing(line: string, style: string): string {
 // Match both free-format (exec sql) and column-7 (/exec sql) starts
 const EXEC_SQL_LINE_RX = /^\s*(?:\/\s*)?exec\s+sql\b/i;
 const END_EXEC_LINE_RX = /^\s*\/\s*end-exec\b/i;
+const FIXED_EXEC_SQL_LINE_RX = /^.{5}[ cC]\/EXEC\s+SQL/i;
+const FIXED_END_EXEC_LINE_RX = /^.{5}[ cC]\/END-EXEC/i;
+const FIXED_SQL_CONT_RX = /^.{5}[ cC]?\+/;
 // Fixed-format spec: column 6 (0-based index 5) is a spec letter
 const FIXED_SPEC_RX = /^.{5}[HFDICOPcdfhiopcn]/i;
 // Classic directive: col 7 (0-based index 6) is '/'
@@ -520,9 +563,9 @@ const FREE_DIR_RX = /^\*\*FREE\s*$/i;
  */
 function isInlineDeclaration(stmtText: string, openerTok: string): boolean {
   const closerMap: Record<string, string> = {
-    'DCL-DS':   'END-DS',
-    'DCL-PR':   'END-PR',
-    'DCL-PI':   'END-PI',
+    'DCL-DS': 'END-DS',
+    'DCL-PR': 'END-PR',
+    'DCL-PI': 'END-PI',
     'DCL-ENUM': 'END-ENUM',
   };
   const closer = closerMap[openerTok];
@@ -664,6 +707,25 @@ export function formatRPGIVDocument(lines: string[]): string[] {
 
     // **FREE directive — preserve as-is
     if (FREE_DIR_RX.test(trimmed)) {
+      result.push(raw);
+      i++;
+      continue;
+    }
+
+    // Fixed-format embedded SQL block — collect and reformat as free SQL.
+    // This covers mixed continuation styles (e.g. " +" and "C+").
+    if (FIXED_EXEC_SQL_LINE_RX.test(raw) || FIXED_SQL_CONT_RX.test(raw) || FIXED_END_EXEC_LINE_RX.test(raw)) {
+      const collected = collectSQLStatement(lines, i, 'fixed');
+      if (collected.isSQL && collected.indexes.length > 0) {
+        const wrappedSQL = convertCollectedToFreeSQL(collected.lines);
+        const extraIndent = ' '.repeat(depth * INDENT);
+        result.push(...wrappedSQL.map(ln => extraIndent + ln));
+        i = Math.max(...collected.indexes) + 1;
+        continue;
+      }
+
+      // If a selection starts mid-block and opener is not present in the
+      // selected slice, keep the current line unchanged.
       result.push(raw);
       i++;
       continue;

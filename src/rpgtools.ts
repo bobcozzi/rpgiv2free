@@ -100,6 +100,7 @@ export interface configSettings {
   indentSize: number;
   opcodeCase: string;
   sqlIndent: number;
+  enableConvertISpecToDS: boolean;
 }
 
 /** Default national-variant chars covering all known IBM i single-byte CCSIDs. */
@@ -125,7 +126,7 @@ export function getIdentClasses(variantChars: string): { start: string; cont: st
   const v = escapeForCharClass(variantChars);
   return {
     start: `A-Za-z#$@${v}`,
-    cont:  `A-Za-z0-9_#$@${v}`,
+    cont: `A-Za-z0-9_#$@${v}`,
   };
 }
 
@@ -154,6 +155,7 @@ export function getRPGIVFreeSettings(): configSettings {
     indentSize: config.get<number>('indentSize', 2),
     opcodeCase: config.get<string>('opcodeCase', 'lower'),
     sqlIndent: config.get<number>('sqlIndent', 8),
+    enableConvertISpecToDS: config.get<boolean>('enableConvertISpecToDS', false),
   };
 }
 
@@ -1435,6 +1437,208 @@ export function hasCondIndy(line: string): boolean {
   if (['', 'or', 'an'].includes(conjunction.trim()) && condIndy.trim() !== '') {
     // if it is conditioned by a conditioning indicator return true
     return true;
+
   }
   return false;
+}
+
+// ─── Shared type-conversion helpers (used by DSpec and ISpec conversion) ─────
+
+const _isDigits = (s: string): boolean => /^\d+$/.test(s);
+
+function _hasKeyword(kwdArea: string, keyword: string): boolean {
+  return new RegExp(`\\b${keyword}\\b`, 'i').test(kwdArea);
+}
+
+function _calcIntLength(dataType: string, fromPos: string, toPos: string): number {
+  if (dataType === 'I' || dataType === 'U') {
+    if (_isDigits(fromPos) && _isDigits(toPos)) {
+      const positions = parseInt(toPos, 10) - (parseInt(fromPos, 10) - 1);
+      switch (positions) {
+        case 1: return 3;
+        case 2: return 5;
+        case 4: return 10;
+        case 8: return 20;
+        case 16: return 40;
+        default: return positions;
+      }
+    } else if (_isDigits(toPos)) {
+      return parseInt(toPos, 10);
+    }
+  } else if (dataType === 'B') {
+    const n = _isDigits(fromPos) && _isDigits(toPos)
+      ? parseInt(toPos, 10) - (parseInt(fromPos, 10) - 1)
+      : _isDigits(toPos) ? parseInt(toPos, 10) : 0;
+    if (n > 0) return n <= 4 ? 5 : n <= 9 ? 10 : 20;
+  }
+  return 0;
+}
+
+/**
+ * Calculates the byte/digit length of an RPG IV fixed-format field from its
+ * from-position, to-position (or length), and data type.
+ * Mirrors the private calcLength() in DSpec.ts; exported so ISpec.ts can reuse it.
+ */
+export function calcFieldLength(
+  dataType: string,
+  fromPos: string,
+  toPos: string,
+  defnKwds?: string
+): number {
+  if (dataType === 'P') {
+    if (_isDigits(fromPos) && _isDigits(toPos)) {
+      const positions = parseInt(toPos, 10) - (parseInt(fromPos, 10) - 1);
+      if (defnKwds && _hasKeyword(defnKwds, 'PACKEVEN')) {
+        return 2 * (positions - 1);
+      }
+      return positions * 2 - 1;
+    } else if (_isDigits(toPos)) {
+      return parseInt(toPos, 10);
+    }
+  } else if (['I', 'U', 'B'].includes(dataType)) {
+    return _calcIntLength(dataType, fromPos, toPos);
+  } else if (_isDigits(fromPos) && _isDigits(toPos)) {
+    return parseInt(toPos, 10) - (parseInt(fromPos, 10) - 1);
+  } else if (_isDigits(toPos)) {
+    return parseInt(toPos, 10);
+  }
+  return 0;
+}
+
+/**
+ * Converts a fixed-format field type/length/decimal specification to the
+ * equivalent free-format RPG IV type keyword (e.g. `char(10)`, `packed(7:2)`).
+ * Shared between DSpec.ts and ISpec.ts conversion.
+ *
+ * Returns `{ fieldType, kwds }` where `fieldType` is the RPG IV type keyword
+ * (empty string for unrecognised/character fields — caller should fall back to
+ * `char(len)`) and `kwds` contains positional/other keywords (e.g. `POS(n)`).
+ */
+export function convertTypeToKwd(
+  dclType: string,
+  dataType: string,
+  fromPos: string,
+  toPos: string,
+  dec: string,
+  fmt: string,
+  inKwds: string,
+  allLines: string[],
+  curLineIndex: number
+): { fieldType: string; kwds: string } {
+  let fieldType = '';
+  const datfmtMatch = inKwds.match(/DATFMT\(([^)]+)\)/i);
+  const timfmtMatch = inKwds.match(/TIMFMT\(([^)]+)\)/i);
+  const settings = getRPGIVFreeSettings();
+  let kwds = '';
+  let length = calcFieldLength(dataType, fromPos, toPos, inKwds);
+
+  if (_isDigits(fromPos)) {
+    kwds += `POS(${fromPos})`;
+  }
+
+  if (['B', 'I', 'U', 'P', 'S'].includes(dataType) || dec !== '') {
+    if (dclType.trim() === '' && (!dataType || dataType.trim() === '')) {
+      if (/^\d+$/.test(dec)) {
+        const parentContext = getDefnContext(curLineIndex, allLines);
+        if (parentContext === 'DS') {
+          dataType = 'S';
+        } else if (parentContext === 'PI' || parentContext === 'PR') {
+          dataType = 'P';
+        } else {
+          dataType = 'S';
+        }
+      } else {
+        dataType = 'S';
+      }
+      length = calcFieldLength(dataType, fromPos, toPos, inKwds);
+    } else if (dclType.trim() === 'S' && (!dataType || dataType.trim() === '')) {
+      dataType = 'P';
+      length = calcFieldLength(dataType, fromPos, toPos, inKwds);
+    } else if (dataType.trim() === 'B') {
+      const decIsZero = !dec || dec === '0';
+      const shouldConvertToInt = decIsZero && settings.convertBINTOINT;
+      if (shouldConvertToInt) {
+        dataType = 'I';
+        const byteLen = _isDigits(fromPos) && _isDigits(toPos)
+          ? parseInt(toPos, 10) - (parseInt(fromPos, 10) - 1)
+          : _isDigits(toPos) ? parseInt(toPos, 10) : 0;
+        length = byteLen <= 4 ? 5 : byteLen <= 9 ? 10 : 20;
+      } else {
+        if (_isDigits(fromPos) && _isDigits(toPos)) {
+          const span = parseInt(toPos, 10) - (parseInt(fromPos, 10) - 1);
+          length = span <= 2 ? 4 : 9;
+        } else {
+          length = _isDigits(toPos) ? parseInt(toPos, 10) : 0;
+        }
+      }
+    } else if (dataType.trim() === 'I' || dataType.trim() === 'U') {
+      length = _calcIntLength(dataType, fromPos, toPos);
+    } else {
+      length = calcFieldLength(dataType, fromPos, toPos, inKwds);
+    }
+  }
+
+  if (dclType === 'DS') {
+    if (toPos && fromPos) {
+      kwds += `LEN(${length})`;
+    } else if (toPos) {
+      kwds += ` LEN(${toPos})`;
+    }
+    if (fromPos) {
+      kwds += ` OCCURS(${fromPos})`;
+    }
+  }
+
+  const cleanedKwds = inKwds.replace(/\bPACKEVEN\b\s*/i, '').trim();
+  kwds += ` ${cleanedKwds}`;
+
+  switch (dataType) {
+    case 'A':
+      if (/varying/i.test(kwds)) {
+        fieldType = `varchar(${length})`;
+        kwds = kwds.replace(/\bvarying\b\s*/i, '').replace(/\s{2,}/g, ' ').trim();
+      } else {
+        fieldType = `char(${length})`;
+      }
+      return { fieldType, kwds };
+    case 'P': return { fieldType: `packed(${length}:${dec || '0'})`, kwds };
+    case 'S': return { fieldType: `zoned(${length}:${dec || '0'})`, kwds };
+    case 'B': return { fieldType: `bindec(${length}:${dec || '0'})`, kwds };
+    case 'I': return { fieldType: `int(${length})`, kwds };
+    case 'U': return { fieldType: `uns(${length})`, kwds };
+    case 'F': return { fieldType: `float(${length})`, kwds };
+    case 'Z': return { fieldType: `timestamp`, kwds };
+    case 'D':
+      if (datfmtMatch) {
+        fieldType = `date(${datfmtMatch[1].toUpperCase()})`;
+        kwds = kwds.replace(datfmtMatch[0], '').trim();
+      } else {
+        fieldType = `date(${fmt})`;
+      }
+      return { fieldType, kwds };
+    case 'T':
+      if (timfmtMatch) {
+        fieldType = `time(${timfmtMatch[1].toUpperCase()})`;
+        kwds = kwds.replace(timfmtMatch[0], '').trim();
+      } else {
+        fieldType = `time(${fmt})`;
+      }
+      return { fieldType, kwds };
+    case 'G': return { fieldType: `graphic(${length})`, kwds };
+    case 'C': return { fieldType: `USC2(${length})`, kwds };
+    case '*': return { fieldType: `pointer`, kwds };
+    case 'N': return { fieldType: `ind`, kwds };
+    case 'O': {
+      const classRegex = /CLASS\s*\(([^)]*)\)/i;
+      if (classRegex.test(kwds)) {
+        kwds = kwds.replace(classRegex, 'OBJECT($1)');
+        fieldType = 'O';
+      } else {
+        fieldType = 'OBJECT';
+      }
+      return { fieldType, kwds };
+    }
+    default:
+      return { fieldType: '', kwds };
+  }
 }

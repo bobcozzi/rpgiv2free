@@ -5,6 +5,7 @@
 import * as vscode from 'vscode';
 import { formatRPGIVDocument } from './formatRPGIV';
 import * as rpgiv from './rpgtools';
+import { expandSelectionToEmbeddedSqlBlock } from './sql/sqlfmt_index';
 
 export function registerFormatRPGFreeCommand(context: vscode.ExtensionContext) {
   const disposable = vscode.commands.registerCommand('rpgiv2free.formatRPGFree', async () => {
@@ -30,6 +31,14 @@ export function registerFormatRPGFreeCommand(context: vscode.ExtensionContext) {
       if (sel.end.character === 0 && endLine > startLine) {
         endLine--;
       }
+
+      // If selection catches only part of an embedded SQL block
+      // (fixed or free format), expand it to full statement boundaries.
+      const allLines = doc.getText().split(eol);
+      const expanded = expandSelectionToEmbeddedSqlBlock(allLines, startLine, endLine);
+      startLine = expanded.start;
+      endLine = expanded.end;
+
       hasSelection = true;
     } else {
       startLine = 0;

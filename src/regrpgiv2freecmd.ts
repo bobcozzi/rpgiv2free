@@ -4,13 +4,16 @@
 
 import * as vscode from 'vscode';
 import { collectStmt } from './collectStmts';
-import { getPARMIndexes, collectInlinePARMs, buildEntryOnExitBlock, findPARMParent, findOnExitInsertPosition,
-  clearConversionState, getPendingPatches, findPRBlock, buildParmLines } from './opcodes';
+import {
+  getPARMIndexes, collectInlinePARMs, buildEntryOnExitBlock, findPARMParent, findOnExitInsertPosition,
+  clearConversionState, getPendingPatches, findPRBlock, buildParmLines
+} from './opcodes';
 import { collectCondCalc } from './collectCondCalc';
 import { expandCompoundRange } from './compoundStmt';
 import { convertHSpec } from './HSpec';
 import { convertFSpec } from './FSpec';
 import { convertDSpec } from './DSpec';
+import { convertISpec } from './ISpec';
 import { convertPSpec } from './PSpec';
 import { convertCSpec } from './CSpec';
 import { convertToFreeFormSQL } from './collectSQLSpec';
@@ -100,10 +103,10 @@ export function registerConvertToRPGFreeCommand(context: vscode.ExtensionContext
         }
         continue;
       }
-      const collectedStmts = collectStmt(allLines, i, condIndy?.condStmt ?? null);
+      const collectedStmts = collectStmt(allLines, i, condIndy?.condStmt ?? null, selectedLineList);
       if (!collectedStmts) continue;
 
-      const { indexes: indexes, lines: specLines, comments: rawComments, isSQL, isCollected, entityName } = collectedStmts;
+      let { indexes: indexes, lines: specLines, comments: rawComments, isSQL, isCollected, entityName } = collectedStmts;
       let comments = rawComments ?? [];
       if (!specLines.length) continue;
       if (indexes.some(idx => processedLines.has(idx))) continue;
@@ -175,12 +178,22 @@ export function registerConvertToRPGFreeCommand(context: vscode.ExtensionContext
         const line = specLines[0] ?? '';
         specType = line.length > 5 ? line.charAt(5).toLowerCase().trim() : '';
         let converted;
+        let skipFormatting = false;  // Flag for free-format conversions that skip formatRPGIV
         if (specType === 'h') {
           converted = convertHSpec(specLines);
         } else if (specType === 'f') {
           converted = convertFSpec(specLines);
         } else if (specType === 'd') {
           converted = convertDSpec(specLines, entityName, extraDCL, allLines, i);
+        } else if (specType === 'i') {
+          const iSettings = rpgiv.getRPGIVFreeSettings();
+          if (!iSettings.enableConvertISpecToDS) {
+            // Setting is off — leave I-spec lines completely untouched
+            continue;
+          }
+          converted = convertISpec(specLines, iSettings, allLines, indexes);
+          // I-spec conversion handles its own comments inline, so don't relocate them
+          comments = [];
         } else if (specType === 'p') {
           converted = convertPSpec(specLines, entityName);
         } else if (specType === 'c') {
@@ -197,7 +210,7 @@ export function registerConvertToRPGFreeCommand(context: vscode.ExtensionContext
         } else {
           converted = specLines;
         }
-        if (specType !== '') {
+        if (specType !== '' && !skipFormatting) {
           convertedText = converted.flatMap(line => formatRPGIV(line)).join(eol);
         }
         else {

@@ -10,7 +10,7 @@
   "icon": "images/rpgiv2free.png",
   "preview": false,
   "private": false,
-  "version": "1.12.39",
+  "version": "1.12.41",
   "license": "Apache-2.0",
   "engines": {
     "vscode": "^1.96.0",
@@ -244,7 +244,12 @@
         "rpgiv2free.opcodeCase": {
           "type": "string",
           "title": "Opcode Case Style",
-          "enum": ["lower", "upper", "camel", "initcap"],
+          "enum": [
+            "lower",
+            "upper",
+            "camel",
+            "initcap"
+          ],
           "enumDescriptions": [
             "Lowercase: dcl-ds, chain",
             "Uppercase: DCL-DS, CHAIN",
@@ -371,6 +376,12 @@
           "title": "Enable Fixed-Format RPG IV Syntax Highlighting",
           "default": false,
           "description": "Adds column-aware semantic syntax highlighting for fixed-format RPG IV and RPG III source lines. OFF by default."
+        },
+        "rpgiv2free.enableConvertISpecToDS": {
+          "type": "boolean",
+          "title": "Convert Input Specs to Data Structures (DCL-DS)",
+          "default": false,
+          "description": "When enabled, fixed-format RPG IV Input specs (I-specs) are converted to free-format DCL-DS / subfield declarations. Program-described fields use from/to column positions (POS keyword). External field renames use EXTFLD. Externally-described record formats use EXTNAME. Disabled by default."
         }
       }
     },

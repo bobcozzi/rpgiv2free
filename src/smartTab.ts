@@ -4,6 +4,7 @@
 
 import * as vscode from 'vscode';
 import * as rpgiv from './rpgtools';
+import { getInputSpecType } from './iSpecs';
 import * as types from './types'; // <-- restore the types import so setSuppressTabZoneUpdate works
 
 // helper to accept suggestions if present
@@ -36,55 +37,58 @@ const RPGIV_TAB_STOPS: Record<string, number[]> = {
   D: [1, 6, 7, 22, 23, 24, 26, 33, 40, 41, 43, 44, 81],
   C: [1, 6, 7, 9, 12, 26, 36, 50, 64, 69, 71, 73, 75, 77, 81],
   CX: [1, 6, 7, 9, 26, 36, 81],
-  I:    [1, 6, 7, 17, 19, 20, 21, 23, 28, 29, 30, 31, 36, 37, 38, 39, 44, 45, 46, 47, 81],  // Prog-described record: name, seq, num, opt, RI, 3× Pos/N/CC
-  IAnd: [1, 6, 16, 21, 23, 28, 29, 30, 31, 36, 37, 38, 39, 44, 45, 46, 47, 81],             // AND/OR continuation: connector, RI, 3× Pos/N/CC
-  IF:   [1, 6, 31, 35, 37, 42, 47, 49, 63, 65, 67, 69, 71, 73, 75, 81],                      // Prog-described field: fmt, from, to, dec, name, level/match/relation, indicators
-  IXR:  [1, 6, 7, 17, 21, 23, 81],                                                            // Ext-described record: record name, RI indicator
-  IXF:  [1, 6, 21, 31, 49, 63, 65, 69, 71, 73, 75, 81],                                      // Ext-described field: ext name, RPG name, level/match, indicators
-  O:    [1, 6, 7, 17, 18, 21, 24, 27, 30, 40, 43, 46, 49, 81],  // Record ID: name, type, flag, 3× indicators, EXCEPT, spacing
+  I: [1, 6, 7, 17, 19, 20, 21, 23, 28, 29, 30, 31, 36, 37, 38, 39, 44, 45, 46, 47, 81],  // Prog-described record: name, seq, num, opt, RI, 3× Pos/N/CC
+  IC: [1, 6, 16, 21, 23, 28, 29, 30, 31, 36, 37, 38, 39, 44, 45, 46, 47, 81],             // AND/OR continuation: connector, RI, 3× Pos/N/CC
+  IJ: [1, 6, 31, 35, 37, 42, 47, 49, 63, 65, 67, 69, 71, 73, 75, 81],                      // Prog-described field: fmt, from, to, dec, name, level/match/relation, indicators
+  IX: [1, 6, 7, 17, 21, 23, 81],                                                            // Ext-described record: record name, RI indicator
+  JX: [1, 6, 21, 31, 49, 63, 65, 69, 71, 73, 75, 81],                                      // Ext-described field: ext name, RPG name, level/match, indicators
+  O: [1, 6, 7, 17, 18, 21, 24, 27, 30, 40, 43, 46, 49, 81],  // Record ID: name, type, flag, 3× indicators, EXCEPT, spacing
   OAnd: [1, 6, 16, 21, 24, 27, 30, 81],                          // AND/OR continuation: AND keyword, 3× indicators, EXCEPT name
-  OF:   [1, 6, 21, 24, 27, 30, 44, 45, 47, 52, 53, 81],         // Prog-described field: indicators, name, edit code, end pos, constant
-  OFC:  [1, 6, 53, 81],                                          // Field constant continuation
-  OXF:  [1, 6, 21, 24, 27, 30, 45, 81],                         // Ext-described field: indicators, name, blank-after
+  OF: [1, 6, 21, 24, 27, 30, 44, 45, 47, 52, 53, 81],         // Prog-described field: indicators, name, edit code, end pos, constant
+  OFC: [1, 6, 53, 81],                                          // Field constant continuation
+  OXF: [1, 6, 21, 24, 27, 30, 45, 81],                         // Ext-described field: indicators, name, blank-after
   P: [1, 6, 7, 24, 44, 81]
 };
 
-const RPG_RULERS: {[spec: string]: string} = {
-  R:   '*.. v ...1... v ...2... v ...3... v ...4... v ...5... v ...6... v ...7... v ...8',
-  H:   `.....H........1..CDYI....S..............1.F...............................PgmID+`,
-  F:   `.....FFilenameIPEAF....RlenLK1AIOvKlocEDevice+......KExit++Entry+A....UC..`,
-  FC:  `.....F............Ext-record..................RcdnbrKOptionEntry+++`,
-  E:   `.....E....FromfileTofile++Name++N/rN/tbLenPDSArrnamLenPDSComments+++++++++`,
-  L:   `.....LFilename066Fl060Ol...`,
-  I:   `.....IFilenameSqNORiPos1NCCPos2NCCPos3NCC...`,
-  IJ:  `.....I....................................PFromTo++DFldnmeL1M1FrPlMnZr...`,
-  IX:  `.....IRcdname+....In...`,
-  JX:  `.....I..............Ext-Field+......................Field+L1M1..PlMnZr...`,
-  DS:  `.....IDsname....NSDsExt-File++.............OccrLen+...........`,
-  DJ:  `.....I..............Ext-Field+............PFromTo++DField+....`,
-  DK:  `.....I.....................................KeyWorkd.Field+....`,
-  NC:  `.....I..............NamedConstantValue++++C.........Field+...`,
+const RPG_RULERS: { [spec: string]: string } = {
+  R: '*.. v ...1... v ...2... v ...3... v ...4... v ...5... v ...6... v ...7... v ...8',
+  H: `.....H........1..CDYI....S..............1.F...............................PgmID+`,
+  F: `.....FFilenameIPEAF....RlenLK1AIOvKlocEDevice+......KExit++Entry+A....UC..`,
+  FC: `.....F............Ext-record..................RcdnbrKOptionEntry+++`,
+  E: `.....E....FromfileTofile++Name++N/rN/tbLenPDSArrnamLenPDSComments+++++++++`,
+  L: `.....LFilename066Fl060Ol...`,
+  I: `.....IFilenameSqNORiPos1NCCPos2NCCPos3NCC...`,
+  IC: `.....I.........And..RiPos1NCCPos2NCCPos3NCC...`,
+  IJ: `.....I....................................PFromTo++DFldnmeL1M1FrPlMnZr...`,
+  IX: `.....IRcdname+....In...`,
+  JX: `.....I..............Ext-Field+......................Field+L1M1..PlMnZr...`,
+  DS: `.....IDsname....NSDsExt-File++.............OccrLen+...........`,
+  DJ: `.....I..............Ext-Field+............PFromTo++DField+....`,
+  DK: `.....I.....................................KeyWorkd.Field+....`,
+  NC: `.....I..............NamedConstantValue++++C.........Field+...`,
   NCC: `.....I..............NamedConstantValue++++...................`,
   C: `.....CL0N01N02N03Factor1+++OpcdeFactor2+++Result+++LenDXHiLoEq............`,
   O: `.....OFilename+DTAAIndIndIndField++++EBPAAADCONSTANT/EDITWORD+++++++......`
 };
 
+// Reserved for unfinished RPG III tab/ruler support (.rpg, .rpg38, .sqlrpg).
+// This table is not the active SmartTab map for RPG IV in this extension.
 const RPG_TAB_STOPS: Record<string, number[]> = {
   H: [1, 6, 7, 81],
   F: [1, 6, 7, 17, 18, 19, 20, 21, 22, 23, 28, 29, 34, 36, 43, 44, 81],
   D: [1, 6, 7, 22, 23, 24, 26, 33, 40, 41, 43, 44, 81],
   C: [1, 6, 7, 9, 12, 26, 36, 50, 64, 69, 71, 73, 75, 77, 81],
   CX: [1, 6, 7, 9, 26, 36, 81],
-  I:    [1, 6, 7, 17, 19, 20, 21, 23, 28, 29, 30, 31, 36, 37, 38, 39, 44, 45, 46, 47, 81],  // Prog-described record: name, seq, num, opt, RI, 3× Pos/N/CC
-  IAnd: [1, 6, 16, 21, 23, 28, 29, 30, 31, 36, 37, 38, 39, 44, 45, 46, 47, 81],             // AND/OR continuation: connector, RI, 3× Pos/N/CC
-  IF:   [1, 6, 31, 35, 37, 42, 47, 49, 63, 65, 67, 69, 71, 73, 75, 81],                      // Prog-described field: fmt, from, to, dec, name, level/match/relation, indicators
-  IXR:  [1, 6, 7, 17, 21, 23, 81],                                                            // Ext-described record: record name, RI indicator
-  IXF:  [1, 6, 21, 31, 49, 63, 65, 69, 71, 73, 75, 81],                                      // Ext-described field: ext name, RPG name, level/match, indicators
-  O:    [1, 6, 7, 17, 18, 21, 24, 27, 30, 40, 43, 46, 49, 81],  // Record ID: name, type, flag, 3× indicators, EXCEPT, spacing
+  I: [1, 6, 7, 17, 19, 20, 21, 23, 28, 29, 30, 31, 36, 37, 38, 39, 44, 45, 46, 47, 81],  // Prog-described record: name, seq, num, opt, RI, 3× Pos/N/CC
+  IC: [1, 6, 16, 21, 23, 28, 29, 30, 31, 36, 37, 38, 39, 44, 45, 46, 47, 81],             // AND/OR continuation: connector, RI, 3× Pos/N/CC
+  IJ: [1, 6, 31, 35, 37, 42, 47, 49, 63, 65, 67, 69, 71, 73, 75, 81],                      // Prog-described field: fmt, from, to, dec, name, level/match/relation, indicators
+  IX: [1, 6, 7, 17, 21, 23, 81],                                                            // Ext-described record: record name, RI indicator
+  JX: [1, 6, 21, 31, 49, 63, 65, 69, 71, 73, 75, 81],                                      // Ext-described field: ext name, RPG name, level/match, indicators
+  O: [1, 6, 7, 17, 18, 21, 24, 27, 30, 40, 43, 46, 49, 81],  // Record ID: name, type, flag, 3× indicators, EXCEPT, spacing
   OAnd: [1, 6, 16, 21, 24, 27, 30, 81],                          // AND/OR continuation: AND keyword, 3× indicators, EXCEPT name
-  OF:   [1, 6, 21, 24, 27, 30, 44, 45, 47, 52, 53, 81],         // Prog-described field: indicators, name, edit code, end pos, constant
-  OFC:  [1, 6, 53, 81],                                          // Field constant continuation
-  OXF:  [1, 6, 21, 24, 27, 30, 45, 81],                         // Ext-described field: indicators, name, blank-after
+  OF: [1, 6, 21, 24, 27, 30, 44, 45, 47, 52, 53, 81],         // Prog-described field: indicators, name, edit code, end pos, constant
+  OFC: [1, 6, 53, 81],                                          // Field constant continuation
+  OXF: [1, 6, 21, 24, 27, 30, 45, 81],                         // Ext-described field: indicators, name, blank-after
   P: [1, 6, 7, 24, 44, 81]
 };
 // Map from editor.document.uri.toString() to an array of ranges per line
@@ -194,7 +198,7 @@ export function getStmtVariant(line: string, specType: string): string {
     case 'O': {
       // AND continuation: cols 7-15 blank, AND keyword at cols 16-18
       if (rpgiv.getCol(line, 7, 15).trim() === '' &&
-          rpgiv.getCol(line, 16, 18).toUpperCase().trim() === 'AND') {
+        rpgiv.getCol(line, 16, 18).toUpperCase().trim() === 'AND') {
         varient = 'OAnd';
       } else if (rpgiv.getCol(line, 7, 16).trim() !== '') {
         varient = 'O';                               // Record identification line
@@ -209,21 +213,17 @@ export function getStmtVariant(line: string, specType: string): string {
     }
 
     case 'I': {
-      const iCols715  = rpgiv.getCol(line, 7, 15).trim();
-      const iConxn    = rpgiv.getCol(line, 16, 18).toUpperCase().trim();
-      const iName716  = rpgiv.getCol(line, 7, 16).trim();
-      const iCols1720 = rpgiv.getCol(line, 17, 20).trim();
-      const iExtName  = rpgiv.getCol(line, 21, 30).trim();
-      const iProgFld  = rpgiv.getCol(line, 31, 74).trim();
-
-      if (!iCols715 && (iConxn === 'AND' || iConxn === 'OR')) {
-        varient = 'IAnd';                            // AND/OR continuation
-      } else if (iName716) {
-        varient = iCols1720 ? 'I' : 'IXR';          // Prog- or ext-described record
-      } else if (iExtName) {
-        varient = 'IXF';                             // Ext-described field
-      } else if (iProgFld) {
-        varient = 'IF';                              // Prog-described field
+      const inputType = getInputSpecType(line);
+      switch (inputType) {
+        case 'I':
+        case 'IC':
+        case 'IX':
+        case 'JX':
+          varient = inputType;
+          break;
+        case 'J':
+          varient = 'IJ';
+          break;
       }
       break;
     }

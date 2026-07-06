@@ -74,12 +74,13 @@ vsce publish -p "$VSCE_PAT" || {
 
 # Publish to Open VSX
 echo "📤 Publishing to Open VSX..."
-if [ -z "${OVSX_PAT:-}" ]; then
-  echo "⚠️  Skipping Open VSX publish: OVSX_PAT environment variable is not set"
+OVSX_TOKEN="${OVSX_PAT:-${OPENVSX_PAT:-}}"
+if [ -z "${OVSX_TOKEN}" ]; then
+  echo "⚠️  Skipping Open VSX publish: OVSX_PAT/OPENVSX_PAT environment variable is not set"
   echo "    Set it with: export OVSX_PAT=your_token"
   echo "    Get a token at: https://open-vsx.org/user-settings/tokens"
 else
-  npx ovsx publish "./rpgiv2free-${VERSION}.vsix" -p "$OVSX_PAT" || {
+  ovsx publish "./rpgiv2free-${VERSION}.vsix" -p "$OVSX_TOKEN" || {
     echo "⚠️  Open VSX publish failed (VS Code Marketplace publish succeeded)"
   }
 fi
