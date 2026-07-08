@@ -9,6 +9,8 @@ import { commands, ExtensionContext, Uri, window } from "vscode";
 import * as vartypes from '../vartype';
 import { getStructTypeInfo } from '../calcStructLen';
 
+let warnedMissingRpgleCache = false;
+
 
 export async function convertMOVE(
     opcode: string,
@@ -28,7 +30,16 @@ export async function convertMOVE(
     }
 
     const uri = activeEditor.document.uri;
-    const symbols = await commands.executeCommand(`vscode-rpgle.server.getCache`, uri) as any;
+    let symbols: any = {};
+    try {
+        const cached = await commands.executeCommand(`vscode-rpgle.server.getCache`, uri) as any;
+        symbols = cached ?? {};
+    } catch {
+        if (!warnedMissingRpgleCache) {
+            warnedMissingRpgleCache = true;
+            rpgiv.log('vscode-rpgle symbol cache unavailable; MOVE conversion will use generic type heuristics.');
+        }
+    }
     // console.log('CODE4IBMi Symbols.variables:', JSON.stringify(symbols.variables, null, 2));
 
     // === Extract Extender (e.g., from CAT(P)) ===
@@ -81,7 +92,7 @@ export async function convertMOVE(
     const factor2Upper = f2.trim().toUpperCase();
     const isFactor2Indicator =
         factor2Upper.startsWith('*IN') ||
-        factor2Upper === 'ON'  ||
+        factor2Upper === 'ON' ||
         factor2Upper === 'OFF' ||
         factor2Upper === "'1'" ||
         factor2Upper === "'0'";
@@ -218,21 +229,19 @@ export async function convertMOVE(
     else {   // Numeric to Char or Char to Numberic or likeType = likeType (e.g., char to char)
         if ((f2a && rfa) &&
             ((['PACKED', 'DEC', 'DECIMAL', 'BINDEC', 'ZONED', 'INT', 'UNS', 'FLOAT'].includes(f2a.type) &&
-            ['STRUCT', 'CHAR', 'VARCHAR', 'GRAPH', 'VARGRAPH'].includes(rfa.type)) ||
+                ['STRUCT', 'CHAR', 'VARCHAR', 'GRAPH', 'VARGRAPH'].includes(rfa.type)) ||
 
-           (['STRUCT', 'CHAR', 'VARCHAR', 'GRAPH', 'VARGRAPH', 'LITERAL', 'CONST'].includes(f2a.type) &&
-              ['PACKED', 'DEC', 'DECIMAL', 'BINDEC','ZONED', 'INT', 'UNS', 'FLOAT'].includes(rfa.type))))
-        {
+                (['STRUCT', 'CHAR', 'VARCHAR', 'GRAPH', 'VARGRAPH', 'LITERAL', 'CONST'].includes(f2a.type) &&
+                    ['PACKED', 'DEC', 'DECIMAL', 'BINDEC', 'ZONED', 'INT', 'UNS', 'FLOAT'].includes(rfa.type)))) {
             let rType = (rfa.type === 'PACKED') ? 'DEC' : rfa.type;
-              // Is Char to Numeric?
-            if ((f2a && rfa) && ['DEC','PACKED', 'ZONED', 'BINDEC', 'INT', 'UNS', 'FLOAT'].includes(rType)) {
+            // Is Char to Numeric?
+            if ((f2a && rfa) && ['DEC', 'PACKED', 'ZONED', 'BINDEC', 'INT', 'UNS', 'FLOAT'].includes(rType)) {
                 let rfLen = rfa.length;
                 let rfDec = (typeof rfa.decimals === 'number') ? rfa.decimals : 0;
                 if (['INT', 'UNS', 'FLOAT'].includes(rType)) {
                     lines.push(`${result} = %${rType}(${f2})`);
                 }
-                else
-                {
+                else {
                     // FIX: Always use %DEC instead of %ZONED or %BINDEC because they do not exist.
                     // lines.push(`${result} = %${rType}(${f2} : ${rfLen} : ${rfDec})`);
                     rType = 'DEC';
@@ -246,14 +255,13 @@ export async function convertMOVE(
         }
         else {  // both numeric, then just do an assignment
             if ((f2a && rfa) &&
-                ( ['DEC', 'PACKED', 'ZONED', 'BINDEC', 'INT', 'UNS', 'FLOAT'].includes(rfa.type) &&
-                  ['DEC', 'PACKED', 'ZONED', 'BINDEC', 'INT', 'UNS', 'FLOAT'].includes(f2a.type)))
-            {
+                (['DEC', 'PACKED', 'ZONED', 'BINDEC', 'INT', 'UNS', 'FLOAT'].includes(rfa.type) &&
+                    ['DEC', 'PACKED', 'ZONED', 'BINDEC', 'INT', 'UNS', 'FLOAT'].includes(f2a.type))) {
                 lines.push(`${result} = ${f2}`);
             }
             else if ((f2a && rfa) &&  // If one is numeric and the other isn't then do {opcode} assigment
-                ( ['DEC', 'PACKED', 'ZONED', 'BINDEC', 'INT', 'UNS', 'FLOAT'].includes(rfa.type) ||
-                  ['DEC', 'PACKED', 'ZONED', 'BINDEC', 'INT', 'UNS', 'FLOAT'].includes(f2a.type) &&
+                (['DEC', 'PACKED', 'ZONED', 'BINDEC', 'INT', 'UNS', 'FLOAT'].includes(rfa.type) ||
+                    ['DEC', 'PACKED', 'ZONED', 'BINDEC', 'INT', 'UNS', 'FLOAT'].includes(f2a.type) &&
                     f2a.type != rfa.type)) {
                 if (oper && oper != '') {
                     lines.push(`${oper} ${result} = ${f2}`);

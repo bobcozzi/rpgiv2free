@@ -283,7 +283,7 @@ export function registerConvertToRPGFreeCommand(context: vscode.ExtensionContext
 
     if (edits.length > 0) {
       try {
-        rpgiv.log('CMD Handler Applying edits');
+        rpgiv.log('Conversion begin');
         rpgiv.logOverlappingEdits(edits);
 
         // Sort edits by start position (descending)
@@ -350,7 +350,7 @@ export function registerConvertToRPGFreeCommand(context: vscode.ExtensionContext
         }))
       );
     }
-    rpgiv.log('CMD Handler ending');
+    rpgiv.log('Conversion ending');
   });
 
   context.subscriptions.push(disposable);

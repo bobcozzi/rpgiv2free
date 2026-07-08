@@ -94,7 +94,6 @@ export interface configSettings {
   replaceCOPYinSQLRPG: boolean;
   tempVar1STG: string;
   tempVar2DO: string;
-  verifyCODE4i: boolean;
   parenthesizeANDOR: boolean;
   nationalVariantChars: string;
   indentSize: number;
@@ -149,7 +148,6 @@ export function getRPGIVFreeSettings(): configSettings {
     replaceCOPYinSQLRPG: config.get<boolean>('ReplaceCOPYwithINCLUDE_SQLRPG', false),
     tempVar1STG: config.get<string>('tempVarName1', 'rpg2ff_tempSTG'),
     tempVar2DO: config.get<string>('tempVarName2', 'rpg2ff_tempDO'),
-    verifyCODE4i: config.get<boolean>('VerifyCode4IBMi', false),
     parenthesizeANDOR: config.get<boolean>('parenthesizeANDOR', false),
     nationalVariantChars: config.get<string>('nationalVariantChars', DEFAULT_VARIANT_CHARS),
     indentSize: config.get<number>('indentSize', 2),
@@ -1080,7 +1078,38 @@ export function isRPGDocument(document?: vscode.TextDocument): boolean {
     doc = editor.document;
   }
   const langId = doc.languageId.toLowerCase();
-  return langId === 'rpgle' || langId === 'sqlrpgle' || langId === 'rpgleinc';
+  const ext = path.extname(doc.fileName).toLowerCase();
+
+  const isIleLang = langId === 'rpgle' || langId === 'sqlrpgle' || langId === 'rpgleinc';
+  const isLegacyLang = langId === 'rpg' || langId === 'sqlrpg' || langId === 'rpg36' || langId === 'rpg38' || langId === 'sqlrpg38';
+  const isLegacyExt = ext === '.rpg' || ext === '.sqlrpg' || ext === '.rpg36' || ext === '.rpg38' || ext === '.sqlrpg38';
+
+  return isIleLang || isLegacyLang || isLegacyExt;
+}
+
+export function isLegacyRPGDocument(document?: vscode.TextDocument): boolean {
+  let doc: vscode.TextDocument | undefined = document;
+  if (!doc) {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) return false;
+    doc = editor.document;
+  }
+
+  const langId = doc.languageId.toLowerCase();
+  const ext = path.extname(doc.fileName).toLowerCase();
+
+  return (
+    langId === 'rpg' ||
+    langId === 'sqlrpg' ||
+    langId === 'rpg36' ||
+    langId === 'rpg38' ||
+    langId === 'sqlrpg38' ||
+    ext === '.rpg' ||
+    ext === '.sqlrpg' ||
+    ext === '.rpg36' ||
+    ext === '.rpg38' ||
+    ext === '.sqlrpg38'
+  );
 }
 
 export function isFixedFormatRPG(document?: vscode.TextDocument): boolean {

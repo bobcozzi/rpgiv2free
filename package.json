@@ -10,7 +10,7 @@
   "icon": "images/rpgiv2free.png",
   "preview": false,
   "private": false,
-  "version": "1.12.41",
+  "version": "1.12.43",
   "license": "Apache-2.0",
   "engines": {
     "vscode": "^1.96.0",
@@ -61,6 +61,10 @@
         "title": "Code for IBM i Settings"
       },
       {
+        "command": "rpgiv2free.toggleRPGColumnGuides",
+        "title": "Toggle RPG Column Guides"
+      },
+      {
         "command": "rpgiv2free.formatRPGFree",
         "title": "Format RPG IV Free Format Code"
       }
@@ -109,6 +113,11 @@
           "command": "rpgiv2free.openCode4iSettings",
           "when": "editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc'",
           "group": "rpgiv2free@6"
+        },
+        {
+          "command": "rpgiv2free.toggleRPGColumnGuides",
+          "when": "editorLangId == 'rpgle' || editorLangId == 'sqlrpgle' || editorLangId == 'rpgleinc'",
+          "group": "rpgiv2free@7"
         }
       ],
       "commandPalette": [
@@ -117,6 +126,9 @@
         },
         {
           "command": "rpgiv2free.openCode4iSettings"
+        },
+        {
+          "command": "rpgiv2free.toggleRPGColumnGuides"
         }
       ]
     },
@@ -128,12 +140,6 @@
           "title": "Smart Convert BIN to INT",
           "default": true,
           "description": "When enabled, converts RPG IV B ('binary') fields with no decimal positions to the equivalent Integer (INT) data type. Fields with decimal positions are always converted to BINDEC."
-        },
-        "rpgiv2free.VerifyCode4IBMi": {
-          "type": "boolean",
-          "title": "Verify CODE for IBM i Extension API",
-          "default": true,
-          "description": "Verify and log Code4IBMi Extension is running (Debug mode only)."
         },
         "rpgiv2free.altMOVEL": {
           "type": "boolean",
@@ -347,7 +353,7 @@
           "type": "boolean",
           "title": "Enable RPG Fixed-Format Columnar Guides",
           "default": true,
-          "description": "Show vertical columnar guidelines for fixed-format RPG (independent of Smart Tab/Enter features)."
+          "description": "Show vertical columnar guidelines for fixed-format RPG (independent of Smart Tab/Enter features). Can also be toggled with the Toggle RPG Column Guides command."
         },
         "rpgiv2free.verticalTabColor_DarkMode": {
           "type": "string",
@@ -432,7 +438,12 @@
   "activationEvents": [
     "onLanguage:rpgle",
     "onLanguage:sqlrpgle",
-    "onLanguage:rpgleinc"
+    "onLanguage:rpgleinc",
+    "onLanguage:rpg",
+    "onLanguage:sqlrpg",
+    "onLanguage:rpg36",
+    "onLanguage:rpg38",
+    "onLanguage:sqlrpg38"
   ],
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -447,7 +458,6 @@
   "devDependencies": {
     "@eslint/json": "^0.12.0",
     "@eslint/markdown": "^6.4.0",
-    "@halcyontech/vscode-ibmi-types": "^2.18.0",
     "@types/node": "^22.19.17",
     "@types/vscode": "^1.70.0",
     "@typescript-eslint/eslint-plugin": "^8.32.0",
@@ -460,6 +470,6 @@
     "sql-formatter": "^15.5.2"
   },
   "extensionDependencies": [
-    "halcyontechltd.code-for-ibmi"
+    "halcyontechltd.vscode-rpgle"
   ]
 }

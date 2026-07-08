@@ -1,6 +1,10 @@
 # Bob Cozzi's RPG IV to Free Format Conversion (rpgiv2free) Extension for use with Visual Studio CODE and IBM Bob
 
-This Visual Studio Code extension helps developers convert RPG IV fixed-format statements into free-format RPG IV code effortlessly. It is compatible with both Microsoft Visual Studio CODE with the `CODE FOR IBM i` extension, as well as `IBM Bob`.
+This Visual Studio Code extension helps developers convert RPG IV fixed-format statements into free-format RPG IV code effortlessly. It is compatible with Microsoft Visual Studio CODE and IBM Bob.
+
+The extension now declares `vscode-rpgle` as its runtime extension dependency (`halcyontechltd.vscode-rpgle`) because symbol metadata from that extension is used to improve MOVE and SUBST conversions. When symbol cache metadata is unavailable at runtime, MOVE/SUBST conversions continue using generic heuristics instead of failing.
+
+`CODE FOR IBM i` is optional for this extension. A convenience command to open `Code for IBM i Settings` is still included for users who have that extension installed.
 
 Your input and feedback is extremely valuable. Please [use this link to submit your bugs or feedback](https://github.com/bobcozzi/rpgiv2free/issues).
 
@@ -42,7 +46,7 @@ If you work on IBM i, you will also want to install the **CL Prompter and Format
 - ## Bonus Editing Features**
 - **Smart RPG Tab key** When enabled (default: `true`) on fixed-foramt RPG IV statements, when the TAB/Shift+TAB keys are pressed, it moves to the next/prev available "tab" location for the specification. For example: On a C (calc) spec, you may _tab_ from factor 1 to the opcode then to factor 2 and so on. The tab is non-distructive so tabbing can be done quickly and safely. To turn off Smart RPG Tab, press the "RPG Smart Tab" _button_ on the bottom status bar of the editor winodow. There is also a settings option to turn this off when VS Code starts. Smart RPG Enter and Smart RPG Tab features are off when NOT in fixed format.
 - **Smart RPG Enter key** When enabled (default: `true`) on fixed-format RPG IV statments, when you press ENTER, the current line is **not** broken and a new line with the same source spec type is inserted. The cursor is moved under the first non-blank position (after the spec) of the previous line. To turn this off, go to the settings for the `rpgiv2free` extension. NOTE: This may interfer with GitHub CoPilot code completion (code _suggestions_) in fixed-format. Smart RPG Enter and Smart RPG Tab features are off when NOT in fixed format.
-- **Columnar Boundaries** When the Smart RPG Tab key is enabled (on) the extension highlights the boundaries of each fixed-format RPG IV statement to show where the various fields such as Factor 1, Opcode, Factor 2, Result Field, etc. are located. This gives you a visual cue to verify that you are editing in the correct location.  To use this feature effectively, turn off the `vs CODE for IBM i Format Ruler` setting, using Shift+F4. If you want to have it off by default when you start up VS CODE, go to the `settings.json` by pressing `Ctrl + comma` or `Cmd + comma` on macOS and then search for the setting: `"vscode-rpgle.rulerEnabledByDefault"` Set it to `false`. You can always turn it back on using the `Shift+F4` at any time.
+- **Columnar Boundaries** The extension can highlight fixed-format RPG IV column boundaries to show where fields such as Factor 1, Opcode, Factor 2, and Result are located. This visual cue is controlled by the `rpgiv2free.enableRPGColumnGuides` setting and is independent of Smart Tab/Enter. You can toggle it using the **Toggle RPG Column Guides** command (Command Palette or editor right-click menu), or by changing the setting directly.
 
 ## Advanced Support for Indicator Conditions and the CASxx Opcode
 - **Conditioning Indicators on Calc Specs Support**:
@@ -59,10 +63,16 @@ When an `ENDSR` statement includes a TAG label in Factor 1, this extension conve
 ## Smart RPG Tab
 - The RPG IV Smart Tab feature appears in the status bar at the bottom of the VS CODE editor window (right side). When RPGLE or SQLRPGLE are detected and the source is NOT **FREE, this feature is enabled for Fixed Format code. It gives you the abilit to forward TAB or backwards TAB within the lines (such as going from Factor 1 to the Opcode to Factor 2, etc.) in a non-distructive way. It also outlines columnar boundaries on each fixed-format line in a non-intrusive mannor, and highlights the "column" in which the cursor is located. For example, if your cursor is in the Opcode area, that entire 10-byte area is highlighted. The highlight follows your cursor in any fixed format line, to help you insure you've place the code in the right place.
 
+## RPG Column Guides
+- RPG fixed-format column guides are controlled separately from Smart Tab by the `rpgiv2free.enableRPGColumnGuides` setting.
+- To toggle quickly, run **Toggle RPG Column Guides** from the Command Palette or from the editor right-click menu under the extension's Settings commands.
+
 ## Smart Enter Key
 - In Fixed-format, when you press Enter, the current fixed-format line will not break at the Enter location and a new line is inserted normally. In addition, the Smart Enter key adds the new line with the same specification as the prior line (the one where Enter was pressed) and positions the cursor at the first non-blank position of that prior line. This is simlar to how other editors work.
 
 **NOTE:** Both features may be turned off in the settings, but the Smart RPG Tab key feature also has a "toggle" switch located in the right-side of the Status bar. See the Extension Settings for details on turning off either of these features.
+
+Column guides are controlled separately via `rpgiv2free.enableRPGColumnGuides` and can be toggled with the **Toggle RPG Column Guides** command.
 
 ## Extension Settings
 This extension provides several settings to customize its behavior. You can configure these in your VS Code `settings.json` or through the extension settings user interface.
@@ -96,6 +106,16 @@ Enables the RPG Smart Tab feature. This is shipped as `true` and may be toggled 
 
 - `true` — RPG Fixed Format Smart Tab is Active at start up.
 - `false` — RPG Fixed Format Smart Tab is disabled at start up
+
+Default: `true`
+
+### `rpgiv2free.enableRPGColumnGuides`
+Enables fixed-format RPG column guides (vertical boundaries) independently of Smart Tab and Smart Enter.
+
+- `true` — Show fixed-format RPG column guides.
+- `false` — Hide fixed-format RPG column guides.
+
+You can also toggle this quickly using the **Toggle RPG Column Guides** command from the Command Palette or the editor right-click menu.
 
 Default: `true`
 

@@ -18,10 +18,6 @@ import { convertPSpec } from './PSpec';
 import { convertCSpec } from './CSpec';
 import { collectCondCalc } from './collectCondCalc';
 import { convertToFreeFormSQL } from './collectSQLSpec';
-
-import { getIBMiAPI } from './codeforibmi';
-
-import * as types from './types';
 import * as rpgiv from './rpgtools';
 
 import { registerConvertToRPGFreeCommand } from './regrpgiv2freecmd';
@@ -187,33 +183,6 @@ export async function activate(context: vscode.ExtensionContext) {
   registerFormatRPGFreeCommand(context);
   // registerSyntaxHighlighting(context);  // Temporarily disabled — conflicts with fixed-format RPG IV syntax highlighter
 
-  // Resolve the Code for IBM i API and store it globally so it’s available elsewhere
-  try {
-    const ibmiAPI = await getIBMiAPI();
-    types.setIbmiApi(ibmiAPI);
-
-    // Log CODE for IBM i APIs only in dev mode (optional)
-    const bCheckCode4i = config.verifyCODE4i;
-    if (bCheckCode4i && ibmiAPI && context.extensionMode === vscode.ExtensionMode.Development) {
-      const apiAny = ibmiAPI as any;
-      const keys = Object.keys(apiAny);
-      rpgiv.log('Code for IBM i API keys:', keys);
-      for (const key of keys) {
-        const value = apiAny[key];
-        if (value && typeof value === 'object') {
-          try {
-            rpgiv.log(`ibmiAPI.${key} keys:`, Object.keys(value));
-          } catch {
-            // ignore non-plain objects
-          }
-        }
-      }
-    }
-  } catch (err) {
-    // getIBMiAPI already surfaces a user-facing error
-    console.error('getIBMiAPI failed:', err);
-  }
-
   const smartTabEnabled = vscode.workspace.getConfiguration().get<boolean>('rpgiv2free.enableRPGSmartTab', true);
   await vscode.commands.executeCommand('setContext', 'rpgiv2free.smartTabEnabled', smartTabEnabled);
 
@@ -243,6 +212,26 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand('rpgiv2free.openCode4iSettings', () => {
       vscode.commands.executeCommand('workbench.action.openSettings', '@ext:halcyontechltd.code-for-ibmi');
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('rpgiv2free.toggleRPGColumnGuides', async () => {
+      const config = vscode.workspace.getConfiguration('rpgiv2free');
+      const current = config.get<boolean>('enableRPGColumnGuides', true);
+      const next = !current;
+
+      await config.update('enableRPGColumnGuides', next, vscode.ConfigurationTarget.Global);
+
+      const editor = vscode.window.activeTextEditor;
+      if (editor && rpgiv.isRPGDocument(editor.document)) {
+        evaluateAndApplyFeatures(editor.document);
+      }
+
+      void vscode.window.setStatusBarMessage(
+        `RPG Column Guides ${next ? 'enabled' : 'disabled'}`,
+        2000
+      );
     })
   );
 }

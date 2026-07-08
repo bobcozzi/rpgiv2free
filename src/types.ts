@@ -2,12 +2,6 @@
 // Copyright (c) 1996-2026 by R. Cozzi, Jr.
 // @author BobCozzi
 
-export let ibmiAPI: any = undefined;
-
-export function setIbmiApi(api: any) {
-  ibmiAPI = api;
-}
-
 export interface collectedStmt {
   specType: string;
   lines: string[];
@@ -17,9 +11,9 @@ export interface collectedStmt {
 }
 
 export interface stmtLines {
-    lines: string[];
-    indexes: number[];
-    comments: string[] | null; // embedded comments in statement
+  lines: string[];
+  indexes: number[];
+  comments: string[] | null; // embedded comments in statement
 }
 
 let suppressTabZoneUpdate = false;

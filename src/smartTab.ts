@@ -50,10 +50,10 @@ const RPGIV_TAB_STOPS: Record<string, number[]> = {
   P: [1, 6, 7, 24, 44, 81]
 };
 
-const RPG_RULERS: { [spec: string]: string } = {
-  R: '*.. v ...1... v ...2... v ...3... v ...4... v ...5... v ...6... v ...7... v ...8',
-  H: `.....H........1..CDYI....S..............1.F...............................PgmID+`,
-  F: `.....FFilenameIPEAF....RlenLK1AIOvKlocEDevice+......KExit++Entry+A....UC..`,
+const RPGIV_RULERS: { [spec: string]: string } = {
+  R: '......*..1... v ...2... v ...3... v ...4... v ...5... v ...6... v ...7... v ...8',
+  H: `.....H++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++`,
+  F: `.....FFilenameIPEAF....RlenLK1AIOvKlocEDevice+......KExit++Entry+A....UC........`,
   FC: `.....F............Ext-record..................RcdnbrKOptionEntry+++`,
   E: `.....E....FromfileTofile++Name++N/rN/tbLenPDSArrnamLenPDSComments+++++++++`,
   L: `.....LFilename066Fl060Ol...`,
@@ -68,28 +68,19 @@ const RPG_RULERS: { [spec: string]: string } = {
   NC: `.....I..............NamedConstantValue++++C.........Field+...`,
   NCC: `.....I..............NamedConstantValue++++...................`,
   C: `.....CL0N01N02N03Factor1+++OpcdeFactor2+++Result+++LenDXHiLoEq............`,
-  O: `.....OFilename+DTAAIndIndIndField++++EBPAAADCONSTANT/EDITWORD+++++++......`
+  O: `.....OFilename++DAddN01N02N03Excnam++++YB.End++PConstant/editword/DTformat++`
 };
 
-// Reserved for unfinished RPG III tab/ruler support (.rpg, .rpg38, .sqlrpg).
-// This table is not the active SmartTab map for RPG IV in this extension.
-const RPG_TAB_STOPS: Record<string, number[]> = {
-  H: [1, 6, 7, 81],
-  F: [1, 6, 7, 17, 18, 19, 20, 21, 22, 23, 28, 29, 34, 36, 43, 44, 81],
-  D: [1, 6, 7, 22, 23, 24, 26, 33, 40, 41, 43, 44, 81],
-  C: [1, 6, 7, 9, 12, 26, 36, 50, 64, 69, 71, 73, 75, 77, 81],
-  CX: [1, 6, 7, 9, 26, 36, 81],
-  I: [1, 6, 7, 17, 19, 20, 21, 23, 28, 29, 30, 31, 36, 37, 38, 39, 44, 45, 46, 47, 81],  // Prog-described record: name, seq, num, opt, RI, 3× Pos/N/CC
-  IC: [1, 6, 16, 21, 23, 28, 29, 30, 31, 36, 37, 38, 39, 44, 45, 46, 47, 81],             // AND/OR continuation: connector, RI, 3× Pos/N/CC
-  IJ: [1, 6, 31, 35, 37, 42, 47, 49, 63, 65, 67, 69, 71, 73, 75, 81],                      // Prog-described field: fmt, from, to, dec, name, level/match/relation, indicators
-  IX: [1, 6, 7, 17, 21, 23, 81],                                                            // Ext-described record: record name, RI indicator
-  JX: [1, 6, 21, 31, 49, 63, 65, 69, 71, 73, 75, 81],                                      // Ext-described field: ext name, RPG name, level/match, indicators
-  O: [1, 6, 7, 17, 18, 21, 24, 27, 30, 40, 43, 46, 49, 81],  // Record ID: name, type, flag, 3× indicators, EXCEPT, spacing
-  OAnd: [1, 6, 16, 21, 24, 27, 30, 81],                          // AND/OR continuation: AND keyword, 3× indicators, EXCEPT name
-  OF: [1, 6, 21, 24, 27, 30, 44, 45, 47, 52, 53, 81],         // Prog-described field: indicators, name, edit code, end pos, constant
-  OFC: [1, 6, 53, 81],                                          // Field constant continuation
-  OXF: [1, 6, 21, 24, 27, 30, 45, 81],                         // Ext-described field: indicators, name, blank-after
-  P: [1, 6, 7, 24, 44, 81]
+// Legacy OPM RPG III tab/ruler support (.rpg, .rpg38, .sqlrpg).
+// This map is used only for visual column guides in legacy source types.
+const OPMRPG_TAB_STOPS: Record<string, number[]> = {
+  H: [1, 6, 7, 15, 16, 18, 19, 20, 21, 22, 26, 27, 40, 41, 42, 43, 44, 57, 58, 75, 81],
+  F: [1, 6, 7, 14, 15, 16, 17, 18, 19, 20, 24, 28, 29, 31, 32, 33, 35, 39, 40, 47, 53, 54, 60, 66, 67, 71, 73, 75, 81],
+  E: [1, 6, 7, 11, 19, 27, 33, 36, 40, 43, 44, 45, 46, 52, 55, 56, 57, 58, 75, 81],
+  L: [1, 6, 7, 15, 18, 20, 23, 25, 75, 81],
+  I: [1, 6, 7, 14, 15, 16, 17, 18, 19, 21, 25, 26, 27, 28, 32, 33, 34, 35, 39, 40, 41, 42, 43, 44, 48, 52, 53, 59, 61, 63, 65, 67, 69, 71, 75, 81],
+  C: [1, 6, 7, 9, 18, 28, 33, 43, 49, 53, 53, 54, 56, 58, 60, 75, 81],
+  O: [1, 6, 7, 14, 15, 16, 17, 18, 19, 21, 23, 32, 38, 39, 40, 44, 45, 71, 75, 81]
 };
 // Map from editor.document.uri.toString() to an array of ranges per line
 const tabStopRangesPerEditor: Map<string, vscode.Range[][]> = new Map();
@@ -132,10 +123,25 @@ const verticalLineDecoration = vscode.window.createTextEditorDecorationType({
   isWholeLine: false,
 });
 
-function getTabStops(line: string): number[] {
-  const specChar = getStmtRule(line);
+function getTabStopMap(document?: vscode.TextDocument): Record<string, number[]> {
+  if (document && rpgiv.isLegacyRPGDocument(document)) {
+    return OPMRPG_TAB_STOPS;
+  }
+  return RPGIV_TAB_STOPS;
+}
+
+function getTabStops(line: string, document?: vscode.TextDocument): number[] {
+  const specChar = getStmtRule(line, document);
   if (!specChar) return [];
-  const stops = RPGIV_TAB_STOPS[specChar] || [];
+  const stops = getTabStopMap(document)[specChar] || [];
+
+  // Legacy OPM tables are mixed: sequence/spec columns align as-authored,
+  // while data-area field boundaries are effectively one column high.
+  // Keep col 1/6 as-is, shift later boundaries by one.
+  if (document && rpgiv.isLegacyRPGDocument(document)) {
+    return stops.map(stop => Math.max(0, stop <= 6 ? stop : stop - 1));
+  }
+
   return stops.map(stop => Math.max(0, stop - 1));
 }
 
@@ -176,12 +182,15 @@ function getCurrentTabRange(col: number, stops: number[]): [number, number] {
   // return [0, 0];
   return [-1, -1];
 }
-function getStmtRule(line: string): string {
+function getStmtRule(line: string, document?: vscode.TextDocument): string {
   let specType = '';
   const lineType = rpgiv.getSpecType(line);
   if (lineType && lineType.trim() !== '') {
     specType = lineType.toUpperCase();
-    specType = getStmtVariant(line, specType);
+    // For legacy OPM guides, simple col-6 spec detection is sufficient.
+    if (!(document && rpgiv.isLegacyRPGDocument(document))) {
+      specType = getStmtVariant(line, specType);
+    }
   }
   return specType;
 }
@@ -280,13 +289,14 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
   // DELETE THIS LINE (line 204):
 
   // Is it a Fixed Format statement?
-  const specChar = getStmtRule(lineText);
-  if (lineText.length < 6 || !specChar || !RPGIV_TAB_STOPS[specChar]) {
+  const specChar = getStmtRule(lineText, doc);
+  const tabStopMap = getTabStopMap(doc);
+  if (lineText.length < 6 || !specChar || !tabStopMap[specChar]) {
     await vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
     return;
   }
 
-  const stops = getTabStops(lineText);
+  const stops = getTabStops(lineText, doc);
   if (stops.length === 0 || (stops[0] === 0 && stops.length === 1)) {
     await vscode.commands.executeCommand(reverse ? 'outdent' : 'tab');
     return;
@@ -358,7 +368,7 @@ export async function handleSmartTab(reverse: boolean): Promise<void> {
       });
     }
     const nextLineText = doc.lineAt(Math.min(nextLine, doc.lineCount - 1)).text;
-    const nextStops = getTabStops(nextLineText);
+    const nextStops = getTabStops(nextLineText, doc);
     const firstTab = nextStops.length > 1 ? nextStops[1] : 5;  // get 2nd tab (first is alway column 1)
 
     // Pad next line if needed
@@ -409,13 +419,14 @@ export async function highlightCurrentTabZone(editor: vscode.TextEditor): Promis
     return;
   }
 
-  const specChar = getStmtRule(lineText);
-  if (!specChar || !RPGIV_TAB_STOPS[specChar]) {
+  const specChar = getStmtRule(lineText, doc);
+  const tabStopMap = getTabStopMap(doc);
+  if (!specChar || !tabStopMap[specChar]) {
     editor.setDecorations(tabBoxDecoration, []);
     return;
   }
 
-  const stops = getTabStops(lineText);
+  const stops = getTabStops(lineText, doc);
   if (!stops || stops.length === 0 || (stops[0] === 0 && stops.length === 1)) {
     editor.setDecorations(tabBoxDecoration, []);
     return;
@@ -471,7 +482,7 @@ export function drawTabStopLines(editor: vscode.TextEditor, lineNbr: number): vo
   const decorations: vscode.Range[] = [];
   if (lineNbr < doc.lineCount) {
     const line = doc.lineAt(lineNbr);
-    const stops = getTabStops(line.text);
+    const stops = getTabStops(line.text, doc);
 
     for (const stop of stops) {
       if (stop > 0 && stop < line.text.length) {
@@ -516,7 +527,7 @@ export function applyColumnarDecorations(editor: vscode.TextEditor, smartTabEnab
         const line = doc.lineAt(i);
         if (rpgiv.isSkipStmt(line.text)) continue;
 
-        const stops = getTabStops(line.text);
+        const stops = getTabStops(line.text, doc);
         if (!stops || stops.length === 0) continue;
 
         const ranges: vscode.Range[] = [];

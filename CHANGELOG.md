@@ -2,6 +2,34 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.43] - 2026-07-08
+
+### What's New
+
+- **Column guides quick toggle command**: Added `Toggle RPG Column Guides` to quickly flip `rpgiv2free.enableRPGColumnGuides` without opening Settings.
+
+- **Basic OPM RPG column-guide support**: Added legacy fixed-format visual column guides for OPMRPG-style source members (`.rpg`, `.sqlrpg`, `.rpg36`, `.rpg38`, `.sqlrpg38`) using col-6 spec detection with col-7 comment/directive exclusion (`*` or `/`). This support is visual-guides only. The `SmartTab` support is not included for OPMRPG, currently.
+
+### What's Changed
+
+- **Settings menu grouping**: Added `Toggle RPG Column Guides` to the editor context menu in the same extension Settings command group as `RPGIV2Free Settings` and `Code for IBM i Settings`.
+
+- **Documentation refresh for column guides**: README now documents column guides as independent from Smart Tab and no longer references Shift+F4 / `vscode-rpgle.rulerEnabledByDefault` for controlling this extension's guide rendering.
+
+## [1.12.42] - 2026-07-08
+
+### What's Changed
+
+- **Removed Code for IBM i runtime coupling**: The extension no longer loads or inspects the Code for IBM i API during activation, and the internal helper/setting used only for that verification path has been removed.
+
+- **Extension dependency updated**: The hard extension dependency now targets `halcyontechltd.vscode-rpgle` (instead of `halcyontechltd.code-for-ibmi`) because symbol cache metadata from `vscode-rpgle` is what powers type-aware MOVE/SUBST conversion behavior.
+
+- **Code for IBM i settings shortcut retained**: The context menu/command palette shortcut that opens `Code for IBM i Settings` is still available as a convenience for users who also have that extension installed.
+
+### What's Fixed
+
+- **MOVE/SUBST symbol-cache resilience**: When `vscode-rpgle` symbol cache metadata is unavailable, MOVE and SUBST conversion now falls back to generic heuristics and continues conversion instead of throwing and exception.
+
 ## [1.12.41] - 2026-07-06
 
 ### What's New

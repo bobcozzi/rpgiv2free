@@ -10,6 +10,8 @@ import * as rpgiv from '../rpgtools';
 import * as vartypes from '../vartype';
 import { getStructTypeInfo } from '../calcStructLen';
 
+let warnedMissingRpgleCache = false;
+
 export async function convertSUBST(
     opcode: string,
     factor1: string,
@@ -27,7 +29,16 @@ export async function convertSUBST(
         return { lines: ['// No active editor found.'], action: '' };
     }
     const uri = activeEditor.document.uri;
-    const symbols = await commands.executeCommand(`vscode-rpgle.server.getCache`, uri) as any;
+    let symbols: any = {};
+    try {
+        const cached = await commands.executeCommand(`vscode-rpgle.server.getCache`, uri) as any;
+        symbols = cached ?? {};
+    } catch {
+        if (!warnedMissingRpgleCache) {
+            warnedMissingRpgleCache = true;
+            rpgiv.log('vscode-rpgle symbol cache unavailable; SUBST conversion will use generic type heuristics.');
+        }
+    }
 
     const { rawOpcode: rawOpcode, extenders: extender } = rpgiv.splitOpCodeExt(opcode);
     const hasP = extender.includes('P');
@@ -98,8 +109,7 @@ export async function convertSUBST(
         if (source && source != '') {
             source = `${f2Start} : ${source}`;
         }
-        else
-        {
+        else {
             source = `${f2Start}`;
         }
     }
