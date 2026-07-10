@@ -10,7 +10,7 @@
   "icon": "images/rpgiv2free.png",
   "preview": false,
   "private": false,
-  "version": "1.12.43",
+  "version": "1.12.44",
   "license": "Apache-2.0",
   "engines": {
     "vscode": "^1.96.0",
@@ -54,11 +54,11 @@
       },
       {
         "command": "rpgiv2free.openSettings",
-        "title": "RPGIV2Free Settings"
+        "title": "Settings for RPGIV2Free"
       },
       {
         "command": "rpgiv2free.openCode4iSettings",
-        "title": "Code for IBM i Settings"
+        "title": "Settings for Code4IBMi"
       },
       {
         "command": "rpgiv2free.toggleRPGColumnGuides",
@@ -279,19 +279,29 @@
           "default": false,
           "description": "Add *EXT to DISK, WORKSTN, etc. when converting externally described files."
         },
-        "rpgiv2free.RemoveFREEDirective": {
-          "type": "boolean",
-          "title": "Remove /FREE and /END-FREE directives",
-          "default": true,
-          "markdownDescription": "Remove deprecated /free and /end-free directives."
+        "rpgiv2free.RPGFreeDirectiveHandling": {
+          "type": "string",
+          "title": "/FREE and /END-FREE handling",
+          "enum": [
+            "remove",
+            "comment",
+            "keep"
+          ],
+          "enumDescriptions": [
+            "Delete /FREE and /END-FREE directive lines from the converted source. (recommended)",
+            "Comment-out /FREE and /END-FREE so the original directive is still visible.",
+            "Leave /FREE and /END-FREE unchanged in the source (not recommended)."
+          ],
+          "default": "remove",
+          "markdownDescription": "Choose how deprecated /FREE and /END-FREE directives are handled during conversion."
         },
-        "rpgiv2free.ReplaceCOPYwithINCLUDE_RPG": {
+        "rpgiv2free.ReplaceCopyWithIncludeRpg": {
           "type": "boolean",
           "title": "Replace /COPY with /INCLUDE [RPGLE]",
           "default": true,
           "description": "Replaces /copy statements in RPGLE source members with a /include directive."
         },
-        "rpgiv2free.ReplaceCOPYwithINCLUDE_SQLRPG": {
+        "rpgiv2free.ReplaceCopyWithIncludeSqlRpg": {
           "type": "boolean",
           "title": "Replace /COPY with /INCLUDE [SQLRPG]",
           "default": false,

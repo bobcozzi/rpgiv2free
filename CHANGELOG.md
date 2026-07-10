@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.44] - 2026-07-10
+
+### What's Changed
+
+This release focuses on conversion reliability and settings UX polish. Embedded SQL conversion now correctly handles mixed selections that include `/FREE` blocks around fixed-format `C/EXEC SQL` / `C/END-EXEC` wrappers, and `/FREE` / `/END-FREE` handling is now configurable with clear modes (`remove`, `comment`, `keep`) under a dedicated setting. Settings keys for `/COPY` to `/INCLUDE` replacement were renamed to improve readability in the VS Code Settings UI, command labels were updated to `Settings for ...` wording for faster visual scanning, and compatibility fallbacks were kept in runtime reads so existing user settings continue to work.
+
 ## [1.12.43] - 2026-07-08
 
 ### What's New

@@ -50,10 +50,18 @@ function convertDirective(line: string, extension: string, settings: rpgiv.confi
   const dir = typeof col === 'string' ? col.trimEnd() : '';
   if (dir) {
     const dirLower = dir.trim().toLowerCase();
-    if (settings.removeFREEdir &&
+    if (
       (dirLower === '/free' ||
         dirLower === '/end-free')) {
-      enhancedDir = ` // F2FF: Removed deprecated ${dir} statement`
+      if (settings.freeDirectiveMode === 'remove') {
+        enhancedDir = ' ';
+      } else if (settings.freeDirectiveMode === 'comment') {
+        const normalized = dir.trim().toUpperCase();
+        enhancedDir = ` //   ${normalized}`;
+      } else {
+        // keep: leave directive line unchanged
+        enhancedDir = line;
+      }
     } else if (settings.replaceCOPYinRPG && dirLower.startsWith('/copy')) {
       if ((isSQLType && settings.replaceCOPYinSQLRPG) || !isSQLType)
         // Replace only the directive, keep spacing after it intact

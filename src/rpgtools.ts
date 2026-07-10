@@ -88,7 +88,7 @@ export interface configSettings {
   altMOVEL: boolean;
   indyMOVEAStyle: string;
   addEXTDEVFLAG: boolean;
-  removeFREEdir: boolean;
+  freeDirectiveMode: string;
   removeOLDdir: boolean;
   replaceCOPYinRPG: boolean;
   replaceCOPYinSQLRPG: boolean;
@@ -132,6 +132,15 @@ export function getIdentClasses(variantChars: string): { start: string; cont: st
 export function getRPGIVFreeSettings(): configSettings {
   const config = vscode.workspace.getConfiguration('rpgiv2free');
   const convertBINTOINT = config.get<boolean>('convertBINTOINT', true);
+  const freeDirectiveModeRaw = config.get<any>('RPGFreeDirectiveHandling', 'remove');
+  const freeDirectiveMode =
+    freeDirectiveModeRaw === true ? 'remove'
+      : freeDirectiveModeRaw === false ? 'keep'
+        : (typeof freeDirectiveModeRaw === 'string' &&
+          (freeDirectiveModeRaw === 'remove' || freeDirectiveModeRaw === 'comment' || freeDirectiveModeRaw === 'keep'))
+          ? freeDirectiveModeRaw
+          : 'remove';
+
   return {
     convertBINTOINT: convertBINTOINT,
     addINZ: config.get<boolean>('addINZ', true),
@@ -142,10 +151,16 @@ export function getRPGIVFreeSettings(): configSettings {
     altMOVEL: config.get<boolean>('ALTMOVEL', true),
     indyMOVEAStyle: config.get<string>('indyMOVEAStyle', "LIST"),
     addEXTDEVFLAG: config.get<boolean>('AddEXTDeviceFlag', true),
-    removeFREEdir: config.get<boolean>('RemoveFREEDirective', true),
+    freeDirectiveMode: freeDirectiveMode,
     removeOLDdir: config.get<boolean>('RemoveOLDDirectives', true),
-    replaceCOPYinRPG: config.get<boolean>('ReplaceCOPYwithINCLUDE_RPG', true),
-    replaceCOPYinSQLRPG: config.get<boolean>('ReplaceCOPYwithINCLUDE_SQLRPG', false),
+    replaceCOPYinRPG: config.get<boolean>(
+      'ReplaceCopyWithIncludeRpg',
+      config.get<boolean>('ReplaceCOPYwithINCLUDE_RPG', true)
+    ),
+    replaceCOPYinSQLRPG: config.get<boolean>(
+      'ReplaceCopyWithIncludeSqlRpg',
+      config.get<boolean>('ReplaceCOPYwithINCLUDE_SQLRPG', false)
+    ),
     tempVar1STG: config.get<string>('tempVarName1', 'rpg2ff_tempSTG'),
     tempVar2DO: config.get<string>('tempVarName2', 'rpg2ff_tempDO'),
     parenthesizeANDOR: config.get<boolean>('parenthesizeANDOR', false),
@@ -420,6 +435,16 @@ const singleCharDirectiveRegex = /^\/[A-Za-z0-9]\s?/;   // Matches /X or /X[whit
 const validCharRegex = /^[A-Za-z0-9]/;                  // Matches valid characters after '/'
 
 export function isDirective(line: string, bFreeFormOnly?: boolean): boolean {
+  const col6 = line.length > 5 ? line[5].toUpperCase() : '';
+  const col7 = line.length > 6 ? line[6] : '';
+  const directiveText = getCol(line, 8, 80).trim().toUpperCase();
+
+  // Fixed-form embedded SQL wrappers are C-spec statements, not directives.
+  if (col6 === 'C' && col7 === '/' &&
+    (directiveText.startsWith('EXEC SQL') || directiveText.startsWith('END-EXEC'))) {
+    return false;
+  }
+
   // Classic RPG directive: column 7 is '/' and column 8 is not '/'
   const bDirective = (
     line.length > 7 &&

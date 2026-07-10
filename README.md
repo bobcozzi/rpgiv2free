@@ -85,7 +85,7 @@ Automatically comments-out /free compiler directives. /free has been deprecated 
 
 Default: `true`
 
-### `rpgiv2free.ReplaceCOPYwithINCLUDE_RPG`
+### `rpgiv2free.ReplaceCopyWithIncludeRpg`
 Converts the legacy /copy statement to the more modern and cross-language /include statement for RPGLE source type source members.
 
 - `true` — Any selected /copy is converted to /include.
@@ -93,7 +93,7 @@ Converts the legacy /copy statement to the more modern and cross-language /inclu
 
 Default: `true`
 
-### `rpgiv2free.ReplaceCOPYwithINCLUDE_SQLRPG`
+### `rpgiv2free.ReplaceCopyWithIncludeSqlRpg`
 Converts the legacy /copy statement to the more modern and cross-language /include statement for SQLRPG* source type source members.
 
 - `true` — Any selected /copy is converted to /include.
