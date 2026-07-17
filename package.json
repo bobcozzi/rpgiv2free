@@ -456,14 +456,18 @@
     "onLanguage:sqlrpg38"
   ],
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "build": "tsc",
+    "vscode:prepublish": "npm run validate",
+    "build": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
+    "validate": "npm run compile && vitest run",
+    "test": "npm run validate",
+    "test:fixtures": "npm run validate",
+    "test:watch": "vitest",
     "fix": "eslint . --fix",
     "publish:vsx": "ovsx publish --pat $OPENVSX_PAT",
     "publish:ms": "vsce publish",
-    "publish:all": "npm run fix && npm run compile && npm run publish:ms && npm run publish:vsx"
+    "publish:all": "npm run fix && npm run validate && npm run publish:ms && npm run publish:vsx"
   },
   "devDependencies": {
     "@eslint/json": "^0.12.0",
@@ -473,7 +477,8 @@
     "@typescript-eslint/eslint-plugin": "^8.32.0",
     "@typescript-eslint/parser": "^8.32.0",
     "eslint": "^9.26.0",
-    "typescript": "^4.8.0"
+    "typescript": "^4.8.0",
+    "vitest": "^0.34.6"
   },
   "dependencies": {
     "odbc": "^2.4.9",
