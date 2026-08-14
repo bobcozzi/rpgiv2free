@@ -40,6 +40,8 @@ If you work on IBM i, you will also want to install the **CL Prompter and Format
   - /EXEC SQL and C+ "fixed format" style Embedded SQL Statements
   - Procedure (P) Specs
 
+There is also a hidden Input Spec conversion option. Locate the `enableConvertISpecToDS` setting in your settings.json file (Cmd+, or Ctrl+,) and set it to `true` to enable input spec conversion to Data Structures. This setting is `false` (disabled) by default.
+
 - ## Bonus Editing Features**
 - **Smart RPG Tab key** When enabled (default: `true`) on fixed-foramt RPG IV statements, when the TAB/Shift+TAB keys are pressed, it moves to the next/prev available "tab" location for the specification. For example: On a C (calc) spec, you may _tab_ from factor 1 to the opcode then to factor 2 and so on. The tab is non-distructive so tabbing can be done quickly and safely. To turn off Smart RPG Tab, press the "RPG Smart Tab" _button_ on the bottom status bar of the editor winodow. There is also a settings option to turn this off when VS Code starts. Smart RPG Enter and Smart RPG Tab features are off when NOT in fixed format.
 - **Smart RPG Enter key** When enabled (default: `true`) on fixed-format RPG IV statments, when you press ENTER, the current line is **not** broken and a new line with the same source spec type is inserted. The cursor is moved under the first non-blank position (after the spec) of the previous line. To turn this off, go to the settings for the `rpgiv2free` extension. NOTE: This may interfer with GitHub CoPilot code completion (code _suggestions_) in fixed-format. Smart RPG Enter and Smart RPG Tab features are off when NOT in fixed format.
