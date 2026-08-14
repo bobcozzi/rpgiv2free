@@ -342,8 +342,6 @@ function convertProgramRecordGroup(lines: string[]): string[] {
     if (ricGroups.length > 0) {
         const ricOutput = generateRICOutput(ricGroups, recIdInd, fileName, dsName);
         result.push(...ricOutput);
-    } else if (recIdInd) {
-        result.push(`  // Test: IF *IN${recIdInd}; or IF NOT *IN${recIdInd};`);
     }
 
     let fillerCount = 0;

@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.45] - 2026-08-14
+
+### What's Changed
+
+This release adds support for non-standard RPGLE source extensions (i.e., custom `SEU Types` or `source types`) when the local VS Code language ID associations includes that suffix. For example, if you prefer to use the source type of `incrpgle` for RPG IV source files members that you `/COPY` or `/INCLUDE` into other RPG IV source code, that file suffix `.incrpgle` will now be recognized by this extension if you  configure files with that suffix as a language ID of `rpgle`. Once configured, it will always be associated with RPGLE and therefore supported by this extesnion.
+
 ## [1.12.44] - 2026-07-10
 
 ### What's Changed
@@ -14,7 +20,7 @@ This release focuses on conversion reliability and settings UX polish. Embedded 
 
 - **Column guides quick toggle command**: Added `Toggle RPG Column Guides` to quickly flip `rpgiv2free.enableRPGColumnGuides` without opening Settings.
 
-- **Basic OPM RPG column-guide support**: Added legacy fixed-format visual column guides for OPMRPG-style source members (`.rpg`, `.sqlrpg`, `.rpg36`, `.rpg38`, `.sqlrpg38`) using col-6 spec detection with col-7 comment/directive exclusion (`*` or `/`). This support is visual-guides only. The `SmartTab` support is not included for OPMRPG, currently.
+- **Basic OPM RPG column-guide support**: Added legacy fixed-format visual column guides for OPMRPG-style source members (`.rpg`, `.sqlrpg`, `.rpg36`, `.rpg38`, `.sqlrpg38`) using col-6 spec detection with col-7 comment/directive exclusion (`*` or `/`). This support is columnar-guides, `SmartTab` and `SmartEnter` for OPMRPG.
 
 ### What's Changed
 

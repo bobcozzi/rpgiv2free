@@ -34,5 +34,5 @@ export function convertHSpec(lines: string[]): string[] {
   if (firstOpt.startsWith('ctl-opt')) {
     return [ctlOpts.join(' ') + cmtSuffix];
   }
-  return [`ctl-opt ${ctlOpts.join(' ')};${cmtSuffix}`];
+  return [`ctl-opt ${ctlOpts.join(' ')}; ${cmtSuffix}`];
 }
