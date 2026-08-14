@@ -1,13 +1,10 @@
 # Bob Cozzi's RPG IV to Free Format Conversion (rpgiv2free) Extension for use with Visual Studio CODE and IBM Bob
 
-This Visual Studio Code extension helps developers convert RPG IV fixed-format statements into free-format RPG IV code effortlessly. It is compatible with Microsoft Visual Studio CODE and IBM Bob.
+This Visual Studio CODE extension helps developers convert RPG IV fixed-format statements into free-format RPG IV code effortlessly. It is compatible with Microsoft Visual Studio CODE and IBM Bob.
 
 The extension now declares `vscode-rpgle` as its runtime extension dependency (`halcyontechltd.vscode-rpgle`) because symbol metadata from that extension is used to improve MOVE and SUBST conversions. When symbol cache metadata is unavailable at runtime, MOVE/SUBST conversions continue using generic heuristics instead of failing.
 
-`CODE FOR IBM i` is optional for this extension. A convenience command to open `Code for IBM i Settings` is still included for users who have that extension installed.
-
 Your input and feedback is extremely valuable. Please [use this link to submit your bugs or feedback](https://github.com/bobcozzi/rpgiv2free/issues).
-
 
 [Available on the VS CODE Marketplace](https://marketplace.visualstudio.com/items?itemName=CozziResearch.rpgiv2free)
 
