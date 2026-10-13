@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.46] - 2026-10-13
+
+### What's Changed
+- When converting fixed-format D spec that contain a procedure interface (PI) or a Prototype (PR) and that statement when converted to free format would span multiple lines, the generated `end-ds` statement would often be inserted between the `dcl-pi` and the keywords that were continued on the 2nd line. This has been fixed.
+
 ## [1.12.45] - 2026-08-14
 
 ### What's Changed

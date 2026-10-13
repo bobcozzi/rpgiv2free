@@ -4,6 +4,7 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
+import { collectFreeStmt } from './collectFreeStmt';
 
 
 export enum SmartEnterMode {
@@ -647,11 +648,23 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
   // next line is the actual DS/PR/PI definition — treat it as a continuation so we don't
   // break out of the scan prematurely and place end-ds in the wrong location.
   let inNameContinuation = dNameContinues(allLines[startIndex]);
+  // Collect a wrapped free-format prototype/interface header as one statement
+  // before continuing with parameters and subsequent opcodes or calls.
+  const startTrimmed = allLines[startIndex]?.trimStart() ?? '';
+  let scanStartIndex = startIndex + 1;
+  if (/^dcl-(?:pr|pi)\b/i.test(startTrimmed)) {
+    const header = collectFreeStmt(allLines, startIndex, line => {
+      const token = line.trim().split(/\s+|\(/)[0]?.toUpperCase() ?? '';
+      return !!token && isValidOpcode(token);
+    });
+    insertPoint = Math.max(insertPoint, header.nextIndex - 1);
+    scanStartIndex = Math.max(scanStartIndex, header.nextIndex);
+  }
   // Saved insertPoint from just before a '...' continuation line was encountered.
   // Used to restore the correct insert position if the continuation turns out to
   // be the start of a new DS/PR/PI/S/C declaration rather than a subfield.
   let preContinuationInsertPoint = -1;
-  for (i = startIndex + 1; i < allLines.length; i++) {
+  for (i = scanStartIndex; i < allLines.length; i++) {
     const line = allLines[i]; // Use original line for column-based checks
     const lineUpper = line.toUpperCase();
 
@@ -688,6 +701,19 @@ function findLocationForEndStmt(startIndex: number, allLines: string[]): number 
       break;  // If fixed-format but not a D spec, we're done
     }
 
+    // A continued D-spec keyword (for example EXTPROC('VeryLongName_+
+    //                                          MoreText')) is still part of the same declaration,
+    // not a free-format procedure call or a new statement boundary.
+    if (bFixedFormat && specType === 'd') {
+      const prevLine = i > startIndex ? allLines[i - 1] : '';
+      const prevContinues = dKwdContinues(prevLine) || dNameContinues(prevLine);
+      const nameArea = getCol(line, 7, 21).trim();
+      const kwdArea = getCol(line, 22, 80).trim();
+      if ((prevContinues || inNameContinuation) && !nameArea && kwdArea) {
+        insertPoint = i;
+        continue;
+      }
+    }
 
     const trimmed = line.trim();
     if (trimmed && !bFixedFormat) {

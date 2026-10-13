@@ -116,16 +116,24 @@ export function collectDSpecs(
     const nameEndsDots = /\.\.\.$/.test(nameAreaRaw.trimEnd());
 
     const isHeader = bValidFixedDefn || (hasName && !nameEndsDots);
+    const prevLine = i > firstIndex ? allLines[i - 1] : '';
+    const prevLineContinues = rpgiv.dKwdContinues(prevLine) || rpgiv.dNameContinues(prevLine);
 
-    // Break on any new header (even if it has keyword continuation),
-    // or if we see a name-continuation but the current header didn’t continue
-    if (headerSeen && (isHeader || (!headerNameContinues && bNameContinues))) {
+    // A continued keyword or name line belongs to the same declaration; do not
+    // treat it as a brand-new D-spec header. This covers cases like
+    // PR ... EXTPROC('VeryLongName_+
+    //                          MoreText')
+    if (headerSeen && prevLineContinues) {
+      // Keep collecting the declaration; the current line is part of the
+      // previous header's continuation, not a fresh D-spec.
+    } else if (headerSeen && (isHeader || (!headerNameContinues && bNameContinues))) {
       break;
     }
 
     if (headerSeen && bValidFixedDefn &&
       !bNameContinues &&
-      !bKwdContinues) {
+      !bKwdContinues &&
+      !prevLineContinues) {
       break;
     }
     if (headerSeen && bValidFixedDefn) {

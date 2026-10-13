@@ -4,6 +4,7 @@
 
 import * as vscode from 'vscode';
 import * as rpgiv from './rpgtools';
+import { collectFreeStmt } from './collectFreeStmt';
 import { wrapSQLBody } from './collectSQLSpec';
 import { collectSQLStatement, convertCollectedToFreeSQL } from './sql/sqlfmt_index';
 
@@ -572,113 +573,6 @@ function isInlineDeclaration(stmtText: string, openerTok: string): boolean {
   if (!closer) return false;
   const closerRx = new RegExp(`(?<![A-Z0-9_-])${closer.replace('-', '\\-')}(?![A-Z0-9_-])`);
   return closerRx.test(stmtText.toUpperCase());
-}
-
-/**
- * Returns true when `text` ends inside an open RPG IV single-quoted string
- * literal, i.e. there is an odd number of unescaped single-quote characters.
- */
-function isInsideOpenString(text: string): boolean {
-  let inStr = false;
-  for (let i = 0; i < text.length; i++) {
-    if (text[i] === "'") {
-      // A doubled quote ('') inside a string is an escaped quote — skip the pair.
-      if (inStr && i + 1 < text.length && text[i + 1] === "'") {
-        i++;
-      } else {
-        inStr = !inStr;
-      }
-    }
-  }
-  return inStr;
-}
-
-/**
- * Collects physical lines starting at `startIndex` that together form one
- * RPG IV free-format logical *statement* — everything up to and including
- * the physical line whose code portion (after stripping any trailing inline
- * comment) ends with `;`.
- *
- * Collection stops early (without consuming the triggering line) when a
- * continuation line would start a new context: blank line, comment-only
- * line, EXEC SQL opener, fixed-format spec, **FREE, or column-7 directive.
- * A comment-only line as the very first line is returned as a standalone
- * single-line statement.
- */
-function collectFreeStmt(lines: string[], startIndex: number): { stmtText: string; nextIndex: number } {
-  const parts: string[] = [];
-  let i = startIndex;
-
-  while (i < lines.length) {
-    const raw = lines[i];
-    const trimmed = raw.trim();
-
-    // Comment-only lines are always standalone — return immediately if first
-    // line, or stop collection if encountered mid-statement.
-    if (trimmed.startsWith('//')) {
-      if (parts.length === 0) {
-        parts.push(trimmed);
-        i++;
-      }
-      break;
-    }
-
-    // Mid-collection: stop before any line that starts a new context.
-    if (parts.length > 0) {
-      if (trimmed === '') break;
-      if (EXEC_SQL_LINE_RX.test(trimmed)) break;
-      if (END_EXEC_LINE_RX.test(trimmed)) break;
-      if (raw.length >= 6 && FIXED_SPEC_RX.test(raw)) break;
-      if (FREE_DIR_RX.test(trimmed)) break;
-      if (raw.length >= 7 && COL7_DIR_RX.test(raw)) break;
-    }
-
-    // Strip inline comment to find the real statement terminator.
-    const { code } = extractComment(trimmed);
-    parts.push(trimmed);
-    i++;
-
-    if (code.trimEnd().endsWith(';')) break;
-  }
-
-  // Join physical lines into one logical statement, respecting RPG IV
-  // continuation conventions:
-  //   '...'  at end of a line  — name continuation:   strip '...', join directly
-  //   '+'    at end of code    — string continuation:  strip '+',   join directly
-  //   '-'    at end of code    — string continuation:  strip '-',   join with next part leading-whitespace trimmed
-  let stmtText = '';
-  for (const part of parts) {
-    if (stmtText === '') {
-      stmtText = part;
-      continue;
-    }
-    // Name-continuation marker
-    if (stmtText.trimEnd().endsWith('...')) {
-      stmtText = stmtText.trimEnd().slice(0, -3) + part;
-      continue;
-    }
-    // String-literal continuation: only applies when we are inside an open string
-    const prevCode = extractComment(stmtText).code.trimEnd();
-    if (isInsideOpenString(prevCode)) {
-      if (prevCode.endsWith('+')) {
-        // Strip the trailing '+' (the continuation marker, not string content)
-        stmtText = stmtText.slice(0, prevCode.length - 1) + part;
-        continue;
-      }
-      if (prevCode.endsWith('-')) {
-        // Strip the trailing '-' and concatenate the next part as-is, preserving
-        // its leading whitespace (position 1 of the next physical line is the
-        // next character in the string value).
-        stmtText = stmtText.slice(0, prevCode.length - 1) + part;
-        continue;
-      }
-    }
-    // Default: join with a single space
-    stmtText = stmtText + ' ' + part;
-  }
-  stmtText = stmtText.replace(/\s+/g, ' ').trim();
-
-  return { stmtText, nextIndex: i };
 }
 
 /**
